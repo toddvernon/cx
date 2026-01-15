@@ -1,0 +1,8 @@
+
+base.lib:
+        cd win
+        nmake -f LIB_base.mak
+        
+clean:
+        cd win
+        nmake -f LIB_base.mak CLEAN

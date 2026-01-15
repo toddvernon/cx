@@ -1,0 +1,669 @@
+/***************************************************************************
+ *
+ *  slist.h
+ *
+ *  CxSList Class
+ *
+ ***************************************************************************
+ *
+ * (c) Copyright 1999,2000,2001 T.Vernon
+ * ALL RIGHTS RESERVED
+ *
+ * The software and information contained herein are proprietary to, and
+ * comprise valuable trade secrets of, T.Vernon , which
+ * intends to preserve as trade secrets such software and information.
+ * This software is furnished pursuant to a written license agreement and
+ * may be used, copied, transmitted, and stored only in accordance with
+ * the terms of such license and with the inclusion of the above copyright
+ * notice.  This software and information or any other copies thereof may
+ * not be provided or otherwise made available to any other person.
+ *
+ *
+ **************************************************************************/
+
+#include <stdio.h>
+
+#include <cx/base/exception.h>
+
+
+#ifndef _CxSList_h_
+#define _CxSList_h_
+
+
+//-------------------------------------------------------------------------
+// class CxSList
+//
+//-------------------------------------------------------------------------
+template <class T>
+class CxSList
+{
+  public:
+
+	CxSList( void );
+	// constructor
+
+	CxSList( const CxSList<T>& slist_ );
+	// copy constructor
+
+	~CxSList( void );
+	// destructor
+
+	CxSList<T>& operator=( const CxSList<T>& slist_ );
+	// assignment operator
+
+	void append( const T& item );
+	// add item to the list
+
+	void append( const CxSList<T>& slist_ );
+	// add a list to the list
+
+	void insertBefore( int i, const T& item );
+	// insert item before item at position i
+
+	void insertAfter( int i, const T& item );
+	// insert item after item at position i
+
+	void push( const T& item );
+	// push an item onto the end of the list
+
+	T pop( void );
+	// remove the last item from the list
+
+	T peek( void ) const;
+	// get a copy of the last item on the list
+
+	void replaceAt( int i, const T& item );
+	// replace the item at index i
+
+	void removeAt( int i );
+	// remove the item at item i
+
+	void clear( void );
+	// clear the items from the list
+
+	void clearAndDelete( void );
+	// clear the items from the list and delete them
+
+	size_t entries( void ) const;
+	// return the number of items in the list
+	
+	T at( int i ) const;
+	// return a copy of the item at index i
+
+	T first( void );
+	// return a copy of first item on the list
+
+	T last( void );
+	// return a copy of last item on the list
+ 	
+  protected:
+
+	struct Node
+	{
+		T     data;
+		Node *next;
+	};
+
+	size_t  _entries;
+	Node   *_head;
+	Node   *_tail;
+	Node   *_work;
+
+	void deepCopy( const CxSList<T>& slist_ );
+	// copy the items in the list
+
+	void setNull( void );
+	// set the list to no items
+};
+
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::
+//
+//-------------------------------------------------------------------------
+template <class T>
+CxSList<T>::CxSList( void  ) 
+{
+	setNull();
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::
+//
+//-------------------------------------------------------------------------
+template <class T>
+CxSList<T>::CxSList( const CxSList<T>& slist_ )
+{
+	setNull();
+	deepCopy( slist_ );
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::operator=
+//
+//-------------------------------------------------------------------------
+template< class T >
+CxSList<T>&
+CxSList<T>::operator=( const CxSList<T>& slist_ )
+{
+	if ( &slist_ != this ) {
+		clear();
+		setNull();
+		deepCopy( slist_ );
+	}
+	return( *this );
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::~CxSList<T>
+//
+//-------------------------------------------------------------------------
+template <class T>
+CxSList<T>::~CxSList( void )
+{
+	clear();
+}
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::entries
+//
+//-------------------------------------------------------------------------
+template <class T>
+size_t
+CxSList<T>::entries(void) const
+{
+	return(_entries);
+}
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::setNull
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::setNull( void )
+{
+	_head = NULL;
+	_tail = NULL;
+	_work = NULL;
+	_entries = 0;
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::deepCopy
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::deepCopy( const CxSList<T>& slist_ )
+{
+	if (slist_.entries() == 0) return;
+
+	Node *n = slist_._head;
+
+	do {
+		append( n->data );
+		n = n->next;
+	} while (n != NULL );
+
+	_work = _head;
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::replaceAt
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::replaceAt( int i, const T& item )
+{
+	int count = 0;
+
+	Node *n = _head;
+
+	while (n != NULL) {
+
+		if (i == count) {
+			n->data = item;
+			return;
+		}
+
+		n = n->next;
+		count++;
+	}
+
+	throw CxException("CxSList::at(invalid index)");
+}
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::removeAt
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::removeAt( int i )
+{
+	int count = 0;
+
+	Node *prev    = NULL;
+	Node *n       = _head;
+
+	while (n != NULL) {
+
+		if (i == count) {
+
+			// case where there is only one item
+			if (( n == _head ) && ( n == _tail )) {
+				_head = _tail = _work = NULL;
+				delete n;
+			} else
+
+			// case where first item is deleted.
+			if ( n == _head ) {
+				_head = n->next;
+				delete n;
+			} else
+
+			// case where last item is deleted.
+			if ( n == _tail ) {
+				prev->next = NULL;
+				_tail = prev;
+				delete n;
+			} else
+
+			// otherwise in the middle
+			{
+				prev->next = n->next;
+				delete n;
+			}
+
+			_entries--;
+			return;
+		}
+	
+		prev = n;
+		n    = n->next;
+	
+		count++;
+	}
+
+	throw CxException("CxSList::at(invalid index)");
+}
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::insertBefore
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::insertBefore( int i, const T& item )
+{
+	int count = 0;
+
+	Node *prev    = NULL;
+	Node *n       = _head;
+	Node *newNode = new Node;
+
+	newNode->data = item;
+	newNode->next = NULL;
+
+
+	if ((_head == NULL) && (_tail==NULL)) {
+		_work = newNode;
+		_tail = newNode;
+		_head = newNode;
+		_entries = 1;
+		return;
+	}
+		
+	while (n != NULL) {
+
+		if (i == count) {
+
+			// case where there is only one item
+			if (( n == _head ) && ( n == _tail )) {
+				newNode->next = _head;
+				_head = newNode;
+			} else
+
+			// case where first item is the pointer item.
+			if ( n == _head ) {
+				newNode->next = _head;
+				_head = newNode;
+			} else
+
+			// case where last item is the pointer item
+			if ( n == _tail ) {
+				prev->next = newNode;
+				_tail = newNode;
+				newNode->next = n;
+			} else
+
+			// otherwise in the middle
+			{
+				newNode->next = n;
+				prev->next = newNode;
+			}
+
+			_entries++;
+
+			return;
+		}
+	
+		prev = n;
+		n    = n->next;
+	
+		count++;
+	}
+	
+	// didn't find the item so just append to the end of the list
+	prev->next = newNode;
+	_tail = newNode;
+	newNode->next = NULL;
+
+	_entries++;
+
+	throw CxException("CxSList::insertBefore(invalid index)");
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::insertAfter
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::insertAfter( int i, const T& item )
+{
+	int count = 0;
+
+	Node *prev    = NULL;
+	Node *n       = _head;
+	Node *newNode = new Node;
+
+	newNode->data = item;
+	newNode->next = NULL;
+
+
+	if ((_head == NULL) && (_tail==NULL)) {
+		_work = newNode;
+		_tail = newNode;
+		_head = newNode;
+		_entries = 1;
+		return;
+	}
+		
+	while (n != NULL) {
+
+		if (i == count) {
+
+			// case where there is only one item
+			if (( n == _head ) && ( n == _tail )) {
+				_head->next = newNode;
+				newNode->next = NULL;
+				_tail = newNode;
+			} else
+
+			// case where first item is the pointer item.
+			if ( n == _head ) {
+				newNode->next = _head->next;
+				_head->next = newNode;
+			} else
+
+			// case where last item is the pointer item
+			if ( n == _tail ) {
+				_tail = newNode;
+				n->next = newNode;
+				newNode->next = NULL;
+			} else
+
+			// otherwise in the middle
+			{
+				newNode->next = n->next;
+				n->next = newNode;
+			}
+
+			_entries++;
+
+			return;
+		}
+	
+		prev = n;
+		n    = n->next;
+	
+		count++;
+	}
+	
+	// didn't find the item so just append to the end of the list
+	prev->next = newNode;
+	_tail = newNode;
+	newNode->next = NULL;
+
+	_entries++;
+
+	throw CxException("CxSList::insertBefore(invalid index)");
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::push
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::push( const T& item )
+{
+	append( item );
+}
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::pop
+//
+//-------------------------------------------------------------------------
+template <class T>
+T
+CxSList<T>::pop( void )
+{
+	int count = entries();
+
+	if (count==0) {
+		throw CxException("CxSList::at(invalid index)");
+	}
+
+	T data = at( count-1 );
+
+	removeAt( count-1 );
+
+	return( data );
+};
+
+//-------------------------------------------------------------------------
+// CxSList<T>::peek
+//
+//-------------------------------------------------------------------------
+template <class T>
+T
+CxSList<T>::peek( void ) const
+{
+	int count = entries();
+
+	if (count==0) {
+		throw CxException("CxSList::at(invalid index)");
+	}
+
+	T data = at( count-1 );
+
+	return( data );
+}
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::append
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::append( const T& item )
+{
+	Node *n = new Node;
+
+	if (n == NULL) {
+		throw CxException("CxSList::append(memory allocation error)");
+	}
+
+	n->data = item;
+	n->next = NULL;
+
+    // if no items in the list
+	if (_tail == NULL) {
+
+		_head = n;
+		_tail = n;
+		_work = n;
+
+    // else just slide in at the end of the list
+	} else {
+
+		_tail->next = n;
+		_tail = n;
+	}
+
+	_entries++;
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::append
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::append( const CxSList<T>& slist_ )
+{
+	const Node *n = slist_._head;
+
+	while (n != NULL) {
+		append( n->data );
+		n = n->next;
+	}
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::clear
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::clear( void )
+{
+	_work = _head;
+
+	while (_work != NULL ) {
+
+		_head = _work->next;
+		delete _work;
+		_work = _head;
+	}
+
+	setNull();
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::clearAndDelete
+//
+//-------------------------------------------------------------------------
+template <class T>
+void
+CxSList<T>::clearAndDelete( void )
+{
+	_work = _head;
+
+	while (_work != NULL ) {
+
+		_head = _work->next;
+		
+		delete _work->data;
+		delete _work;
+
+
+		_work = _head;
+	}
+
+	setNull();
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::at
+//
+//-------------------------------------------------------------------------
+template <class T>
+T
+CxSList<T>::at( int i ) const
+{
+	int count = 0;
+
+	const Node *n = _head;
+
+	while (n != NULL) {
+
+		if (i == count) {
+			return( n->data );
+		}
+
+		n = n->next;
+		count++;
+	}
+
+	throw CxException("CxSList::at(invalid index)");
+}	
+
+
+//-------------------------------------------------------------------------
+// CxSList<T>::first
+//
+//-------------------------------------------------------------------------
+template <class T>
+T
+CxSList<T>::first( void )
+{
+	int count = entries();
+
+	if (count==0) {
+		throw CxException("CxSList::at(invalid index)");
+	}
+
+	T item = at( 0 );
+	
+	removeAt(0);
+
+	return( item );
+}
+
+//-------------------------------------------------------------------------
+// CxSList<T>::last
+//
+//-------------------------------------------------------------------------
+template <class T>
+T
+CxSList<T>::last( void )
+{
+	int count = entries();
+
+	if (count==0) {
+		throw CxException("CxSList::at(invalid index)");
+	}
+
+	T item = at( count-1 );
+
+	removeAt(count-1);
+
+	return( item );
+}
+
+
+
+
+#endif

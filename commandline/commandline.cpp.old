@@ -1,0 +1,724 @@
+/***************************************************************************
+ *
+ *  xxx
+ *
+ *  xxx
+ *
+ ***************************************************************************
+ *
+ * (c) Copyright 2018 T.Vernon
+ * ALL RIGHTS RESERVED
+ *
+ * The software and information contained herein are proprietary to, and
+ * comprise valuable trade secrets of, T.Vernon , which
+ * intends to preserve as trade secrets such software and information.
+ * This software is furnished pursuant to a written license agreement and
+ * may be used, copied, transmitted, and stored only in accordance with
+ * the terms of such license and with the inclusion of the above copyright
+ * notice.  This software and information or any other copies thereof may
+ * not be provided or otherwise made available to any other person.
+ *
+ *
+ **************************************************************************/
+
+#include <stdio.h>
+#include <termios.h>            //termios, TCSANOW, ECHO, ICANON
+#include <unistd.h>     //STDIN_FILENO
+
+#include <iostream>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+#include <cx/base/string.h>
+#include <cx/base/slist.h>
+#include <cx/base/rule.h>
+#include <cx/base/exception.h>
+#include <cx/base/file.h>
+#include <cx/base/star.h>
+#include <cx/base/filename.h>
+#include <cx/base/directory.h>
+#include <cx/functor/functor.h>
+#include <cx/functor/defercall.h>
+#include <cx/functor/reference.h>
+
+#include <cx/commandline/command.h>
+#include <cx/commandline/commandline.h>
+
+#define LEFT_ARROW_KEY   68
+#define RIGHT_ARROW_KEY  67
+#define UP_ARROW_KEY     65
+#define DOWN_ARROW_KEY   66
+#define ESC_KEY          27
+#define DELETE_KEY       127
+#define RETURN_KEY       10
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+CxCommandLine::CxCommandLine( void )
+{
+	_first  = TRUE;
+	_prompt = "";
+    
+    setToEditMode();
+}
+
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+CxCommandLine::~CxCommandLine( void )
+{
+
+}
+
+void
+CxCommandLine::registerCommandCallback( CxCommand command )
+{
+    _commandCallbackList.append(command);
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::setPrompt(CxString p)
+{
+    _prompt = p;
+}
+
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::setPromptColor(int r, int g, int b)
+{
+	CxString redString, greenString, blueString;
+
+	redString.setInt(r);
+	greenString.setInt(g);
+	blueString.setInt(b);
+
+	char buffer[20];
+	sprintf(buffer, "%c[38;2;%s;%s;%sm", 
+		ESC_KEY, 
+		redString.data(), 
+		greenString.data(), 
+		blueString.data() );
+
+	_promptColorStartString = buffer;
+
+	sprintf(buffer, "%c[0m", 
+		ESC_KEY);
+
+	_promptColorStopString = buffer;
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::setCommandHistory( CxSList< CxString > ch)
+{
+    _commandLineHistory = ch;
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::setupTerminalFeatures(void)
+{
+    // tcgetattr gets the parameters of the current terminal
+    // STDIN_FILENO will tell tcgetattr that it should write the settings
+    // of stdin to oldt
+
+    tcgetattr( STDIN_FILENO, &_oldt);
+
+    //now the settings will be copied
+
+    _newt = _oldt;
+
+    // ICANON normally takes care that one line at a time will be processed
+    // that means it will return if it sees a "\n" or an EOF or an EOL
+
+    _newt.c_lflag &= ~(ICANON | ECHO);          
+
+    // Those new settings will be set to STDIN
+1;5B    // TCSANOW tells tcsetattr to change attributes immediately.
+
+    tcsetattr( STDIN_FILENO, TCSANOW, &_newt);
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::teardownTerminalFeatures(void)
+{
+    //restore the old settings
+    tcsetattr( STDIN_FILENO, TCSANOW, &_oldt);
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::handleEscSequence( char c )
+{
+	int c1=getchar();
+	int c2=getchar();
+
+	if (c1=='[') {  // 91
+
+		switch( c2 ) {
+
+            case LEFT_ARROW_KEY : processLeftArrow();  break;
+            case RIGHT_ARROW_KEY: processRightArrow(); break;
+            case UP_ARROW_KEY   : processUpArrow();    break;
+            case DOWN_ARROW_KEY : processDownArrow();  break;
+
+			case 49:
+			{
+				int c3=getchar();
+						
+				printf("--unhandled esc 49 sequence--\n");
+						printf("1-->[%d]\n", c1);
+						printf("2-->[%d]\n", c2);
+						printf("3-->[%d]\n", c3);
+				break;
+			}
+
+
+            // keypad delete key
+			case 51:
+			{	
+				int c3=getchar();
+
+				switch(c3) {
+
+					case 126:
+					{
+						processDeleteKey();
+					}
+					break;
+
+					default:
+					{
+
+						printf("--unhandled esc 51 sequence--\n");
+						printf("1-->[%d]\n", c1);
+						printf("2-->[%d]\n", c2);
+						printf("3-->[%d]\n", c3);
+
+					}		
+				}
+				break;
+			}
+
+			default:
+			{
+				int c3=getchar();
+
+				printf("--unhandled esc sequence--\n");
+				printf("-->[%d]\n", c1);
+				printf("-->[%d]\n", c2);
+				printf("-->[%d]\n", c3);
+
+			}
+
+		}
+	} else {
+
+		printf("non 91 eqc seq=%d\n", c1);
+
+
+	}
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::setDone(void)
+{
+	_doneWithLine = TRUE;
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::getInput(void)
+{
+	if (_first) {
+		_first=FALSE;
+		printCommandLine(_commandLine);
+		moveCursorToColumn(_prompt.length()+1);
+	}
+
+	_doneWithLine = FALSE;
+
+	while (!_doneWithLine) {
+
+		CxString buffer;
+		
+		if (charactersWaiting()) {
+			int c=getchar();
+			buffer += CxString(c);
+		}
+
+		if (buffer.length()) {
+
+			for (int i=0; i<buffer.length(); i++) {
+				processKey(buffer.charAt(i));
+			}
+		}
+
+		usleep(100);
+	}
+
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+int
+CxCommandLine::processKey(char c)
+{
+	switch(c) {
+        case ESC_KEY    : handleEscSequence( c ); break;
+        case DELETE_KEY : processDeleteKey(); break;
+        case RETURN_KEY : processReturnKey(); break;
+        default         : processCharacter(c); break;
+	}
+
+	return(TRUE);
+}    
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::setToEditMode()
+{
+    _historyCursor = -1;
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+int
+CxCommandLine::isEditMode(void)
+{
+    if (_historyCursor==-1) return(TRUE);
+    return(FALSE);
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processCharacter(char c)
+{
+	int row, col;
+  
+    setToEditMode();
+    
+	getCursorPosition( &row, &col);
+	_commandLine.insert( c, col-1-_prompt.length());
+
+	printCommandLine( _commandLine );
+	moveCursorToColumn(col+1);
+}
+
+
+int
+CxCommandLine::charactersWaiting(void)
+{
+	fd_set readfds;
+    FD_ZERO(&readfds);
+
+    struct timeval timeout;
+    timeout.tv_sec  = 1;
+    timeout.tv_usec = 0;
+
+	FD_SET(STDIN_FILENO, &readfds);
+
+   	if (select(1, &readfds, NULL, NULL, &timeout)==1)
+   	{
+		return(TRUE);
+	}
+
+	return(FALSE);
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processReturnKey(void)
+{
+    setToEditMode();
+    
+    CxString cl = _commandLine;
+    CxString commandName = cl.nextToken(" \t");
+
+	if (commandName.length()!=0) {
+    
+	    int anyCalled = FALSE;
+    
+	    for( int i=0; i<_commandCallbackList.entries(); i++) {
+    	    CxCommand command = _commandCallbackList.at(i);
+        	if (command.name() == commandName ) {
+            	command.call();
+            	anyCalled = TRUE;
+        	}
+    	}
+    
+	    if (!anyCalled) {
+        
+    	    for( int i=0; i<_commandCallbackList.entries(); i++) {
+        	    CxCommand command = _commandCallbackList.at(i);
+            	if (command.name() == "<unknown>" ) {
+                	command.call();
+            	}
+        	}
+    	}
+
+		_commandLineHistory.append( _commandLine );
+
+	} else {
+		printf("\n");
+	}
+    
+    _commandLine = "";
+    printCommandLine( _commandLine );
+    moveCursorToColumn( _commandLine.length()+1+_prompt.length());
+    eraseFromCursorToEndOfLine();
+    
+    _doneWithLine = TRUE;
+
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processDeleteKey(void)
+{
+	int row, col;
+
+	getCursorPosition( &row, &col);
+	_commandLine.remove( col-2-_prompt.length(), 1);
+
+	printCommandLine( _commandLine);
+
+	moveCursorToColumn( _commandLine.length()+1+_prompt.length());
+	eraseFromCursorToEndOfLine();
+
+    if (col>1+_prompt.length() ) {
+        moveCursorToColumn(col-1);
+    } else {
+        moveCursorToColumn(col);
+	}
+
+
+//	moveCursorToColumn( _commandLine.length()+1+_prompt.length());
+
+
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processRightArrow(void)
+{
+    int row, col;
+    
+    getCursorPosition( &row, &col);
+    int len = _commandLine.length();
+    if (col<=len+_prompt.length()) {
+        moveCursorRight(1);
+    }
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processLeftArrow(void)
+{
+    int row, col;
+
+    getCursorPosition( &row, &col);
+    if (col>1+_prompt.length() ) {
+        moveCursorLeft(1);
+    }
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processUpArrow(void)
+{
+    CxString lastCommandLine;
+    
+    if (isEditMode()) {
+        
+        if (_commandLine.length()) {
+            _commandLineHistory.append(_commandLine);
+        }
+        
+        // editing the commandline
+        _historyCursor  = _commandLineHistory.entries()-1;
+        lastCommandLine = _commandLineHistory.at( _historyCursor );
+        
+    } else {
+    
+        _historyCursor--;
+        if (_historyCursor<0) {
+            _historyCursor = 0;
+            return;
+        } else {
+            lastCommandLine = _commandLineHistory.at( _historyCursor );
+        }
+    }
+    
+    _commandLine = lastCommandLine;
+    
+    printCommandLine( _commandLine );
+    
+    moveCursorToColumn( _commandLine.length()+1+_prompt.length() );
+    eraseFromCursorToEndOfLine(); 
+}
+
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::processDownArrow(void)
+{
+    
+    if (isEditMode()) {
+        return;
+    } else {
+        
+        _historyCursor++;
+        
+        if (_historyCursor==_commandLineHistory.entries()) {
+            setToEditMode();
+            _commandLine = "";
+            printCommandLine( _commandLine );
+            moveCursorToColumn( _commandLine.length()+1+_prompt.length() );
+            eraseFromCursorToEndOfLine();
+        } else {
+            _commandLine = _commandLineHistory.at( _historyCursor );
+            printCommandLine(_commandLine);
+            moveCursorToColumn( _commandLine.length()+1+_prompt.length() );
+            eraseFromCursorToEndOfLine();
+            
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+void
+CxCommandLine::getCursorPosition( int *row, int *col)
+{
+	CxString rowString;
+	CxString colString;
+
+ 	char buffer[20];
+	printf("%c[6n", ESC_KEY);
+	fflush(stdout);	
+
+	int esc=getchar();
+	int par=getchar();
+
+	char c;
+
+	do {
+		c = getchar();
+		if (c!=';') {
+			rowString.append(c);
+		}		
+	} while(c!=';');
+
+	do {
+		c = getchar();
+		if (c!='R') {
+			colString.append(c);
+		}		
+	} while(c!='R');
+
+	*row = rowString.toInt();
+	*col = colString.toInt();
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+void
+CxCommandLine::moveCursorLeft( int num )
+{
+	char buffer[20];
+	printf("%c[%dD", ESC_KEY, num );
+	fflush(stdout);	
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+void
+CxCommandLine::moveCursorRight( int num )
+{
+	char buffer[20];
+	printf("%c[%dC", ESC_KEY, num );
+	fflush(stdout);	
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+
+void
+CxCommandLine::moveCursorToColumn( int c )
+{
+	char buffer[20];
+	printf("%c[%dG", ESC_KEY, c );
+	fflush(stdout);	
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+void
+CxCommandLine::eraseFromCursorToEndOfLine( void )
+{
+	char buffer[20];
+	printf("%c[K", ESC_KEY);
+	fflush(stdout);	
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+void 
+CxCommandLine::saveCursorPosition(void)
+{
+	char buffer[20];
+	printf("%c[s", ESC_KEY);
+	fflush(stdout);	
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+void 
+CxCommandLine::restoreCursorPosition(void)
+{
+	char buffer[20];
+	printf("%c[u", ESC_KEY);
+	fflush(stdout);	
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+void
+CxCommandLine::printCommandLine(CxString line)
+{
+	printf("\r%s%s%s%s\r", _promptColorStartString.data(), _prompt.data(), _promptColorStopString.data(),line.data() );
+	fflush(stdout);
+}
+
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+/*static*/
+CxString
+CxCommandLine::commandLine(void)
+{
+	return(_commandLine);
+}
+
+//-------------------------------------------------------------------------
+// CxCommandLine::
+//
+//-------------------------------------------------------------------------
+CxString
+CxCommandLine::lastCommandLine(void)
+{
+    if (_commandLineHistory.entries()) {
+        return( _commandLineHistory.at( _commandLineHistory.entries()-1));
+    }
+    
+    return("");
+}

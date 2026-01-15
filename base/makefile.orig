@@ -1,0 +1,92 @@
+CPP=        g++
+SHELL=		/bin/sh
+MOVE=		mv
+COPY=		ln -s
+RM=			rm -rf
+TOUCH=		touch
+LIBRARIAN=	ar rvu
+INC=        -I../..
+
+
+##########################  OSX  #############################
+CPPFLAGS=-D_OSX_=1 -g -Wno-deprecated
+PLATFORM_LIBS=-lpthread
+
+########################## LINUX #############################
+#CPPFLAGS=-D_LINUX_=1 -g
+#PLATFORM_LIBS=-lpthread
+
+
+######################### SOLARIS ############################
+#CPPFLAGS=-D_SOLARIS_=1
+#PLATFORM_LIBS=-lpthread -lxnet
+
+
+########################  Object code ########################
+
+LIB_CX_BASE_NAME=libcx_base.a
+LIB_CX_BASE_OBJECTS=\
+		string.o\
+		buffer.o\
+		rbuffer.o\
+		double.o\
+		prop.o\
+		rule.o\
+		exception.o\
+		file.o\
+		filei.o\
+		time.o\
+		star.o\
+		cntbody.o\
+		err.o\
+		filename.o\
+		directory.o\
+		tokenizer.o
+
+###########################   Targets    #############################
+
+ALL: $(LIB_CX_BASE_NAME)
+
+
+$(LIB_CX_BASE_NAME): $(LIB_CX_BASE_OBJECTS) 
+	$(RM) $(LIB_CX_BASE_NAME)
+	$(LIBRARIAN) $(LIB_CX_BASE_NAME) $(LIB_CX_BASE_OBJECTS) 
+	if [ -f /usr/bin/ranlib -o -f /bin/ranlib ] ; \
+		then ranlib $(LIB_CX_BASE_NAME) ; fi
+	cp $(LIB_CX_BASE_NAME) ../../lib
+	@echo "Done building static library "$(LIB_CX_BASE_NAME)
+
+cleanupmac:
+	$(RM) ._*
+
+clean:
+	$(RM) *.o *.dbx *.i *.ixx core a.out *.a
+
+
+##########################  Conversions   ########################
+
+
+.PRECIOUS: $(CX_LIBS)
+
+.SUFFIXES: .cpp .C .cc .cxx .o
+
+string.o 	: string.cpp
+buffer.o	: buffer.cpp
+double.o	: double.cpp
+rbuffer.o	: rbuffer.cpp
+prop.o		: prop.cpp
+rule.o		: rule.cpp
+exception.o 	: exception.cpp
+file.o		: file.cpp
+filei.o		: filei.cpp
+time.o		: time.cpp
+timeval.o	: timeval.cpp
+star.o		: star.cpp
+cntbody.o	: cntbody.cpp
+err.o		: err.cpp
+filename.o	: filename.cpp
+directory.o	: directory.cpp
+tokenizer.o : tokenizer.cpp
+
+$(LIB_CX_BASE_OBJECTS):
+	$(CPP)  $(CPPFLAGS) $(INC) -c $? -o $@

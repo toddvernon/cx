@@ -73,13 +73,27 @@ public:
     CxString * at( unsigned long i );
     // return a copy of the item at index i
 
+    void initLazy(char* buffer, unsigned long size, int tabSpaces);
+    // initialize lazy loading mode with raw buffer
+
 //protected:
 
     unsigned long  _entries;
     unsigned long  _allocated;
-    
+
     CxString **_list;
-        
+
+    // Lazy loading support
+    char*           _rawBuffer;      // Raw file content (owned in lazy mode)
+    unsigned long*  _lineOffsets;    // Start offset of each line
+    unsigned long*  _lineLengths;    // Length of each line (excluding newline)
+    int             _tabSpaces;      // Tab expansion setting
+    int             _lazyMode;       // 1 = lazy mode active
+
+private:
+    void materializeLine(unsigned long i);
+    // create CxString on demand from raw buffer
+
 };
 
 #endif

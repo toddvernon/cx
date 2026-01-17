@@ -29,7 +29,7 @@ ifeq ($(UNAME_S), darwin)
 endif
 
 ifeq ($(UNAME_S), linux)
-	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]'     CCFLAGS = -D _LINUX_
+	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]'     CCFLAGS = -D _LINUX_ )
 endif
 
 ifeq ($(UNAME_S), darwin)

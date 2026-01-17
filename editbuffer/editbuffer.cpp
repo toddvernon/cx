@@ -535,7 +535,8 @@ CxEditBuffer::evaluatePosition(unsigned long row_, unsigned long col_ )
     }
 
     // check to see if the location is a tab extension character
-    if (line->data()[cursor.col] == '\377') {
+    // BUG FIX: was using cursor.col instead of col_ parameter
+    if (line->data()[col_] == '\377') {
         return( CxEditBuffer::POS_INVALID_MID_TAB);
     }
 
@@ -1004,41 +1005,49 @@ CxEditBuffer::cursorDownRequest(void)
 // Reads a file character by character into a line removing CR/LF's and changing tabs into
 // the internal format of a tab followed by tab extension characters.
 //
+// Uses lazy loading to minimize memory allocations at load time. Lines are materialized
+// on-demand when accessed.
+//
 //-------------------------------------------------------------------------------------------------
 int
 CxEditBuffer::loadText(CxString filepath_, int preload)
 {
     CxFile inFile;
-    CxString data;
-    
+
     filePath = filepath_;
 
     // open the file
     if (!inFile.open( filePath, "r")) {
-                
+
         // return false indicating a file was not found
         return( false );
     }
-    
+
     // if the caller wants the file loaded into memory then do so, otherwise just keep
     // the reference to it to load later.
     if (preload) {
-        
-        // load text into a flat buffer
-        while (!inFile.eof()) {
-            data += inFile.fread( 10000 );
-        }
-        
-        // load the edit buffer from the flat buffer
-        loadTextFromString( data );
-    
+
+        // Get file size using stat
+        struct stat fileStat = inFile.getStat();
+        unsigned long fileSize = (unsigned long)fileStat.st_size;
+
+        // Allocate buffer for entire file (+1 for safety)
+        char* rawBuffer = new char[fileSize + 1];
+
+        // Read entire file into buffer
+        size_t bytesRead = inFile.fread(rawBuffer, 1, fileSize);
+        rawBuffer[bytesRead] = '\0';
+
+        // Use lazy loading - _bufferLineList takes ownership of rawBuffer
+        _bufferLineList.initLazy(rawBuffer, bytesRead, tabSpaces);
+
         inMemory = TRUE;
-        
+
     } else {
-        
+
         inMemory = FALSE;
     }
-        
+
     // close the file
     inFile.close();
 
@@ -1046,8 +1055,8 @@ CxEditBuffer::loadText(CxString filepath_, int preload)
     cursorGotoRequest(0,0);
 
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
-    
-    
+
+
     return( true );
 }
 

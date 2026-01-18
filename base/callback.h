@@ -119,6 +119,7 @@ class CxCallback
   public:
     CxCallback() : body_( new CxNilCallbackBody<P1> )
     {
+        this->incBodyCount();
     }
 
     CxCallback( CxBaseCallbackBody<P1>* body ) : body_(body)

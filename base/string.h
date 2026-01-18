@@ -233,7 +233,7 @@ class CxString
   	// set string from double
 
     int charInString( char ch );
-    // return -1 if ch is not in the string
+    // return TRUE if ch is in the string, FALSE otherwise
 
     int compare( CxString right );
 

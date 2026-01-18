@@ -59,9 +59,12 @@ CxExpression::CxExpression(CxString e_string)
     
     var_intrinsic_db   = new CxExpressionIntrinsicVariableDatabase;
     func_intrinsic_db  = new CxExpressionIntrinsicFunctionDatabase;
-    
-	var_db  = new CxExpressionVariableDatabase;
+
+    var_db  = new CxExpressionVariableDatabase;
     func_db = new CxExpressionFunctionDatabase;
+
+    owns_var_db  = 1;
+    owns_func_db = 1;
 }
 
 
@@ -94,15 +97,45 @@ CxExpression::CxExpression(CxString e_string,
     
 	if (vdb_ == NULL ) {
 		var_db = new CxExpressionVariableDatabase;
+		owns_var_db = 1;
 	} else {
 		var_db = vdb_;
+		owns_var_db = 0;
 	}
 
 	if (fdb_ == NULL ) {
 		func_db = new CxExpressionFunctionDatabase;
-	} else {		
-	    func_db	= fdb_;
-    }
+		owns_func_db = 1;
+	} else {
+		func_db = fdb_;
+		owns_func_db = 0;
+	}
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Expression::~Expression (destructor)
+//
+// Free allocated database objects.
+//
+//-------------------------------------------------------------------------------------------------
+CxExpression::~CxExpression()
+{
+	//---------------------------------------------------------------------------------------------
+	// Always delete intrinsic databases (always owned)
+	//---------------------------------------------------------------------------------------------
+	delete var_intrinsic_db;
+	delete func_intrinsic_db;
+
+	//---------------------------------------------------------------------------------------------
+	// Only delete user databases if we created them
+	//---------------------------------------------------------------------------------------------
+	if (owns_var_db) {
+		delete var_db;
+	}
+	if (owns_func_db) {
+		delete func_db;
+	}
 }
 
 
@@ -237,16 +270,23 @@ CxExpression::ParseToTokens( void )
             debugPrintf("- ParseToTokens: looks like a function or variable name\n");
 
 			//-------------------------------------------------------------------------------------
-			// Get a variable name, or function		
+			// Get a variable name, or function (limit to 499 chars to prevent overflow)
 			//-------------------------------------------------------------------------------------
-			while (CxExpressionToken::isvarfunc(*cptr)) {
-				*tptr = *cptr; 
+			while (CxExpressionToken::isvarfunc(*cptr) && (tptr - temp) < 499) {
+				*tptr = *cptr;
 				cptr++;
 				tptr++;
 			}
 
 			//-------------------------------------------------------------------------------------
-			// Null terminate the name			
+			// Skip any remaining characters if name was too long
+			//-------------------------------------------------------------------------------------
+			while (CxExpressionToken::isvarfunc(*cptr)) {
+				cptr++;
+			}
+
+			//-------------------------------------------------------------------------------------
+			// Null terminate the name
 			//-------------------------------------------------------------------------------------
 
 			*tptr = 0;
@@ -1349,8 +1389,8 @@ CxExpression::Evaluate(double *result)
 	}
 
 	if (status == EVALUATION_SUCCESS) {
-		*result = 0.0;
-		return(EVALUATION_SUCCESS);;
+		*result = this->result;
+		return(EVALUATION_SUCCESS);
 	}
 
 	if (status == EVALUATION_PARSED) {
@@ -1389,13 +1429,14 @@ CxExpression::Evaluate(double *result)
 		}
 
 		//---------------------------------------------------------------------------------------------
-		// Start down the recursion tree			
+		// Start down the recursion tree
 		//---------------------------------------------------------------------------------------------
 		Level2(result);
 
 		//---------------------------------------------------------------------------------------------
-		// Mark the expression as evaluated.			
+		// Mark the expression as evaluated and cache the result.
 		//---------------------------------------------------------------------------------------------
+		this->result = *result;
 		status = EVALUATION_SUCCESS;
 
 		//---------------------------------------------------------------------------------------------
@@ -1446,7 +1487,14 @@ CxExpression::Level1(double *result_array, int *args)
 	while (op != CxExpressionToken::RIGHT_PAREN) {
 
 		//-----------------------------------------------------------------------------------------
-		// Start at the top.				
+		// Check for too many arguments (max 20)
+		//-----------------------------------------------------------------------------------------
+		if (c >= 20) {
+			Error(PRIM_E);
+		}
+
+		//-----------------------------------------------------------------------------------------
+		// Start at the top.
 		//-----------------------------------------------------------------------------------------
 		Level2(&(result_array[c]));
 		c++;
@@ -1680,7 +1728,10 @@ CxExpression::Level5( double *result)
 	//---------------------------------------------------------------------------------------------
 	
 	while ((token.ttype == CxExpressionToken::PLUS_SIGN) || (token.ttype == CxExpressionToken::MINUS_SIGN)) {
-				op	  = token.ttype;	
+		// Toggle sign for each minus (plus signs don't change anything)
+		if (token.ttype == CxExpressionToken::MINUS_SIGN) {
+			op = (op == CxExpressionToken::PLUS_SIGN) ? CxExpressionToken::MINUS_SIGN : CxExpressionToken::PLUS_SIGN;
+		}
 		token = NextToken( );
 	}
 
@@ -1830,17 +1881,12 @@ CxExpression::Primitive(double *result)
 			stat = var_db->VariableEvaluate(token.text, result);
 			if (stat == CxExpressionVariableDatabase::VARIABLE_UNDEFINED) {
 
-	            stat = var_intrinsic_db->VariableEvaluate(token.text, result);
+				stat = var_intrinsic_db->VariableEvaluate(token.text, result);
 				if (stat == CxExpressionVariableDatabase::VARIABLE_UNDEFINED) {
-		            Error(PRIM_A);
+					Error(PRIM_A);
 				}
-
-			} else {
-	            
-				stat = var_db->VariableEvaluate(token.text, result);
-				// stat doesn't matter as we already have an answer from the intrinsic database
-
 			}
+			// If var_db found the variable, result is already set
 				
 			//-------------------------------------------------------------------------------------
 			// get the next token			

@@ -132,8 +132,9 @@ class CxFile
     int isOpen(void);
     // return if file is open or not
 
-	static CxString tempName(void);
+	static CxString tempName(const char* prefix = NULL);
 	// generate a tempNamePath in the temp directory
+	// if prefix is provided, use it as the template (e.g., "myapp_XXXXXX")
 
 	static CxString tildaExpansion(CxString path);
 	// if path name starts with tilda expand it

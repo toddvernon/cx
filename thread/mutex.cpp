@@ -36,7 +36,7 @@
 CxMutex::CxMutex( void )
 {
 
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_mutex_init( &_mutex, 0 );
 #endif
 
@@ -53,7 +53,7 @@ CxMutex::CxMutex( void )
 //-------------------------------------------------------------------------
 CxMutex::~CxMutex( void )  
 {
-#ifdef _LINUX_ 
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_mutex_destroy( &_mutex );
 #endif
 
@@ -71,7 +71,7 @@ void
 CxMutex::acquire( void )
 {
 
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_mutex_lock( &_mutex );
 #endif
 
@@ -89,8 +89,7 @@ CxMutex::tryResult
 CxMutex::tryAcquire( void )
 {
 
-#if defined(_LINUX_) || defined( _OSX )
-
+#if defined(_LINUX_) || defined(_OSX_)
     if (pthread_mutex_trylock( &_mutex )==EBUSY) {
 		return( CxMutex::MUTEX_BUSY );
     }
@@ -113,7 +112,7 @@ void
 CxMutex::release( void )
 {
 
-#if defined(_LINUX_) || defined( _OSX )
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_mutex_unlock( &_mutex );
 #endif
 
@@ -128,7 +127,7 @@ CxMutex::release( void )
 // CxMutex::pthread_mutex
 //
 //-------------------------------------------------------------------------
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
 pthread_mutex_t *
 CxMutex::pthread_mutex(void)
 {

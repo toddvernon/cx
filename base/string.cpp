@@ -106,6 +106,21 @@ CxString::CxString( const CxString& sr_ )
 
 
 //-------------------------------------------------------------------------
+// CxString::CxString
+//
+//-------------------------------------------------------------------------
+CxString::CxString( const CxString* sr_ )
+: _data( NULL )
+{
+    if ( sr_ != NULL ) {
+        reAssign( sr_->data() );
+    } else {
+        reAssign( (char *) NULL );
+    }
+}
+
+
+//-------------------------------------------------------------------------
 // CxString::
 //
 //-------------------------------------------------------------------------
@@ -261,7 +276,7 @@ CxString::operator!=( const CxString& sr_ ) const
 int
 CxString::operator<=( const CxString& rhs_ ) const
 {
-    return( strcmp( data(), rhs_.data() ));
+    return( strcmp( data(), rhs_.data() ) <= 0 );
 }
 
 
@@ -1126,13 +1141,15 @@ CxString::isFloat( void )
 			case '.':
 			case '-':
 			case '+':
+				break;
 			default:
 				return(FALSE);
 		}
+		ptr++;
 	}
 
 	return( TRUE );
-	
+
 }
 
 
@@ -1160,13 +1177,15 @@ CxString::isInt( void )
 			case '9':
 			case '-':
 			case '+':
+				break;
 			default:
 				return(FALSE);
 		}
+		ptr++;
 	}
 
 	return( TRUE );
-	
+
 }
 
 
@@ -1174,10 +1193,40 @@ CxString::isInt( void )
 // CxString::urlDecode
 //
 //-------------------------------------------------------------------------
+static int hexCharToInt( char c )
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+	return -1;
+}
+
 CxString
 CxString::urlDecode( CxString s_ )
 {
-	return( s_ );
+	CxString result;
+	char *ptr = s_.data();
+
+	while (*ptr != (char) NULL) {
+		if (*ptr == '+') {
+			result.append(' ');
+		} else if (*ptr == '%' && ptr[1] != (char) NULL && ptr[2] != (char) NULL) {
+			int hi = hexCharToInt(ptr[1]);
+			int lo = hexCharToInt(ptr[2]);
+			if (hi >= 0 && lo >= 0) {
+				char decoded = (char)((hi << 4) | lo);
+				result.append(decoded);
+				ptr += 2;
+			} else {
+				result.append(*ptr);
+			}
+		} else {
+			result.append(*ptr);
+		}
+		ptr++;
+	}
+
+	return( result );
 }
 
 

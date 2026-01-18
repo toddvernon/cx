@@ -158,9 +158,12 @@ class CxExpression
 
     CxExpression( CxString estring );
     // constructor
-    
+
     CxExpression( CxString estring, CxExpressionVariableDatabase *var_db, CxExpressionFunctionDatabase *func_db );
 	// constructor
+
+    ~CxExpression();
+    // destructor
 
     parseStatus Parse(void);
     // parse the expression creating an internal token list for later evaluation
@@ -235,6 +238,9 @@ class CxExpression
 
     CxExpressionVariableDatabase *var_db;
     CxExpressionFunctionDatabase *func_db;
+
+    int owns_var_db;
+    int owns_func_db;
 };
 
 

@@ -1,85 +1,138 @@
 #include "threadpool.h"
 
+
+//-------------------------------------------------------------------------
+// CxThreadPool::Worker - Inner class
+//
+// Worker threads that pull work items from the shared queue and execute them.
+// Each worker loops until it receives a CxQuitRequest.
+//-------------------------------------------------------------------------
+class CxThreadPool::Worker : public CxThread
+{
+public:
+    CxPCQueue<CxRunnable*>* _queue;
+
+    Worker() : _queue(0) {}
+
+    void setQueue( CxPCQueue<CxRunnable*>* q ) { _queue = q; }
+
+    virtual void run()
+    {
+        while (1)
+        {
+            CxRunnable* item = _queue->deQueue();
+
+            if ( item->isQuitRequest() )
+            {
+                delete item;
+                break;
+            }
+
+            item->run();
+            delete item;
+        }
+    }
+};
+
+
 //-------------------------------------------------------------------------
 // CxThreadPool::CxThreadPool
 //
+// Create worker threads but don't start them. Workers are started lazily
+// when start() is called.
 //-------------------------------------------------------------------------
-CxThreadPool::CxThreadPool( size_t numThreads, size_t workQueueSize )
-    : CxRunnableThread( workQueueSize ), 
-      _threads( new CxRunnableThread[numThreads] ), 
-      _numThreads( (int)numThreads )
+CxThreadPool::CxThreadPool( size_t numThreads, size_t queueSize )
+    : _workQueue( queueSize ),
+      _workers( new Worker[numThreads] ),
+      _numWorkers( (int)numThreads ),
+      _started( 0 ),
+      _quitRequested( 0 )
 {
-    for ( int i = 0; i < _numThreads; i++ )
+    // Point all workers at the shared queue
+    for ( int i = 0; i < _numWorkers; i++ )
     {
-        _threads[i].start();
+        _workers[i].setQueue( &_workQueue );
     }
 }
 
 
 //-------------------------------------------------------------------------
-// CxPCQueue::~CxThreadPool
+// CxThreadPool::~CxThreadPool
 //
 //-------------------------------------------------------------------------
 CxThreadPool::~CxThreadPool()
 {
-    delete[] _threads;
+    delete[] _workers;
 }
+
+
+//-------------------------------------------------------------------------
+// CxThreadPool::start
+//
+// Start all worker threads. They will begin pulling work from the shared
+// queue immediately.
+//-------------------------------------------------------------------------
+void
+CxThreadPool::start()
+{
+    if ( !_started )
+    {
+        _started = 1;
+        for ( int i = 0; i < _numWorkers; i++ )
+        {
+            _workers[i].start();
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------
+// CxThreadPool::enQueue
+//
+// Add a work item to the shared queue. All workers compete to dequeue items.
+// Throws CxThreadPoolEnqueueException if the pool is shutting down.
+//-------------------------------------------------------------------------
+void
+CxThreadPool::enQueue( CxRunnable* pItem, time_t sec )
+{
+    if ( _quitRequested )
+    {
+        throw CxThreadPoolEnqueueException( "Cannot enqueue: pool is shutting down" );
+    }
+    _workQueue.enQueue( pItem, sec );
+}
+
 
 //-------------------------------------------------------------------------
 // CxThreadPool::suggestQuit
 //
+// Signal shutdown by enqueuing one CxQuitRequest per worker. Each worker
+// will process work items until it dequeues its quit request, then exit.
+// This ensures all pending work is completed before shutdown.
 //-------------------------------------------------------------------------
 void
-CxThreadPool::performQuit( )
+CxThreadPool::suggestQuit()
 {
-    // Tell the worker threads to quit.
+    _quitRequested = 1;
 
-    for (int i = 0; i < _numThreads; i++ ) 
+    // Enqueue one quit request per worker
+    for ( int i = 0; i < _numWorkers; i++ )
     {
-        _threads[i].suggestQuit();
-    }
-}
-
-//-------------------------------------------------------------------------
-// CxThreadPool::performWork
-//
-//-------------------------------------------------------------------------
-void
-CxThreadPool::performWork( CxRunnable* pWorkItem )
-{
-    // Hand off the work request to the next available thread.
-
-    int i = 0;
-    for (; i < _numThreads; i++ ) 
-    {
-        if ( !_threads[i].isExecuting() ) 
-        {
-            _threads[i].enQueue( pWorkItem );
-            break;
-        }
-    }
-
-    // If we did not find a thread that was not executing, then sleep
-    // for a short time to avoid spinning in the for loop until a thread
-    // becomes available.
-
-    if ( i == _numThreads ) 
-    {
-//        Sleep( 1000 );
+        _workQueue.enQueue( new CxQuitRequest() );
     }
 }
 
 
 //-------------------------------------------------------------------------
-// CxThreadPool::endOfRun()
+// CxThreadPool::join
 //
+// Wait for all worker threads to complete.
 //-------------------------------------------------------------------------
 void
-CxThreadPool::endOfRun( )
+CxThreadPool::join()
 {
-    // Wait for all threads to complete.
-    for (int i = 0; i < _numThreads; i++ ) 
+    for ( int i = 0; i < _numWorkers; i++ )
     {
-        _threads[i].join();
+        _workers[i].join();
     }
 }

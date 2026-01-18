@@ -32,8 +32,8 @@
 CxB64Encoder::CxB64Encoder( void )
 {
 	initialize();
-	_inBuffer  = new CxRingBuffer( 1000 );
-	_outBuffer = new CxRingBuffer( 1300 );
+	_inBuffer  = new CxRingBuffer( 65536 );
+	_outBuffer = new CxRingBuffer( 87382 );  // ceil(65536/3)*4 + margin
 }
 
 //-------------------------------------------------------------------------
@@ -153,15 +153,19 @@ CxB64Encoder::process_input( int finalize_ )
 	//
 	//---------------------------------------------------------------------
 	if ((processBytesRead<3) && (processBytesRead>0)) {
-	
+
 		//-----------------------------------------------------------------
 		// is all the input done ?
 		//
-		//-----------------------------------------------------------------	
+		//-----------------------------------------------------------------
 		if (finalize_) {
-		
+
+			// Zero-fill unused bytes for correct RFC 4648 encoding
+			if ( processBytesRead < 3 ) processData[2] = 0;
+			if ( processBytesRead < 2 ) processData[1] = 0;
+
 			encode_buffer( processData, o_data);
-		
+
 			if ( processBytesRead < 3) o_data[3]='=';
 			if ( processBytesRead < 2) o_data[2]='=';
 
@@ -266,7 +270,7 @@ CxB64Encoder::finalize( CxSList< CxString >& lineList )
 CxB64Decoder::CxB64Decoder( void )
 {
 	initialize();
-	_inBuffer  = new CxRingBuffer( 1000 );
+	_inBuffer  = new CxRingBuffer( 65536 );
 }
 
 

@@ -87,14 +87,23 @@ CxFile::operator=(const CxFile& file_)
 //-------------------------------------------------------------------------
 /*static*/
 CxString
-CxFile::tempName(void)
+CxFile::tempName(const char* prefix)
 {
 	char buffer[1000];
-	
+
 #ifdef _SUNOS_
 	tmpnam(buffer);
 #else
-	mkstemp(buffer);
+	// mkstemp requires a template with XXXXXX pattern
+	if (prefix != NULL) {
+		sprintf(buffer, "/tmp/%s", prefix);
+	} else {
+		strcpy(buffer, "/tmp/cxfile_XXXXXX");
+	}
+	int fd = mkstemp(buffer);
+	if (fd != -1) {
+		::close(fd);  // mkstemp opens the file, close it
+	}
 #endif
 
 	return(buffer);

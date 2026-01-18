@@ -110,12 +110,13 @@ CxAnsiForegroundColor::CxAnsiForegroundColor( CxString colorName )
 
 
 //-------------------------------------------------------------------------
-// CxAnsiForegroundColor:: (constructor)
+// CxAnsiForegroundColor:: (copy constructor)
 //
 //-------------------------------------------------------------------------
 CxAnsiForegroundColor::CxAnsiForegroundColor( const CxAnsiForegroundColor& c_ )
 {
     if (&c_ != this) {
+        _colorType    = c_._colorType;   // BUG FIX: was not copying _colorType
         _colorValue   = c_._colorValue;
     }
 }
@@ -129,9 +130,10 @@ CxAnsiForegroundColor
 CxAnsiForegroundColor::operator=( const CxAnsiForegroundColor& c_)
 {
     if (&c_ != this) {
+        _colorType    = c_._colorType;   // BUG FIX: was not copying _colorType
         _colorValue   = c_._colorValue;
     }
-    
+
     return( *this );
 }
 

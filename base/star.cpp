@@ -78,7 +78,7 @@ CxMatchTemplate::CxMatchTemplate( void )
 	_leadingStar   = 0;
 	_trailingStar  = 0;
 	_matchAll      = FALSE;
-	_matchNone     = FALSE;
+	_matchNone     = TRUE;   // Empty pattern matches nothing
 
 	_parts.clear();
 }
@@ -202,6 +202,12 @@ CxMatchTemplate::test( CxString candidate )
 	// check the easy outs
 	if (_matchNone) return( FALSE );
 	if (_matchAll)  return( TRUE  );
+
+	// Special case: no wildcards at all means exact match required
+	// (like shell glob behavior where "test" only matches "test")
+	if (!_leadingStar && !_trailingStar && _parts.entries() == 1) {
+		return( candidate == _parts.at(0) );
+	}
 
 	// build a string match object
 	CxStringMatch sm( candidate );

@@ -345,13 +345,14 @@ CxXterm256ForegroundColor::CxXterm256ForegroundColor( CxString colorName )
 
 
 //-------------------------------------------------------------------------
-// CxXterm256ForegroundColor:: (constructor)
+// CxXterm256ForegroundColor:: (copy constructor)
 //
 //-------------------------------------------------------------------------
 CxXterm256ForegroundColor::CxXterm256ForegroundColor( const CxXterm256ForegroundColor& c_ )
 {
     if (&c_ != this) {
-        _value   = c_._value;
+        _colorType = c_._colorType;  // BUG FIX: was not copying _colorType
+        _value     = c_._value;
     }
 }
 
@@ -364,9 +365,10 @@ CxXterm256ForegroundColor
 CxXterm256ForegroundColor::operator=( const CxXterm256ForegroundColor& c_)
 {
     if (&c_ != this) {
-        _value   = c_._value;
+        _colorType = c_._colorType;  // BUG FIX: was not copying _colorType
+        _value     = c_._value;
     }
-    
+
     return( *this );
 }
 
@@ -448,13 +450,14 @@ CxXterm256BackgroundColor::CxXterm256BackgroundColor( CxString colorName )
 
 
 //-------------------------------------------------------------------------
-// CxXterm256BackgroundColor:: (constructor)
+// CxXterm256BackgroundColor:: (copy constructor)
 //
 //-------------------------------------------------------------------------
 CxXterm256BackgroundColor::CxXterm256BackgroundColor( const CxXterm256BackgroundColor& c_ )
 {
     if (&c_ != this) {
-        _value   = c_._value;
+        _colorType = c_._colorType;  // BUG FIX: was not copying _colorType
+        _value     = c_._value;
     }
 }
 
@@ -467,9 +470,10 @@ CxXterm256BackgroundColor
 CxXterm256BackgroundColor::operator=( const CxXterm256BackgroundColor& c_)
 {
     if (&c_ != this) {
-        _value   = c_._value;
+        _colorType = c_._colorType;  // BUG FIX: was not copying _colorType
+        _value     = c_._value;
     }
-    
+
     return( *this );
 }
 
@@ -515,7 +519,7 @@ CxString
 CxXterm256BackgroundColor::resetTerminalString(void)
 {
     char buffer[30];
-    sprintf(buffer, "\033[39m");
+    sprintf(buffer, "\033[49m");  // BUG FIX: was 39m (foreground), should be 49m (background)
     return( buffer );
 }
 

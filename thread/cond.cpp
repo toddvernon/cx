@@ -36,7 +36,7 @@
 CxCondition::CxCondition( void )
 {
 
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_cond_init( &_condition, 0 );
 #endif
 
@@ -53,7 +53,7 @@ CxCondition::CxCondition( void )
 //-------------------------------------------------------------------------
 CxCondition::~CxCondition( void )  
 {
-#ifdef _LINUX_ 
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_cond_destroy( &_condition );
 #endif
 
@@ -71,7 +71,7 @@ void
 CxCondition::wait( CxMutex *mutex_ )
 {
 
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
 	pthread_cond_wait( &_condition, mutex_->pthread_mutex() );
 #endif
 
@@ -113,7 +113,7 @@ CxCondition::waitResult
 CxCondition::timedWait( CxMutex *mutex_, time_t sec_ )
 {
 
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
 	time_t t = time(NULL);
 
 	struct timespec ts;
@@ -142,7 +142,7 @@ void
 CxCondition::signal( void )
 {
 
-#ifdef _LINUX_
+#if defined(_LINUX_) || defined(_OSX_)
     pthread_cond_signal( &_condition );
 #endif
 

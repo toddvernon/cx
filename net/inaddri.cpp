@@ -66,21 +66,24 @@ CxInetAddressImpl::~CxInetAddressImpl( void )
 void
 CxInetAddressImpl::unprocess( void )
 {
-    struct sockaddr_in *ptr = &_saddr;
-
     memcpy( (char*) &_ip, (char*) &_saddr.sin_addr, 4);
+
+    // Always extract the port - it's valid even when IP is INADDR_ANY (0)
+    _port = ntohs( _saddr.sin_port );
 
     if (_ip != 0 ) {
 
 	    _host   = CxInetAddressImpl::getHostByAddress( _ip );
-	    _port   = ntohs( _saddr.sin_port );
 	    _target = _host;
         _valid  = TRUE;
 
     } else {
 
-        _valid  = FALSE;
+        // IP is INADDR_ANY - valid for binding, but no specific host
+        _valid  = TRUE;
     }
+
+    _processed = TRUE;
 }
 
 

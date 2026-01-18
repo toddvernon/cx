@@ -109,7 +109,7 @@ class CxHandle
 	{ Unbind( ); }
 
 	CxHandle<T>& operator=( const CxHandle<T>& copy )
-	{ Unbind(); Bind (copy._pCount); return *this;}
+	{ if (_pCount != copy._pCount) { Unbind(); Bind (copy._pCount); } return *this;}
 
 	T& operator*( ) const
 	{ NullCheck(); return *_pObject; }

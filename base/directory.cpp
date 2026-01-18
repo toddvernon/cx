@@ -83,12 +83,13 @@ CxDirectory::getFileType(CxString path)
 //-------------------------------------------------------------------------
 CxDirectory::CxDirectory( CxString path, CxMatchTemplate temp )
 {
-    
-    _fileType = CxDirectory::getFileType( path );
-    
+    // Strip whitespace before checking file type
+    // BUG FIX: was stripping after getFileType, causing stat() to fail
     path.stripLeading(" \t");
     path.stripTrailing(" \n\r\t");
-    
+
+    _fileType = CxDirectory::getFileType( path );
+
     if (path.firstChar('/')==0) {
         _pathType  = CxABSOLUTE;
         

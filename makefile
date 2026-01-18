@@ -162,21 +162,6 @@ all:
 		cd expression; make; \
 	fi
 
-# CommandLine library (doesn't build on SunOS)
-
-	@if [ "$(UNAME_S)" != "sunos" ]; then \
-		if [ ! -d "./commandline" ]; then \
-			echo "BUILD ABORT: './commandline' not found"; \
-			exit 1;\
-		fi;\
-	fi
-
-	@if [ "$(UNAME_S)" != "sunos" ]; then \
-		if [ -d "./commandline" ]; then \
-			cd commandline; make; \
-		fi;\
-	fi
-
 # Thread library (doesn't build on SunOS )
 
 	@if [ "$(UNAME_S)" != "sunos" ]; then \

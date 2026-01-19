@@ -22,7 +22,8 @@ class CxExpressionVariableDatabase
     
     enum returnCode {
         VARIABLE_DEFINED,
-        VARIABLE_UNDEFINED
+        VARIABLE_UNDEFINED,
+        VARIABLE_CIRCULAR_REFERENCE
     };
     
     // constructor

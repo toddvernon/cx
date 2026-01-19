@@ -188,7 +188,11 @@ class CxExpression
     
     CxSList<CxString> GetKnownVariableList(void);
     // get the list of variables that were found in the database
-    
+
+    void setVariableDatabase(CxExpressionVariableDatabase *var_db);
+    // set the variable database to use for evaluation
+    // note: the expression does not take ownership of this database
+
   private:
     
     void ParseToTokens(void);

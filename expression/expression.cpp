@@ -2229,16 +2229,37 @@ CxExpression::GetKnownVariableList(void)
         }
     }
 
-	return(vlist);	
+	return(vlist);
 }
 
 
 //-------------------------------------------------------------------------------------------------
-// EXPRESSION_GetErrorString:					
-//								
-// Returns a string that describes the last error returned 
-// from EXPRESSION_Parse, or EXPRESSION_Evaluate		
-//								
+// CxExpression::setVariableDatabase
+//
+// Set the variable database to use for evaluation.
+// The expression does not take ownership of this database.
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxExpression::setVariableDatabase(CxExpressionVariableDatabase *new_var_db)
+{
+    var_db = new_var_db;
+    owns_var_db = 0;  // We don't own externally provided databases
+
+    // Reset status so next Evaluate() will re-evaluate with the new database
+    // This is important for spreadsheet recalculation where variable values change
+    if (status == EVALUATION_SUCCESS) {
+        status = EVALUATION_PARSED;
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// EXPRESSION_GetErrorString:
+//
+// Returns a string that describes the last error returned
+// from EXPRESSION_Parse, or EXPRESSION_Evaluate
+//
 //-------------------------------------------------------------------------------------------------
 CxString CxExpression::GetErrorString( void )
 {

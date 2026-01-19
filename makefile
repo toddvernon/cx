@@ -151,7 +151,7 @@ all:
 		cd keyboard; make; \
 	fi
 
-# ExpressionLibrary 
+# ExpressionLibrary
 
 	@if [ ! -d "./expression" ]; then \
 		echo "BUILD ABORT: './expression' not found"; \
@@ -160,6 +160,17 @@ all:
 
 	@if [ -d "./expression" ]; then \
 		cd expression; make; \
+	fi
+
+# SheetModel Library
+
+	@if [ ! -d "./sheetModel" ]; then \
+		echo "BUILD ABORT: './sheetModel' not found"; \
+		exit 1; \
+	fi
+
+	@if [ -d "./sheetModel" ]; then \
+		cd sheetModel; make; \
 	fi
 
 # Thread library (doesn't build on SunOS )
@@ -240,6 +251,10 @@ clean:
 
 	@if [ -d "./expression" ]; then \
 		cd expression; make clean; \
+	fi
+
+	@if [ -d "./sheetModel" ]; then \
+		cd sheetModel; make clean; \
 	fi
 
 	@if [ -d "./commandline" ]; then \

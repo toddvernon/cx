@@ -1,4 +1,4 @@
-## makefile: libcx_base.a ######################################
+## makefile: libcx_sheetmodel.a ######################################
 
 
 CPP=        g++
@@ -43,7 +43,7 @@ ifeq ($(UNAME_S),sunos)
 	ifeq ($(UNAME_R), 4.1.3)
         CPPFLAGS = -D _SUNOS_ -g
 	endif
-	
+
 	ifeq ($(UNAME_R), 4.1.4)
         CPPFLAGS = -D _SUNOS_ -g
 	endif
@@ -51,11 +51,11 @@ ifeq ($(UNAME_S),sunos)
 	ifeq ($(UNAME_R), 5.6)
         CPPFLAGS = -D _SOLARIS6_ -g
 	endif
-	
+
 	ifeq ($(UNAME_R), 5.7)
         CPPFLAGS = -D _SOLARIS6_ -g
 	endif
-	
+
     ifeq ($(UNAME_R), 5.10)
         CPPFLAGS = -D _SOLARIS10_  -g
     endif
@@ -86,42 +86,30 @@ endif
 LIB_CX_PLATFORM_LIB_DIR=../../lib/$(UNAME_S)_$(ARCH)
 LIB_CX_PLATFORM_OBJECT_DIR=$(UNAME_S)_$(ARCH)
 
-LIB_CX_BASE_NAME=libcx_base.a
-LIB_CX_BASE_OBJECTS=\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/string.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/buffer.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/rbuffer.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/prop.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/rule.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/exception.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/fileaccess.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/file.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/filei.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/time.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/star.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/cntbody.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/err.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/filename.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/directory.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/tokenizer.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/double.o
+LIB_CX_SHEETMODEL_NAME=libcx_sheetmodel.a
+LIB_CX_SHEETMODEL_OBJECTS=\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCellCoordinate.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCell.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetVariableDatabase.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetDependencyGraph.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetModel.o
 
 
 ## Targets ####################################################
 
 
-ALL: MAKE_OBJ_DIR $(LIB_CX_BASE_NAME)
+ALL: MAKE_OBJ_DIR $(LIB_CX_SHEETMODEL_NAME)
 
 MAKE_OBJ_DIR:
 	test -d $(UNAME_S)_$(ARCH) || mkdir $(UNAME_S)_$(ARCH)
-    
-$(LIB_CX_BASE_NAME): $(LIB_CX_BASE_OBJECTS) 
-	$(RM) $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_BASE_NAME)
-	$(LIBRARIAN) $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_BASE_NAME) $(LIB_CX_BASE_OBJECTS) 
+
+$(LIB_CX_SHEETMODEL_NAME): $(LIB_CX_SHEETMODEL_OBJECTS)
+	$(RM) $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_SHEETMODEL_NAME)
+	$(LIBRARIAN) $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_SHEETMODEL_NAME) $(LIB_CX_SHEETMODEL_OBJECTS)
 	if [ -f /usr/bin/ranlib -o -f /bin/ranlib ] ; \
-		then ranlib $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_BASE_NAME)/$(LIB_CX_BASE_NAME) ; fi
-	cp $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_BASE_NAME) $(LIB_CX_PLATFORM_LIB_DIR)
-	@echo "Done building static library "$(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_BASE_NAME)
+		then ranlib $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_SHEETMODEL_NAME) ; fi
+	cp $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_SHEETMODEL_NAME) $(LIB_CX_PLATFORM_LIB_DIR)
+	@echo "Done building static library "$(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_SHEETMODEL_NAME)
 
 cleanupall:
 	$(RM) ._*
@@ -151,24 +139,11 @@ clean:
 
 .SUFFIXES: .cpp .C .cc .cxx .o
 
-$(LIB_CX_PLATFORM_OBJECT_DIR)/string.o 		: string.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/buffer.o		: buffer.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/rbuffer.o		: rbuffer.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/prop.o		: prop.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/rule.o		: rule.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/exception.o 	: exception.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/fileaccess.o	: fileaccess.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/file.o		: file.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/filei.o		: filei.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/time.o		: time.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/timeval.o		: timeval.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/star.o		: star.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/cntbody.o		: cntbody.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/err.o			: err.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/filename.o	: filename.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/directory.o	: directory.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/tokenizer.o 	: tokenizer.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/double.o		: double.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCellCoordinate.o	: sheetCellCoordinate.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCell.o		: sheetCell.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetVariableDatabase.o	: sheetVariableDatabase.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetDependencyGraph.o	: sheetDependencyGraph.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetModel.o 		: sheetModel.cpp
 
-$(LIB_CX_BASE_OBJECTS):
+$(LIB_CX_SHEETMODEL_OBJECTS):
 	$(CPP)  $(CPPFLAGS) $(INC) -c $? -o $@

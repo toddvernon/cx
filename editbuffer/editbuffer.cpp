@@ -1222,11 +1222,16 @@ CxEditBuffer::findAgain( CxString findString, int skipIfCurrent )
     if (findString.length() == 0) {
         return( FALSE );
     }
-    
+
 	// make sure we are still in the buffer
 	if (cursor.row >= _bufferLineList.entries()) {
 		return( FALSE );
 	}
+
+    // dispatch to multi-line find if findString contains newlines
+    if (findString.firstChar('\n') != -1) {
+        return findAgainMultiLine( findString, skipIfCurrent );
+    }
 
     if (cursor == lastFindLocation) {
         if (skipIfCurrent) {
@@ -1299,17 +1304,22 @@ CxEditBuffer::replaceAgain( CxString findString, CxString replaceString  )
     }
     
     //---------------------------------------------------------------------------------------------
-    // has to be an active replace string
+    // has to be an active replace string (unless multi-line find, allow empty replace to delete)
     //---------------------------------------------------------------------------------------------
-    if (replaceString.length() == 0) {
+    if (replaceString.length() == 0 && findString.firstChar('\n') == -1) {
         return( FALSE );
     }
-    
+
     //---------------------------------------------------------------------------------------------
     // make sure we are still in the buffer
     //---------------------------------------------------------------------------------------------
     if (cursor.row >= _bufferLineList.entries()) {
         return( FALSE );
+    }
+
+    // dispatch to multi-line replace if findString contains newlines
+    if (findString.firstChar('\n') != -1) {
+        return replaceAgainMultiLine( findString, replaceString );
     }
     
     //---------------------------------------------------------------------------------------------
@@ -1369,6 +1379,300 @@ CxEditBuffer::replaceAgain( CxString findString, CxString replaceString  )
 
     return( findAgain( findString, TRUE ) );
 
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxEditBuffer::findAgainMultiLine
+//
+// Multi-line find.  The findString contains embedded '\n' characters representing line
+// boundaries.  The algorithm splits the findString into segments and checks that:
+//   - segment 0 matches at the END of a line
+//   - middle segments match the ENTIRE content of their respective lines
+//   - the last segment matches at the START of the last line
+//
+//-------------------------------------------------------------------------------------------------
+int
+CxEditBuffer::findAgainMultiLine( CxString findString, int skipIfCurrent )
+{
+    // split findString by '\n' into segments (max 64)
+    CxString segments[64];
+    int segCount = 0;
+    {
+        CxString remaining = findString;
+        int pos;
+        while ((pos = remaining.firstChar('\n')) != -1 && segCount < 63) {
+            segments[segCount] = remaining.subString(0, pos);
+            segCount++;
+            remaining = remaining.subString(pos + 1, remaining.length() - pos - 1);
+        }
+        segments[segCount] = remaining;
+        segCount++;
+    }
+
+    if (segCount < 2) {
+        // no newline found, should not happen since caller checked
+        return( FALSE );
+    }
+
+    int linesToSpan = segCount - 1;
+
+    // handle skipIfCurrent: if cursor is at last find location, advance
+    if (cursor == lastFindLocation) {
+        if (skipIfCurrent) {
+            cursorRightRequest();
+        }
+    }
+
+    // search from cursor position
+    unsigned long startRow = cursor.row;
+    unsigned long startCol = cursor.col;
+
+    for (unsigned long row = startRow; row < _bufferLineList.entries(); row++) {
+
+        // check if enough lines remain for the match
+        if (row + linesToSpan >= _bufferLineList.entries()) {
+            break;
+        }
+
+        CxString *linePtr = _bufferLineList.at(row);
+        if (linePtr == NULL) continue;
+        CxString firstLine = *linePtr;
+
+        // determine starting column for search on first row
+        unsigned long searchStartCol = (row == startRow) ? startCol : 0;
+
+        // segment 0 must match at the end of this line
+        int seg0Len = segments[0].length();
+
+        // find positions where seg0 could match at or after searchStartCol
+        // and the match extends to end of line
+        unsigned long matchCol;
+        if (seg0Len == 0) {
+            // empty first segment means match starts at EOL
+            if ((unsigned long)firstLine.length() < searchStartCol) continue;
+            matchCol = firstLine.length();
+        } else {
+            // seg0 must appear at the end of the line
+            int endPos = firstLine.length() - seg0Len;
+            if (endPos < 0) continue;
+            if ((unsigned long)endPos < searchStartCol) continue;
+
+            // verify seg0 matches at position endPos
+            CxString tail = firstLine.subString(endPos, seg0Len);
+            if (!(tail == segments[0])) continue;
+            matchCol = endPos;
+        }
+
+        // check middle segments (1..segCount-2) match entire lines
+        int middleMatch = TRUE;
+        for (int s = 1; s < segCount - 1; s++) {
+            CxString *midPtr = _bufferLineList.at(row + s);
+            if (midPtr == NULL) { middleMatch = FALSE; break; }
+            CxString midLine = *midPtr;
+
+            if (segments[s].length() == 0) {
+                // empty middle segment means line must be empty
+                if (midLine.length() != 0) { middleMatch = FALSE; break; }
+            } else {
+                if (!(midLine == segments[s])) { middleMatch = FALSE; break; }
+            }
+        }
+        if (!middleMatch) continue;
+
+        // check last segment matches at the start of the last line
+        int lastSegIdx = segCount - 1;
+        int lastSegLen = segments[lastSegIdx].length();
+
+        if (lastSegLen > 0) {
+            CxString *lastPtr = _bufferLineList.at(row + linesToSpan);
+            if (lastPtr == NULL) continue;
+            CxString lastLine = *lastPtr;
+
+            if (lastLine.length() < (unsigned long)lastSegLen) continue;
+            CxString head = lastLine.subString(0, lastSegLen);
+            if (!(head == segments[lastSegIdx])) continue;
+        }
+        // if lastSegLen == 0 (trailing newline), the match just consumes the newline
+        // which we already verified exists since row+linesToSpan < entries()
+
+        // match found
+        cursorGotoRequest( row, matchCol );
+        lastFindLocation = cursor;
+        return( TRUE );
+    }
+
+    return( FALSE );
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxEditBuffer::replaceAgainMultiLine
+//
+// Multi-line replace.  If the cursor is at a valid multi-line match, replaces the matched
+// region with the replaceString (which may itself contain '\n' for multi-line output).
+// Then advances to the next match.
+//
+//-------------------------------------------------------------------------------------------------
+int
+CxEditBuffer::replaceAgainMultiLine( CxString findString, CxString replaceString )
+{
+    // split findString into segments
+    CxString segments[64];
+    int segCount = 0;
+    {
+        CxString remaining = findString;
+        int pos;
+        while ((pos = remaining.firstChar('\n')) != -1 && segCount < 63) {
+            segments[segCount] = remaining.subString(0, pos);
+            segCount++;
+            remaining = remaining.subString(pos + 1, remaining.length() - pos - 1);
+        }
+        segments[segCount] = remaining;
+        segCount++;
+    }
+
+    if (segCount < 2) {
+        return( FALSE );
+    }
+
+    int linesToSpan = segCount - 1;
+
+    // verify cursor is at a valid match
+    unsigned long matchRow = cursor.row;
+    unsigned long matchCol = cursor.col;
+
+    // check bounds
+    if (matchRow + linesToSpan >= _bufferLineList.entries()) {
+        // not at a valid match, just find next
+        return findAgainMultiLine( findString, TRUE );
+    }
+
+    // verify segment 0 matches at end of first line
+    CxString *firstPtr = _bufferLineList.at(matchRow);
+    if (firstPtr == NULL) return findAgainMultiLine( findString, TRUE );
+    CxString firstLine = *firstPtr;
+
+    int seg0Len = segments[0].length();
+    if (seg0Len == 0) {
+        // empty first segment: matchCol must be at EOL
+        if (matchCol != (unsigned long)firstLine.length()) {
+            return findAgainMultiLine( findString, TRUE );
+        }
+    } else {
+        // seg0 must match at matchCol and extend to end of line
+        if ((int)matchCol + seg0Len != firstLine.length()) {
+            return findAgainMultiLine( findString, TRUE );
+        }
+        CxString tail = firstLine.subString(matchCol, seg0Len);
+        if (!(tail == segments[0])) {
+            return findAgainMultiLine( findString, TRUE );
+        }
+    }
+
+    // verify middle segments
+    for (int s = 1; s < segCount - 1; s++) {
+        CxString *midPtr = _bufferLineList.at(matchRow + s);
+        if (midPtr == NULL) return findAgainMultiLine( findString, TRUE );
+        CxString midLine = *midPtr;
+        if (segments[s].length() == 0) {
+            if (midLine.length() != 0) return findAgainMultiLine( findString, TRUE );
+        } else {
+            if (!(midLine == segments[s])) return findAgainMultiLine( findString, TRUE );
+        }
+    }
+
+    // verify last segment
+    int lastSegIdx = segCount - 1;
+    int lastSegLen = segments[lastSegIdx].length();
+    CxString suffix;
+
+    CxString *lastPtr = _bufferLineList.at(matchRow + linesToSpan);
+    if (lastPtr == NULL) return findAgainMultiLine( findString, TRUE );
+    CxString lastLine = *lastPtr;
+
+    if (lastSegLen > 0) {
+        if (lastLine.length() < (unsigned long)lastSegLen) {
+            return findAgainMultiLine( findString, TRUE );
+        }
+        CxString head = lastLine.subString(0, lastSegLen);
+        if (!(head == segments[lastSegIdx])) {
+            return findAgainMultiLine( findString, TRUE );
+        }
+        // suffix is the rest of the last line after the match
+        suffix = lastLine.subString(lastSegLen, lastLine.length() - lastSegLen);
+    } else {
+        // empty last segment means we consume the newline, suffix is entire last line
+        suffix = lastLine;
+    }
+
+    // at a valid match — perform the replacement
+    touched = TRUE;
+
+    // prefix is the first line content before the match
+    CxString prefix = firstLine.subString(0, matchCol);
+
+    // remove the spanned lines (lines matchRow+1 through matchRow+linesToSpan)
+    for (int i = 0; i < linesToSpan; i++) {
+        CxString *removed = _bufferLineList.removeAt( matchRow + 1 );
+        if (removed) delete removed;
+    }
+
+    // split replaceString by '\n' into replacement segments
+    CxString replSegs[64];
+    int replSegCount = 0;
+    {
+        CxString remaining = replaceString;
+        int pos;
+        while ((pos = remaining.firstChar('\n')) != -1 && replSegCount < 63) {
+            replSegs[replSegCount] = remaining.subString(0, pos);
+            replSegCount++;
+            remaining = remaining.subString(pos + 1, remaining.length() - pos - 1);
+        }
+        replSegs[replSegCount] = remaining;
+        replSegCount++;
+    }
+
+    if (replSegCount == 1) {
+        // single output line: prefix + replSegs[0] + suffix
+        CxString newLine = prefix + replSegs[0] + suffix;
+        newLine = CxStringUtils::fixTabs(newLine, tabSpaces);
+        CxString *old = _bufferLineList.replaceAt( matchRow, new CxString(newLine) );
+        if (old) delete old;
+
+        // position cursor after replacement text
+        cursor.row = matchRow;
+        cursor.col = prefix.length() + replSegs[0].length();
+    } else {
+        // multiple output lines
+        // first line: prefix + replSegs[0]
+        CxString firstNewLine = prefix + replSegs[0];
+        firstNewLine = CxStringUtils::fixTabs(firstNewLine, tabSpaces);
+        CxString *old = _bufferLineList.replaceAt( matchRow, new CxString(firstNewLine) );
+        if (old) delete old;
+
+        // middle lines: replSegs[1..N-2]
+        int insertIdx = matchRow;
+        for (int s = 1; s < replSegCount - 1; s++) {
+            CxString midNewLine = replSegs[s];
+            midNewLine = CxStringUtils::fixTabs(midNewLine, tabSpaces);
+            _bufferLineList.insertAfter( insertIdx, new CxString(midNewLine) );
+            insertIdx++;
+        }
+
+        // last line: replSegs[N-1] + suffix
+        CxString lastNewLine = replSegs[replSegCount - 1] + suffix;
+        lastNewLine = CxStringUtils::fixTabs(lastNewLine, tabSpaces);
+        _bufferLineList.insertAfter( insertIdx, new CxString(lastNewLine) );
+        insertIdx++;
+
+        // position cursor after the last replacement segment
+        cursor.row = insertIdx;
+        cursor.col = replSegs[replSegCount - 1].length();
+    }
+
+    // find the next match
+    return findAgainMultiLine( findString, TRUE );
 }
 
 

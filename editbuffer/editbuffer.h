@@ -379,6 +379,12 @@ class CxEditBuffer
     unsigned long lastRequestCol;
     // the last column inserted, backspaced, or navigated to intentionally by the user
     
+    int findAgainMultiLine( CxString findString, int skipIfCurrent );
+    // multi-line find across line boundaries
+
+    int replaceAgainMultiLine( CxString findString, CxString replaceString );
+    // multi-line replace across line boundaries
+
     CxEditBufferPosition lastFindLocation;
     // holds the last find location
     

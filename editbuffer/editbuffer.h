@@ -192,6 +192,10 @@ class CxEditBuffer
     numberOfLines();
     // returns the count of lines in the current edit buffer
 
+    unsigned long
+    characterCount();
+    // returns total character count (excludes internal tab extensions)
+
     CxEditHint
     addCharacter( CxString c);
     // adds the first character of the string to the buffer at the cursor position.

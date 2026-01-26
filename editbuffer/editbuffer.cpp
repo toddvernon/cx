@@ -1375,12 +1375,14 @@ CxEditBuffer::replaceAgain( CxString findString, CxString replaceString  )
         // insert the replaceString in the position
         //-----------------------------------------------------------------------------------------
         line.insert( replaceString, col);
-        
+
 #endif
 
-#ifdef NEWCODE
-		cursor.col += replaceString.length();
-#endif
+        //-----------------------------------------------------------------------------------------
+        // advance cursor past the replacement to avoid finding within replacement
+        // (important for replace-all when replacement contains the find string)
+        //-----------------------------------------------------------------------------------------
+        cursor.col = col + (int) replaceString.length();
 
         //-----------------------------------------------------------------------------------------
         // fix the tabs as they may have changed
@@ -1708,6 +1710,35 @@ unsigned long
 CxEditBuffer::numberOfLines( void )
 {
     return( _bufferLineList.entries() );
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxEditBuffer::characterCount
+//
+// returns the total character count excluding internal tab extension markers (0xFF)
+// includes newlines between lines
+//
+//-------------------------------------------------------------------------------------------------
+unsigned long
+CxEditBuffer::characterCount( void )
+{
+    unsigned long count = 0;
+
+    for (unsigned long row = 0; row < _bufferLineList.entries(); row++) {
+        CxString *line = _bufferLineList.at(row);
+        if (line != NULL) {
+            for (unsigned long col = 0; col < line->length(); col++) {
+                unsigned char c = (unsigned char) line->charAt(col);
+                if (c != 0xFF) {
+                    count++;
+                }
+            }
+        }
+        count++;  // count the newline
+    }
+
+    return( count );
 }
 
 

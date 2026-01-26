@@ -1038,6 +1038,17 @@ CxEditBuffer::loadText(CxString filepath_, int preload)
         size_t bytesRead = inFile.fread(rawBuffer, 1, fileSize);
         rawBuffer[bytesRead] = '\0';
 
+        // Sanitize buffer: replace high-ASCII bytes (128-254) with spaces.
+        // These are typically encoding artifacts (e.g., Mac Roman curly quotes)
+        // that can cause display issues. We leave 255 (0xFF) alone since that's
+        // our internal tab extension marker.
+        for (size_t i = 0; i < bytesRead; i++) {
+            unsigned char c = (unsigned char)rawBuffer[i];
+            if (c >= 128 && c <= 254) {
+                rawBuffer[i] = ' ';
+            }
+        }
+
         // Use lazy loading - _bufferLineList takes ownership of rawBuffer
         _bufferLineList.initLazy(rawBuffer, bytesRead, tabSpaces);
 
@@ -1071,6 +1082,17 @@ CxEditBuffer::loadText(CxString filepath_, int preload)
 void
 CxEditBuffer::loadTextFromString( CxString text )
 {
+    // Sanitize input: replace high-ASCII bytes (128-254) with spaces.
+    // Leave 255 (0xFF) alone since that's our internal tab extension marker.
+    char *sanitizePtr = text.data();
+    while (*sanitizePtr != (char) NULL) {
+        unsigned char c = (unsigned char)*sanitizePtr;
+        if (c >= 128 && c <= 254) {
+            *sanitizePtr = ' ';
+        }
+        sanitizePtr++;
+    }
+
     // flag that signals when a line of text has been appended
     int lineDone    = false;
 

@@ -196,6 +196,14 @@ class CxEditBuffer
     characterCount();
     // returns total character count (excludes internal tab extensions)
 
+    void
+    entab();
+    // convert leading spaces to tabs (internal format with extensions)
+
+    void
+    detab();
+    // convert tabs to spaces
+
     CxEditHint
     addCharacter( CxString c);
     // adds the first character of the string to the buffer at the cursor position.

@@ -1743,6 +1743,107 @@ CxEditBuffer::characterCount( void )
 
 
 //-------------------------------------------------------------------------------------------------
+// CxEditBuffer::detab
+//
+// Convert all tabs (with their 0xFF extensions) to space characters
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxEditBuffer::detab( void )
+{
+    if (readOnly) return;
+
+    for (unsigned long row = 0; row < _bufferLineList.entries(); row++) {
+        CxString *line = _bufferLineList.at(row);
+        if (line == NULL) continue;
+
+        CxString newLine;
+        for (unsigned long col = 0; col < line->length(); col++) {
+            char c = line->charAt(col);
+            if (c == '\t') {
+                newLine += ' ';  // tab becomes a space
+            } else if ((unsigned char)c == 0xFF) {
+                newLine += ' ';  // extension becomes a space
+            } else {
+                newLine += c;
+            }
+        }
+
+        CxString *oldLine = _bufferLineList.replaceAt(row, new CxString(newLine));
+        delete oldLine;
+    }
+
+    touched = TRUE;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxEditBuffer::entab
+//
+// Convert leading spaces to tabs (internal format with 0xFF extensions)
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxEditBuffer::entab( void )
+{
+    if (readOnly) return;
+
+    for (unsigned long row = 0; row < _bufferLineList.entries(); row++) {
+        CxString *line = _bufferLineList.at(row);
+        if (line == NULL) continue;
+
+        // count leading spaces (real spaces, not tabs/extensions)
+        unsigned long leadingSpaces = 0;
+        for (unsigned long col = 0; col < line->length(); col++) {
+            char c = line->charAt(col);
+            if (c == ' ') {
+                leadingSpaces++;
+            } else {
+                break;
+            }
+        }
+
+        if (leadingSpaces == 0) continue;
+
+        // allocate buffer for new line (same size is sufficient)
+        char *newBuffer = new char[line->length() + 1];
+        char *destPtr = newBuffer;
+        unsigned long col = 0;
+
+        // convert leading spaces to tabs
+        while (col < leadingSpaces) {
+            unsigned long spacesToNextTab = CxStringUtils::calcTab(col, tabSpaces);
+
+            if (col + spacesToNextTab <= leadingSpaces) {
+                // we have enough spaces to make a tab
+                *destPtr++ = '\t';
+                for (unsigned long i = 1; i < spacesToNextTab; i++) {
+                    *destPtr++ = '\377';  // 0xFF extension
+                }
+                col += spacesToNextTab;
+            } else {
+                // not enough spaces for a full tab, keep as space
+                *destPtr++ = ' ';
+                col++;
+            }
+        }
+
+        // copy the rest of the line (non-leading content)
+        for (unsigned long i = leadingSpaces; i < line->length(); i++) {
+            *destPtr++ = line->charAt(i);
+        }
+        *destPtr = '\0';
+
+        CxString *oldLine = _bufferLineList.replaceAt(row, new CxString(newBuffer));
+        delete oldLine;
+        delete[] newBuffer;
+    }
+
+    touched = TRUE;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CxEditBuffer::rawLengthOfBuffer
 //
 // returns the raw number of characters in the buffer.  Note this call returns the length

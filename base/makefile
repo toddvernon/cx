@@ -19,6 +19,7 @@ UNAME_S := $(shell uname -s | tr '[A-Z]' '[a-z]' )
 
 # if this is linux
 ifeq ($(UNAME_S),linux)
+	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
    	CPPFLAGS = -D _LINUX_  -g -Wno-deprecated
 endif
 
@@ -29,7 +30,7 @@ ifeq ($(UNAME_S), darwin)
 endif
 
 ifeq ($(UNAME_S), linux)
-	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]'     CCFLAGS = -D _LINUX_ )
+	CCFLAGS = -D _LINUX_ )
 endif
 
 ifeq ($(UNAME_S), darwin)

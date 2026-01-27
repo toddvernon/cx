@@ -1,4 +1,4 @@
-## makefile: libcx_base.a ######################################
+## makefile: libcx_editbuffer.a ######################################
 
 
 CPP=        g++

@@ -87,7 +87,12 @@ LIB_CX_EDITBUFFER_OBJECTS=\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/stringlist.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/stringutils.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/editbufferlist.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/editline.o
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/editline.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfcharacter.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfstring.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfstringlist.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfeditbuffer.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfeditbufferlist.o
 
 
 ## Targets ####################################################
@@ -137,6 +142,11 @@ $(LIB_CX_PLATFORM_OBJECT_DIR)/edithint.o		: edithint.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/stringlist.o		: stringlist.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/stringutils.o		: stringutils.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/editline.o		: editline.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/utfcharacter.o		: utfcharacter.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/utfstring.o		: utfstring.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/utfstringlist.o		: utfstringlist.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/utfeditbuffer.o		: utfeditbuffer.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/utfeditbufferlist.o	: utfeditbufferlist.cpp
 
 
 $(LIB_CX_EDITBUFFER_OBJECTS):

@@ -8,9 +8,7 @@ UNAME_S := $(shell uname -s | tr '[A-Z]' '[a-z]' )
 ifeq ($(UNAME_S), linux)
 	UNAME_R := $(shell uname -r | tr '[A-Z]' '[a-z]' )
 	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
- 	ifeq ($(UNAME_R), 5.15.0-56-generic) 
-  		CCFLAGS = -D _LINUX_
-	endif
+	CPPFLAGS = -D _LINUX_ -g
 endif
 
 #if this is OSX
@@ -23,16 +21,25 @@ endif
 ifeq ($(UNAME_S),sunos)
     UNAME_R := $(shell uname -r)
 
-    CPPFLAGS = -D _SOLARIS_ -g
-
-    ifeq ($(UNAME_R), 4.1.3) 
+    ifeq ($(UNAME_R), 4.1.3)
         CPPFLAGS = -D _SUNOS_ -g
     endif
 
-
     ifeq ($(UNAME_R), 4.1.4)
-		CPPFLAGS = -D _SUNOS_ -g
-	endif
+        CPPFLAGS = -D _SUNOS_ -g
+    endif
+
+    ifeq ($(UNAME_R), 5.6)
+        CPPFLAGS = -D _SOLARIS6_ -g
+    endif
+
+    ifeq ($(UNAME_R), 5.7)
+        CPPFLAGS = -D _SOLARIS6_ -g
+    endif
+
+    ifeq ($(UNAME_R), 5.10)
+        CPPFLAGS = -D _SOLARIS10_ -g
+    endif
 
 endif
 

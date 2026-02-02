@@ -18,6 +18,12 @@ CX is a portable C++ library with modules: base, b64, commandline, editbuffer, e
 make
 ```
 
+## Makefile guidelines
+- Platform detection should use `uname -s` (OS name), not `uname -r` (kernel version)
+- Never hardcode specific kernel versions for Linux - flags like `CPPFLAGS` and `CCFLAGS` should apply to all Linux versions
+- Solaris is an exception: different Solaris versions (4.1.x, 5.6, 5.7, 5.10) require different defines (`_SUNOS_`, `_SOLARIS6_`, `_SOLARIS10_`)
+- When adding or modifying makefiles, follow the patterns in existing lib makefiles (e.g., `base/makefile`)
+
 ## Non-negotiable constraints
 - DO NOT use the C++ Standard Library: no `std::` anywhere.
 - DO NOT introduce templates, including template-based third-party libs.

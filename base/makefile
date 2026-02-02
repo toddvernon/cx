@@ -30,7 +30,7 @@ ifeq ($(UNAME_S), darwin)
 endif
 
 ifeq ($(UNAME_S), linux)
-	CCFLAGS = -D _LINUX_ )
+	CCFLAGS = -D _LINUX_
 endif
 
 ifeq ($(UNAME_S), darwin)
@@ -105,9 +105,7 @@ LIB_CX_BASE_OBJECTS=\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/filename.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/directory.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/tokenizer.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/double.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfcharacter.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/utfstring.o
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/double.o
 
 
 ## Targets ####################################################
@@ -172,8 +170,6 @@ $(LIB_CX_PLATFORM_OBJECT_DIR)/filename.o	: filename.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/directory.o	: directory.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/tokenizer.o 	: tokenizer.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/double.o		: double.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/utfcharacter.o	: utfcharacter.cpp
-$(LIB_CX_PLATFORM_OBJECT_DIR)/utfstring.o	: utfstring.cpp
 
 $(LIB_CX_BASE_OBJECTS):
 	$(CPP)  $(CPPFLAGS) $(INC) -c $? -o $@

@@ -52,7 +52,11 @@ ifeq ($(UNAME_S),sunos)
 	ifeq ($(UNAME_R), 5.6)
         CPPFLAGS = -D _SOLARIS6_ -g
 	endif
-	
+
+	ifeq ($(UNAME_R), 5.7)
+        CPPFLAGS = -D _SOLARIS6_ -g
+	endif
+
     ifeq ($(UNAME_R), 5.10)
         CPPFLAGS = -D _SOLARIS10_ -g
     endif

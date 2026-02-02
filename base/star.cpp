@@ -102,7 +102,7 @@ CxMatchTemplate::CxMatchTemplate( CxString t )
 // CxMatchTemplate::CxMatchTemplate
 //
 //-------------------------------------------------------------------------
-CxMatchTemplate::CxMatchTemplate( char *t )
+CxMatchTemplate::CxMatchTemplate( const char *t )
 {
 	CxString temp(t);
 

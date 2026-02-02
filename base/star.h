@@ -81,7 +81,7 @@ class CxMatchTemplate
 	CxMatchTemplate( CxString t );
 	// constructor
 
-	CxMatchTemplate( char *t );
+	CxMatchTemplate( const char *t );
 	// constructor
 
 	CxMatchTemplate( const CxMatchTemplate& mt );

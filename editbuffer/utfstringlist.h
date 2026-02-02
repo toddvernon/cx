@@ -29,7 +29,7 @@
 #ifndef _CxUTFStringList_h_
 #define _CxUTFStringList_h_
 
-#include <cx/editbuffer/utfstring.h>
+#include <cx/base/utfstring.h>
 
 //-------------------------------------------------------------------------------------------------
 // CxUTFStringList

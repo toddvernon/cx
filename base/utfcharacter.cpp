@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cx/editbuffer/utfcharacter.h>
+#include <cx/base/utfcharacter.h>
 
 
 //-------------------------------------------------------------------------------------------------

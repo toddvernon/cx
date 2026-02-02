@@ -36,7 +36,7 @@
 #ifndef _CxUTFString_h_
 #define _CxUTFString_h_
 
-#include <cx/editbuffer/utfcharacter.h>
+#include <cx/base/utfcharacter.h>
 #include <cx/base/string.h>
 
 //-------------------------------------------------------------------------------------------------

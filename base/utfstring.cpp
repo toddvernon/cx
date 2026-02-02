@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cx/editbuffer/utfstring.h>
+#include <cx/base/utfstring.h>
 
 
 #define CXUTFSTRING_INITIAL_CAPACITY 16

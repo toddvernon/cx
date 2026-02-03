@@ -3,6 +3,12 @@
 ## Overview
 CX is a portable C++ library with modules: base, b64, commandline, editbuffer, expression, functor, json, keyboard, log, net, screen, thread, tz.
 
+## Naming Conventions
+When the user refers to:
+- **"cx"** - means all cx repositories together: `cx/cx` (this library), `cx/cx_tests` (tests), and `cx/cx_apps/cm` (editor app)
+- **"cm"** - means the CMacs editor application at `cx/cx_apps/cm`
+- **"cx library"** or **"cx/cx"** - means specifically this shared library
+
 ## Related Repositories
 - **CMacs editor**: `../cx_apps/cm/` - terminal text editor that uses this library
 

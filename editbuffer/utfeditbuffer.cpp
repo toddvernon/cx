@@ -54,6 +54,8 @@ CxUTFEditBuffer::CxUTFEditBuffer(void)
     , readOnly(false)
     , touched(false)
     , inMemory(false)
+    , _killAccumulator("")
+    , _lastWasKill(false)
 {
     reset();
 }
@@ -77,6 +79,8 @@ CxUTFEditBuffer::CxUTFEditBuffer(int tabspaces)
     , readOnly(false)
     , touched(false)
     , inMemory(false)
+    , _killAccumulator("")
+    , _lastWasKill(false)
 {
     tabSpaces = tabspaces;
     reset();
@@ -103,6 +107,8 @@ CxUTFEditBuffer::CxUTFEditBuffer(const CxUTFEditBuffer &c)
         lastRequestCol = c.lastRequestCol;
         tabSpaces = c.tabSpaces;
         _bufferLineList = c._bufferLineList;
+        _killAccumulator = c._killAccumulator;
+        _lastWasKill = c._lastWasKill;
     }
 }
 
@@ -128,6 +134,8 @@ CxUTFEditBuffer::operator=(const CxUTFEditBuffer &c)
         lastRequestCol = c.lastRequestCol;
         tabSpaces = c.tabSpaces;
         _bufferLineList = c._bufferLineList;
+        _killAccumulator = c._killAccumulator;
+        _lastWasKill = c._lastWasKill;
     }
     return *this;
 }
@@ -221,6 +229,9 @@ CxUTFEditBuffer::evaluatePosition(unsigned long row_, unsigned long col_)
 CxEditHint
 CxUTFEditBuffer::cursorRightRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     unsigned long numberOfBufferLines = _bufferLineList.entries();
 
     if (numberOfBufferLines == 0) {
@@ -257,6 +268,9 @@ CxUTFEditBuffer::cursorRightRequest(void)
 CxEditHint
 CxUTFEditBuffer::cursorLeftRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     // Can we move left on this line?
     if (cursor.col > 0) {
         cursor.col--;
@@ -285,6 +299,9 @@ CxUTFEditBuffer::cursorLeftRequest(void)
 CxEditHint
 CxUTFEditBuffer::cursorUpRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     if (cursor.row == 0) {
         return CxEditHint(cursor.row, cursor.col, CxEditHint::UPDATE_HINT_NONE, CxEditHint::CURSOR_HINT_NONE);
     }
@@ -310,6 +327,9 @@ CxUTFEditBuffer::cursorUpRequest(void)
 CxEditHint
 CxUTFEditBuffer::cursorDownRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     unsigned long numberOfBufferLines = _bufferLineList.entries();
 
     if (numberOfBufferLines == 0 || cursor.row >= numberOfBufferLines - 1) {
@@ -337,6 +357,9 @@ CxUTFEditBuffer::cursorDownRequest(void)
 CxUTFEditBuffer::POSITION
 CxUTFEditBuffer::cursorGotoRequest(unsigned long row_, unsigned long col_)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     POSITION pos = evaluatePosition(row_, col_);
 
     if (pos == POS_VALID_INSERT || pos == POS_VALID_APPEND_COL || pos == POS_VALID_INITIAL) {
@@ -583,6 +606,9 @@ CxUTFEditBuffer::addCharacter(char c)
         return CxEditHint(CxEditHint::UPDATE_HINT_NONE, CxEditHint::CURSOR_HINT_NONE);
     }
 
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     // Handle special characters
     if (c == '\n' || c == '\r') {
         return addReturn();
@@ -674,6 +700,9 @@ CxUTFEditBuffer::addReturn(void)
         return CxEditHint(CxEditHint::UPDATE_HINT_NONE, CxEditHint::CURSOR_HINT_NONE);
     }
 
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     touched = TRUE;
 
     // Empty buffer - create first line
@@ -718,6 +747,9 @@ CxUTFEditBuffer::addBackspace(void)
     if (readOnly) {
         return CxEditHint(CxEditHint::UPDATE_HINT_NONE, CxEditHint::CURSOR_HINT_NONE);
     }
+
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
 
     // At start of buffer - nothing to delete
     if (cursor.row == 0 && cursor.col == 0) {
@@ -781,6 +813,9 @@ CxUTFEditBuffer::joinLines(void)
 void
 CxUTFEditBuffer::setMark(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     markSet = true;
     mark = cursor;
 }
@@ -918,6 +953,10 @@ CxUTFEditBuffer::cutToMark(void)
 //-------------------------------------------------------------------------------------------------
 // CxUTFEditBuffer::cutTextToEndOfLine
 //
+// Cuts text from cursor to end of line. If cursor is already at end of line, joins with
+// the next line. Consecutive calls accumulate into the kill buffer, so a subsequent
+// paste will restore all the killed text.
+//
 //-------------------------------------------------------------------------------------------------
 CxString
 CxUTFEditBuffer::cutTextToEndOfLine(void)
@@ -927,13 +966,44 @@ CxUTFEditBuffer::cutTextToEndOfLine(void)
     CxUTFString *line = _bufferLineList.at(cursor.row);
     if (line == 0) return CxString("");
 
-    CxUTFString cut = line->subString(cursor.col, line->charCount() - cursor.col);
-    CxString result = cut.toBytes();
+    CxString theCutText;
 
-    line->remove(cursor.col, line->charCount() - cursor.col);
-    touched = TRUE;
+    // Check if cursor is at or past end of line (nothing to cut on this line)
+    if (cursor.col >= line->charCount()) {
+        // Join with next line if one exists
+        unsigned long numberOfBufferLines = _bufferLineList.entries();
+        if (cursor.row + 1 < numberOfBufferLines) {
+            CxUTFString *nextLine = _bufferLineList.at(cursor.row + 1);
+            if (nextLine != 0) {
+                // Append next line to current line
+                line->append(*nextLine);
+                line->recalculateTabWidths(tabSpaces);
 
-    return result;
+                // Remove the next line
+                _bufferLineList.removeAt(cursor.row + 1);
+
+                touched = TRUE;
+                theCutText = "\n";
+            }
+        }
+        // If no next line, theCutText remains empty
+    } else {
+        CxUTFString cut = line->subString(cursor.col, line->charCount() - cursor.col);
+        theCutText = cut.toBytes();
+
+        line->remove(cursor.col, line->charCount() - cursor.col);
+        touched = TRUE;
+    }
+
+    // Accumulate into kill buffer - append if last operation was also a kill
+    if (_lastWasKill) {
+        _killAccumulator += theCutText;
+    } else {
+        _killAccumulator = theCutText;
+    }
+    _lastWasKill = true;
+
+    return _killAccumulator;
 }
 
 
@@ -1003,6 +1073,9 @@ CxUTFEditBuffer::insertTextAtCursor(CxString text)
 void
 CxUTFEditBuffer::pasteFromCutBuffer(CxString text)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     insertTextAtCursor(text);
 }
 

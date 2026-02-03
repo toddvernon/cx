@@ -107,7 +107,9 @@ CxEditBuffer::CxEditBuffer(void):
     visualFirstScreenCol(0),
     readOnly(false),
     touched(false),
-    inMemory(false)
+    inMemory(false),
+    _killAccumulator(""),
+    _lastWasKill(false)
 {
     reset();
 }
@@ -130,7 +132,9 @@ CxEditBuffer::CxEditBuffer(int tabspaces):
     visualFirstScreenCol(0),
     readOnly(false),
     touched(false),
-    inMemory(false)
+    inMemory(false),
+    _killAccumulator(""),
+    _lastWasKill(false)
 {
     tabSpaces = tabspaces;
     reset();
@@ -154,11 +158,13 @@ CxEditBuffer::CxEditBuffer( const CxEditBuffer& c )
         inMemory = c.inMemory;
         visualFirstScreenLine = c.visualFirstScreenLine;
         visualFirstScreenCol  = c.visualFirstScreenCol;
-        
+
         lastRequestCol = c.lastRequestCol;
-        
+
         _bufferLineList = c._bufferLineList;
 
+        _killAccumulator = c._killAccumulator;
+        _lastWasKill = c._lastWasKill;
     }
 }
 
@@ -180,13 +186,16 @@ CxEditBuffer::operator=( const CxEditBuffer& c)
         readOnly = c.readOnly;
         touched = c.touched;
         inMemory = c.inMemory;
-        
+
         visualFirstScreenLine = c.visualFirstScreenLine;
         visualFirstScreenCol  = c.visualFirstScreenCol;
-        
+
         lastRequestCol = c.lastRequestCol;
-        
+
         _bufferLineList = c._bufferLineList;
+
+        _killAccumulator = c._killAccumulator;
+        _lastWasKill = c._lastWasKill;
     }
 
     return( *this );
@@ -458,6 +467,9 @@ CxEditBuffer::isCursorRowEmpty(void)
 void
 CxEditBuffer::setMark(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     markSet = true;
     mark    = cursor;
 }
@@ -585,6 +597,9 @@ CxEditBuffer::getPositionPriorToCursor(void)
 CxEditHint
 CxEditBuffer::cursorRightRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
     unsigned long numberOfBufferLines = _bufferLineList.entries();
@@ -699,6 +714,9 @@ CxEditBuffer::cursorRightRequest(void)
 CxEditHint
 CxEditBuffer::cursorLeftRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
     CxString *line   = _bufferLineList.at( cursor.row );
@@ -809,6 +827,9 @@ CxEditBuffer::cursorLeftRequest(void)
 CxEditHint
 CxEditBuffer::cursorUpRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
     if (cursor.row == 0) {
@@ -893,6 +914,9 @@ CxEditBuffer::cursorUpRequest(void)
 CxEditHint
 CxEditBuffer::cursorDownRequest(void)
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
     unsigned long numberOfBufferLines = _bufferLineList.entries();
@@ -2029,6 +2053,8 @@ CxEditBuffer::debug_print_string( unsigned long lineNumber)
 CxEditBuffer::POSITION
 CxEditBuffer::cursorGotoRequest(unsigned long row_, unsigned long col_ )
 {
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
 
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
@@ -2275,7 +2301,10 @@ CxEditBuffer::addBackspace(void)
             CxEditHint::CURSOR_HINT_NONE);
         return( editHint );
     }
-    
+
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
     CxEditBuffer::POSITION position = evaluatePosition( cursor.row, cursor.col);
@@ -2756,7 +2785,10 @@ CxEditBuffer::addCharacter(char c)
             CxEditHint::CURSOR_HINT_NONE);
         return( editHint );
     }
-    
+
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
     CxEditBuffer::POSITION position = evaluatePosition( cursor.row, cursor.col);
@@ -2936,7 +2968,10 @@ void
 CxEditBuffer::pasteFromCutBuffer( CxString text )
 {
     if (readOnly) return;
-    
+
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
     insertTextAtCursor( text );
 }
@@ -3065,7 +3100,9 @@ CxEditBuffer::setMarkAtEndOfLine( void )
 //
 // CxEditBuffer::cutTextToEndOfLine
 //
-// copys text between two points in the buffer
+// Cuts text from cursor to end of line. If cursor is already at end of line, joins with
+// the next line. Consecutive calls accumulate into the kill buffer, so a subsequent
+// paste will restore all the killed text.
 //
 //-------------------------------------------------------------------------------------------------
 
@@ -3076,15 +3113,50 @@ CxEditBuffer::cutTextToEndOfLine(void)
 
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
-    // set the mark at the append position on the current line
-    setMarkAtEndOfLine();
+    CxString theCutText;
 
-    CxString theCutText = copyText( );
-    deleteText( );
+    // Check if cursor is at or past end of line
+    CxString *currentLine = _bufferLineList.at(cursor.row);
+    if (currentLine != NULL && cursor.col >= currentLine->length()) {
+        // Cursor is at end of line - join with next line if one exists
+        unsigned long numberOfBufferLines = _bufferLineList.entries();
+        if (cursor.row + 1 < numberOfBufferLines) {
+            CxString *nextLine = _bufferLineList.at(cursor.row + 1);
+            if (nextLine != NULL) {
+                // Append next line to current line
+                currentLine->append(nextLine->data());
+                *currentLine = CxStringUtils::fixTabs(*currentLine, tabSpaces);
+
+                // Remove the next line
+                CxString *deletedLine = _bufferLineList.removeAt(cursor.row + 1);
+                delete deletedLine;
+
+                touched = true;
+                theCutText = "\n";
+            }
+        }
+        // If no next line, theCutText remains empty
+    } else {
+        // Normal case: set mark at end of line and cut
+        // Save _lastWasKill because setMarkAtEndOfLine calls cursorRightRequest which resets it
+        int savedLastWasKill = _lastWasKill;
+        setMarkAtEndOfLine();
+        theCutText = copyText();
+        deleteText();
+        _lastWasKill = savedLastWasKill;
+    }
 
     exitDumpIfCursorIsInvalid( __FUNCTION__ , __LINE__);
 
-    return( theCutText );
+    // Accumulate into kill buffer - append if last operation was also a kill
+    if (_lastWasKill) {
+        _killAccumulator += theCutText;
+    } else {
+        _killAccumulator = theCutText;
+    }
+    _lastWasKill = true;
+
+    return( _killAccumulator );
 }
 
 

@@ -417,9 +417,15 @@ class CxEditBuffer
     
     int touched;
     // has file been changed
-    
+
     int inMemory;
     // is the file in memory
+
+    CxString _killAccumulator;
+    // accumulates text from consecutive kill operations (Ctrl-K)
+
+    int _lastWasKill;
+    // true if the last editing operation was a kill (cutTextToEndOfLine)
 
 };
 

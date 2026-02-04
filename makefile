@@ -278,3 +278,29 @@ clean:
 
 	rm -fr ../lib/$(UNAME_S)/*.a
 
+
+########################################################################################
+# Create tar archive for distribution
+#
+########################################################################################
+
+archive:
+	@echo "Creating cxlibs_unix.tar..."
+	@test -d ../ARCHIVE || mkdir ../ARCHIVE
+	@tar cvf ../ARCHIVE/cxlibs_unix.tar \
+		--exclude='*.o' \
+		--exclude='*.a' \
+		--exclude='.git' \
+		--exclude='.DS_Store' \
+		--exclude='*.xcodeproj' \
+		--exclude='*.xcworkspace' \
+		--exclude='xcuserdata' \
+		--exclude='DerivedData' \
+		--exclude='*.pbxuser' \
+		--exclude='*.mode1v3' \
+		--exclude='*.mode2v3' \
+		--exclude='*.perspectivev3' \
+		--exclude='*.xcuserstate' \
+		.
+	@echo "Archive created: ../ARCHIVE/cxlibs_unix.tar"
+

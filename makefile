@@ -180,6 +180,18 @@ all:
 		cd sheetModel; make; \
 	fi
 
+# Command Completer Library
+
+	@if [ ! -d "./commandcompleter" ]; then \
+		echo ""; \
+		echo "BUILD ABORT: './commandcompleter' not found"; \
+		exit 1; \
+	fi
+
+	@if [ -d "./commandcompleter" ]; then \
+		cd commandcompleter; make; \
+	fi
+
 # Thread library (doesn't build on SunOS )
 
 	@if [ "$(UNAME_S)" != "sunos" ]; then \
@@ -268,6 +280,10 @@ clean:
 		cd commandline; make clean; \
 	fi
 
+	@if [ -d "./commandcompleter" ]; then \
+		cd commandcompleter; make clean; \
+	fi
+
 	@if [ -d "./thread" ]; then \
 		cd thread; make clean; \
 	fi
@@ -291,7 +307,14 @@ archive:
 		--exclude='*.o' \
 		--exclude='*.a' \
 		--exclude='.git' \
+		--exclude='.claude' \
 		--exclude='.DS_Store' \
+		--exclude='darwin_*' \
+		--exclude='linux_*' \
+		--exclude='sunos_*' \
+		--exclude='irix_*' \
+		--exclude='netbsd_*' \
+		--exclude='nextstep_*' \
 		--exclude='*.xcodeproj' \
 		--exclude='*.xcworkspace' \
 		--exclude='xcuserdata' \

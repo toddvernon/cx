@@ -2,7 +2,7 @@
 //
 //  completer.cpp
 //
-//  Hierarchical command completion with fuzzy prefix matching.
+//  Hierarchical command completion with literal prefix matching.
 //
 //  Created by Todd Vernon on 2/4/26.
 //  Copyright (c) 2026 Todd Vernon. All rights reserved.
@@ -133,46 +133,19 @@ Completer::getCandidateAt( int index )
 
 
 //-------------------------------------------------------------------------------------------------
-// Completer::dehyphenate
-//-------------------------------------------------------------------------------------------------
-CxString
-Completer::dehyphenate( CxString s )
-{
-    CxString result = "";
-
-    for (unsigned long i = 0; i < s.length(); i++) {
-        char c = (char) s.charAt( (int) i );
-        if (c != '-') {
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-
-//-------------------------------------------------------------------------------------------------
 // Completer::matchesPrefix
 //
-// Fuzzy prefix match - user input matches if it's a prefix of the dehyphenated candidate name.
+// Literal prefix match - user input matches if it's a prefix of the candidate name.
 //-------------------------------------------------------------------------------------------------
 int
 Completer::matchesPrefix( CxString candidateName, CxString userInput )
 {
-    // If user typed more chars than the candidate name, can't match
     if (userInput.length() > candidateName.length()) {
         return FALSE;
     }
 
-    CxString dehyphenCandidate = dehyphenate( candidateName );
-    CxString dehyphenInput = dehyphenate( userInput );
-
-    if (dehyphenInput.length() > dehyphenCandidate.length()) {
-        return FALSE;
-    }
-
-    for (unsigned long i = 0; i < dehyphenInput.length(); i++) {
-        if (dehyphenInput.charAt( (int) i ) != dehyphenCandidate.charAt( (int) i )) {
+    for (unsigned long i = 0; i < userInput.length(); i++) {
+        if (userInput.charAt( (int) i ) != candidateName.charAt( (int) i )) {
             return FALSE;
         }
     }

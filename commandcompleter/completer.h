@@ -2,14 +2,13 @@
 //
 //  completer.h
 //
-//  Hierarchical command completion with fuzzy prefix matching.
+//  Hierarchical command completion with literal prefix matching.
 //
 //  This module provides a tree-based completion system where each level can have
 //  candidates that either complete to a value or transition to a child completer.
 //
 //  Features:
-//  - Fuzzy prefix matching (hyphens ignored): "gl" matches "goto-line"
-//  - Acronym matching: "bl" matches "buffer-list"
+//  - Literal prefix matching: "goto" matches "goto-line"
 //  - Auto-completion to common prefix when all matches share one
 //  - Support for filtered display names (show "horizontal" instead of "box-horizontal")
 //  - Child completers for multi-level command sequences
@@ -170,11 +169,8 @@ public:
     // Matching utilities (public for testing)
     //---------------------------------------------------------------------------------------------
 
-    static CxString dehyphenate( CxString s );
-    // Remove hyphens from string
-
     static int matchesPrefix( CxString candidateName, CxString userInput );
-    // Fuzzy prefix match (dehyphenated comparison)
+    // Literal prefix match - userInput must be a prefix of candidateName
 
     static CxString findCommonPrefix( CxString *names, int count );
     // Find longest common prefix (literal, preserves hyphens)

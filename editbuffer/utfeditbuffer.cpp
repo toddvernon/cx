@@ -579,6 +579,9 @@ CxUTFEditBuffer::characterAt(unsigned long row, unsigned long col)
 //-------------------------------------------------------------------------------------------------
 // CxUTFEditBuffer::addCharacter (CxString version)
 //
+// Handle a UTF-8 string, inserting the first character (which may be multi-byte).
+// For ASCII characters, delegates to the char version for special handling.
+// For multi-byte UTF-8 characters, inserts directly as a single character.
 //-------------------------------------------------------------------------------------------------
 CxEditHint
 CxUTFEditBuffer::addCharacter(CxString c)
@@ -591,7 +594,42 @@ CxUTFEditBuffer::addCharacter(CxString c)
     CxUTFCharacter ch;
     ch.fromUTF8(c.data());
 
-    return addCharacter(ch.bytes()[0]);
+    // For ASCII characters, use the char version which handles newlines, tabs, etc.
+    if (ch.isASCII()) {
+        return addCharacter((char) ch.bytes()[0]);
+    }
+
+    // Handle multi-byte UTF-8 characters directly
+    if (readOnly) {
+        return CxEditHint(CxEditHint::UPDATE_HINT_NONE, CxEditHint::CURSOR_HINT_NONE);
+    }
+
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+    touched = TRUE;
+
+    // Empty buffer - create first line
+    if (_bufferLineList.entries() == 0) {
+        CxUTFString newLine;
+        newLine.append(ch);
+        _bufferLineList.append(newLine);
+        cursor.col = 1;
+        lastRequestCol = cursor.col;
+        return CxEditHint(cursor.row, cursor.col, CxEditHint::UPDATE_HINT_LINE, CxEditHint::CURSOR_HINT_RIGHT);
+    }
+
+    CxUTFString *line = _bufferLineList.at(cursor.row);
+
+    // Insert character
+    line->insert(cursor.col, ch);
+
+    // Recalculate tabs if any exist after insert point
+    line->recalculateTabWidths(tabSpaces);
+
+    cursor.col++;
+    lastRequestCol = cursor.col;
+
+    return CxEditHint(cursor.row, cursor.col, CxEditHint::UPDATE_HINT_LINE_PAST_POINT, CxEditHint::CURSOR_HINT_RIGHT);
 }
 
 
@@ -729,11 +767,15 @@ CxUTFEditBuffer::addReturn(void)
     // Insert new line after current
     _bufferLineList.insertAfter(cursor.row, newLine);
 
+    // Create hint BEFORE incrementing cursor - hint needs original row
+    // so formatMultipleEditorLines redraws the modified original line too
+    CxEditHint editHint(cursor.row, cursor.col, CxEditHint::UPDATE_HINT_SCREEN_PAST_POINT, CxEditHint::CURSOR_HINT_JUMP);
+
     cursor.row++;
     cursor.col = 0;
     lastRequestCol = 0;
 
-    return CxEditHint(cursor.row, cursor.col, CxEditHint::UPDATE_HINT_SCREEN_PAST_POINT, CxEditHint::CURSOR_HINT_JUMP);
+    return editHint;
 }
 
 

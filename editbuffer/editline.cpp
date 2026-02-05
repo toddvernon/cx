@@ -143,6 +143,19 @@ CxEditLine::cursorCol(void)
 
 
 //-------------------------------------------------------------------------------------------------
+// cursorRow
+//
+// returns the current cursor row in the buffer (always 0 for single-line edit)
+//
+//-------------------------------------------------------------------------------------------------
+unsigned long
+CxEditLine::cursorRow(void)
+{
+    return( _cursorRow );
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // positionString
 //
 // return the position in the buffer as a string.  Used for debug

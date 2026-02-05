@@ -150,10 +150,7 @@ class CxEditLine
     
     unsigned long _cursorCol;
     // current cursor col
-    
-    CxString _prompt;
-    // the non editable prompt text
-    
+
     unsigned _editWidth;
     
 };

@@ -245,7 +245,26 @@ cxUTF8CodepointDisplayWidth(unsigned int cp)
     if (cp >= 0x20000 && cp <= 0x2FFFD) return 2;
     if (cp >= 0x30000 && cp <= 0x3FFFD) return 2;
 
-    // Most emoji are double-width
+    // Symbol blocks commonly rendered as double-width emoji in terminals
+    if (cp >= 0x2600 && cp <= 0x26FF) return 2;   // Miscellaneous Symbols (⚠️, ☀️, ⚡, etc.)
+    if (cp >= 0x2700 && cp <= 0x27BF) return 2;   // Dingbats (✅, ✂️, ✈️, ✉️, etc.)
+    if (cp >= 0x2B00 && cp <= 0x2BFF) return 2;   // Miscellaneous Symbols and Arrows (⭐, ⬛, ⬜, etc.)
+
+    // Miscellaneous Technical - specific emoji codepoints (not the whole range)
+    if (cp == 0x231A || cp == 0x231B) return 2;   // ⌚ Watch, ⌛ Hourglass
+    if (cp >= 0x23E9 && cp <= 0x23F3) return 2;   // ⏩⏪⏫⏬⏭⏮⏯⏰⏱⏲⏳
+    if (cp >= 0x23F8 && cp <= 0x23FA) return 2;   // ⏸⏹⏺ Pause, Stop, Record
+
+    // Geometric Shapes - specific emoji codepoints (not the whole range)
+    if (cp == 0x25AA || cp == 0x25AB) return 2;   // ▪▫ Black/White Small Square
+    if (cp == 0x25B6) return 2;                   // ▶ Play button
+    if (cp == 0x25C0) return 2;                   // ◀ Reverse button
+    if (cp >= 0x25FB && cp <= 0x25FE) return 2;   // ◻◼◽◾ Medium squares
+
+    // Emoji ranges (comprehensive)
+    if (cp >= 0x1F000 && cp <= 0x1F0FF) return 2;  // Mahjong 🀀, Domino 🁣, Playing Cards 🂡
+    if (cp >= 0x1F100 && cp <= 0x1F1FF) return 2;  // Enclosed Alphanumerics 🅰🅱, Regional Indicators 🇺🇸
+    if (cp >= 0x1F200 && cp <= 0x1F2FF) return 2;  // Enclosed Ideographic Supplement 🈚🈲
     if (cp >= 0x1F300 && cp <= 0x1F9FF) return 2;  // Miscellaneous Symbols and Pictographs, Emoticons, etc.
     if (cp >= 0x1FA00 && cp <= 0x1FAFF) return 2;  // Chess, Extended-A
 

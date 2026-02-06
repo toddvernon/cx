@@ -207,6 +207,14 @@ all:
 		fi;\
 	fi
 
+# Regex Library (Linux and macOS only)
+
+	@if [ "$(UNAME_S)" = "darwin" ] || [ "$(UNAME_S)" = "linux" ]; then \
+		if [ -d "./regex" ]; then \
+			cd regex; make; \
+		fi;\
+	fi
+
 # Timezone Library (doesn't build on SunOS
 
 	@if [ "$(UNAME_S)" != "sunos" ]; then \
@@ -286,6 +294,10 @@ clean:
 
 	@if [ -d "./thread" ]; then \
 		cd thread; make clean; \
+	fi
+
+	@if [ -d "./regex" ]; then \
+		cd regex; make clean; \
 	fi
 
 	@if [ -d "./tz" ]; then \

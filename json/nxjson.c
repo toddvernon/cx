@@ -226,23 +226,11 @@ static char* parse_key(const char** key, char* p, nx_json_unicode_encoder encode
       return p-1;
     }
     else if (c=='/') {
-      if (*p=='/') { // line comment
-        char* ps=p-1;
-        p=strchr(p+1, '\n');
-        if (!p) {
-          NX_JSON_REPORT_ERROR("endless comment", ps);
-          return 0; // error
-        }
-        p++;
-      }
-      else if (*p=='*') { // block comment
-        p=skip_block_comment(p+1);
-        if (!p) return 0;
-      }
-      else {
-        NX_JSON_REPORT_ERROR("unexpected chars", p-1);
-        return 0; // error
-      }
+      // NOTE: Comment support disabled - JSON does not have comments.
+      // The original code treated // and /* as comments, but this breaks
+      // when JSON string values contain these sequences (e.g., C++ code).
+      NX_JSON_REPORT_ERROR("unexpected chars", p-1);
+      return 0; // error
     }
     else {
       NX_JSON_REPORT_ERROR("unexpected chars", p-1);
@@ -348,25 +336,10 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
         }
         NX_JSON_REPORT_ERROR("unexpected chars", p);
         return 0; // error
-      case '/': // comment
-        if (p[1]=='/') { // line comment
-          char* ps=p;
-          p=strchr(p+2, '\n');
-          if (!p) {
-            NX_JSON_REPORT_ERROR("endless comment", ps);
-            return 0; // error
-          }
-          p++;
-        }
-        else if (p[1]=='*') { // block comment
-          p=skip_block_comment(p+2);
-          if (!p) return 0;
-        }
-        else {
-          NX_JSON_REPORT_ERROR("unexpected chars", p);
-          return 0; // error
-        }
-        break;
+      case '/':
+        // NOTE: Comment support disabled - JSON does not have comments.
+        NX_JSON_REPORT_ERROR("unexpected chars", p);
+        return 0; // error
       default:
         NX_JSON_REPORT_ERROR("unexpected chars", p);
         return 0; // error

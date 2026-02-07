@@ -78,7 +78,33 @@ CxJSONString::get( void )
 /* virtual */
 void CxJSONString::print(std::ostream& str ) const
 {
-    str << "\"" << _string << "\"";                 
+    str << "\"";
+    // Escape special characters for valid JSON output
+    // Cast away const since charAt() isn't marked const but we only read
+    CxString& s = const_cast<CxString&>(_string);
+    for (unsigned long i = 0; i < s.length(); i++) {
+        char c = (char)s.charAt(i);
+        switch (c) {
+            case '"':  str << "\\\""; break;
+            case '\\': str << "\\\\"; break;
+            case '\n': str << "\\n"; break;
+            case '\r': str << "\\r"; break;
+            case '\t': str << "\\t"; break;
+            case '\b': str << "\\b"; break;
+            case '\f': str << "\\f"; break;
+            default:
+                if ((unsigned char)c < 0x20) {
+                    // Control character - output as \uXXXX
+                    char buf[8];
+                    sprintf(buf, "\\u%04x", (unsigned char)c);
+                    str << buf;
+                } else {
+                    str << c;
+                }
+                break;
+        }
+    }
+    str << "\"";
 }
 
 

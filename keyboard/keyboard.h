@@ -29,6 +29,8 @@
 
 #include <cx/base/string.h>
 #include <cx/base/hashmap.h>
+#include <cx/base/slist.h>
+#include <cx/functor/defercall.h>
 #include <cx/keyboard/keyaction.h>
 
 
@@ -61,6 +63,13 @@ class CxKeyboard
     
     static char readKey( CxKeyboard::BLOCKING blocking);
         // read a key
+
+    static void addIdleCallback( CxFunctor *callback );
+        // add a callback to be called during keyboard idle (every ~100ms when waiting for input)
+
+    static CxSList< CxFunctor * > idleCallbackQueue;
+        // queue of callbacks to call during idle
+
   private:
     
     void setupTerminalFeatures(void);

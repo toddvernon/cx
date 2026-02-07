@@ -61,6 +61,22 @@
  SP     032        20          Space
  */
 
+// Static member definition for idle callbacks
+CxSList< CxFunctor * > CxKeyboard::idleCallbackQueue;
+
+
+//-------------------------------------------------------------------------
+// CxKeyboard::addIdleCallback
+//
+// Add a callback to be called during keyboard idle (~100ms intervals)
+//-------------------------------------------------------------------------
+void
+CxKeyboard::addIdleCallback( CxFunctor *callback )
+{
+    idleCallbackQueue.append( callback );
+}
+
+
 //-------------------------------------------------------------------------
 // CxKeyboard::CxKeyboard
 //
@@ -453,20 +469,28 @@ CxKeyboard::readKey(CxKeyboard::BLOCKING mode = WAIT)
     char c;
   
     if (mode == CxKeyboard::WAIT) {
-        
+
         while (!done) {
 
             nread = read(STDIN_FILENO, &c, 1);
-            
+
             if (nread == -1) {
-                
+
                 if (errno != EINTR) {
                     printf("error in call to read in WAIT mode\n");
                     printf("Oh dear, something went wrong with read()! %d, %s\n", errno, strerror(errno));
                     exit(0);
                 }
             }
-            
+
+            if (nread == 0) {
+                // No key pressed - call idle callbacks (fires every ~100ms)
+                for (int i = 0; i < idleCallbackQueue.entries(); i++) {
+                    CxFunctor *f = idleCallbackQueue.at(i);
+                    (*f)();
+                }
+            }
+
             if (nread != 0) {
                 done = true;
             }

@@ -1802,6 +1802,52 @@ CxEditBuffer::detab( void )
 
 
 //-------------------------------------------------------------------------------------------------
+// CxEditBuffer::trimTrailing
+//
+// Remove trailing whitespace (spaces, tabs, and tab extensions) from all lines
+// Returns the total number of characters removed
+//
+//-------------------------------------------------------------------------------------------------
+int
+CxEditBuffer::trimTrailing( void )
+{
+    if (readOnly) return 0;
+
+    int totalRemoved = 0;
+
+    for (unsigned long row = 0; row < _bufferLineList.entries(); row++) {
+        CxString *line = _bufferLineList.at(row);
+        if (line == NULL) continue;
+
+        // Find last non-whitespace character
+        int lastNonSpace = -1;
+        for (int col = 0; col < (int)line->length(); col++) {
+            char c = line->charAt(col);
+            // Skip spaces, tabs, and tab extensions (0xFF)
+            if (c != ' ' && c != '\t' && (unsigned char)c != 0xFF) {
+                lastNonSpace = col;
+            }
+        }
+
+        // Remove trailing whitespace
+        int charsToRemove = (int)line->length() - (lastNonSpace + 1);
+        if (charsToRemove > 0) {
+            CxString trimmed = line->subString(0, lastNonSpace + 1);
+            CxString *oldLine = _bufferLineList.replaceAt(row, new CxString(trimmed));
+            delete oldLine;
+            totalRemoved += charsToRemove;
+        }
+    }
+
+    if (totalRemoved > 0) {
+        touched = TRUE;
+    }
+
+    return totalRemoved;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CxEditBuffer::entab
 //
 // Convert leading spaces to tabs (internal format with 0xFF extensions)

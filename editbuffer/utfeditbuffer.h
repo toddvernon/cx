@@ -209,6 +209,9 @@ class CxUTFEditBuffer
     void detab(void);
     // convert tabs to spaces
 
+    int trimTrailing(void);
+    // remove trailing whitespace from all lines, returns count of characters removed
+
     //----- State -----
 
     int isReadOnly(void);

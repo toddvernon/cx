@@ -1346,6 +1346,49 @@ CxUTFEditBuffer::detab(void)
 
 
 //-------------------------------------------------------------------------------------------------
+// CxUTFEditBuffer::trimTrailing
+//
+// Remove trailing whitespace (spaces and tabs) from all lines
+// Returns the total number of characters removed
+//
+//-------------------------------------------------------------------------------------------------
+int
+CxUTFEditBuffer::trimTrailing(void)
+{
+    int totalRemoved = 0;
+
+    for (unsigned long row = 0; row < _bufferLineList.entries(); row++) {
+        CxUTFString *line = _bufferLineList.at(row);
+
+        // Find last non-whitespace character
+        int lastNonSpace = -1;
+        for (int i = 0; i < (int)line->charCount(); i++) {
+            const CxUTFCharacter *ch = line->at(i);
+            if (ch->isASCII()) {
+                char c = ch->bytes()[0];
+                if (c != ' ' && c != '\t') {
+                    lastNonSpace = i;
+                }
+            } else {
+                // Non-ASCII characters are not whitespace
+                lastNonSpace = i;
+            }
+        }
+
+        // Remove trailing whitespace
+        int charsToRemove = (int)line->charCount() - (lastNonSpace + 1);
+        if (charsToRemove > 0) {
+            line->remove(lastNonSpace + 1, charsToRemove);
+            totalRemoved += charsToRemove;
+            touched = TRUE;
+        }
+    }
+
+    return totalRemoved;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // State accessors
 //-------------------------------------------------------------------------------------------------
 

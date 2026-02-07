@@ -204,6 +204,10 @@ class CxEditBuffer
     detab();
     // convert tabs to spaces
 
+    int
+    trimTrailing();
+    // remove trailing whitespace from all lines, returns count of characters removed
+
     CxEditHint
     addCharacter( CxString c);
     // adds the first character of the string to the buffer at the cursor position.

@@ -192,6 +192,12 @@ all:
 		cd commandcompleter; make; \
 	fi
 
+# Process Library
+
+	@if [ -d "./process" ]; then \
+		cd process; make; \
+	fi
+
 # Thread library (doesn't build on SunOS )
 
 	@if [ "$(UNAME_S)" != "sunos" ]; then \
@@ -290,6 +296,10 @@ clean:
 
 	@if [ -d "./commandcompleter" ]; then \
 		cd commandcompleter; make clean; \
+	fi
+
+	@if [ -d "./process" ]; then \
+		cd process; make clean; \
 	fi
 
 	@if [ -d "./thread" ]; then \

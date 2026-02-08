@@ -198,6 +198,12 @@ all:
 		cd process; make; \
 	fi
 
+# Build Output Library
+
+	@if [ -d "./buildoutput" ]; then \
+		cd buildoutput; make; \
+	fi
+
 # Thread library (doesn't build on SunOS )
 
 	@if [ "$(UNAME_S)" != "sunos" ]; then \
@@ -300,6 +306,10 @@ clean:
 
 	@if [ -d "./process" ]; then \
 		cd process; make clean; \
+	fi
+
+	@if [ -d "./buildoutput" ]; then \
+		cd buildoutput; make clean; \
 	fi
 
 	@if [ -d "./thread" ]; then \

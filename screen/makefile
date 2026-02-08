@@ -96,7 +96,8 @@ LIB_CX_SCREEN_OBJECTS=\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/rgbcolor.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/ansicolor.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/xterm256color.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/cursor.o
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/cursor.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/boxframe.o
 
 	
 
@@ -150,6 +151,7 @@ $(LIB_CX_PLATFORM_OBJECT_DIR)/ansicolor.o	: ansicolor.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/rgbcolor.o	: rgbcolor.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/xterm256color.o	: xterm256color.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/cursor.o	: cursor.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/boxframe.o	: boxframe.cpp
 
 
 $(LIB_CX_SCREEN_OBJECTS):

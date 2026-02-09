@@ -24,7 +24,8 @@ enum BuildLineType {
     BUILD_LINE_ERROR,      // file:line: error:
     BUILD_LINE_WARNING,    // file:line: warning:
     BUILD_LINE_NOTE,       // file:line: note:
-    BUILD_LINE_COMMAND     // gcc, g++, clang invocations
+    BUILD_LINE_COMMAND,    // gcc, g++, clang invocations
+    BUILD_LINE_SEPARATOR   // "=== Building cx ===" header for build-all
 };
 
 
@@ -87,6 +88,13 @@ public:
     int start(CxString command);
 
     //---------------------------------------------------------------------------------------------
+    // Start a new build command without clearing previous output (for build-all).
+    // Keeps existing lines and error/warning counts. Resets pipe state only.
+    // Returns 0 on success, -1 on failure to start
+    //---------------------------------------------------------------------------------------------
+    int startNext(CxString command);
+
+    //---------------------------------------------------------------------------------------------
     // Poll for new output (non-blocking)
     // Returns 1 if new lines were read, 0 otherwise
     // Should be called periodically (e.g., from keyboard idle callback)
@@ -137,6 +145,18 @@ public:
     //---------------------------------------------------------------------------------------------
     void clear(void);
 
+    //---------------------------------------------------------------------------------------------
+    // Build context - tracks which directory/subproject the build is for
+    //---------------------------------------------------------------------------------------------
+    void setBuildContext(CxString directory, CxString subprojectName);
+    CxString getBuildDirectory(void);
+    CxString getSubprojectName(void);
+
+    //---------------------------------------------------------------------------------------------
+    // Append a separator line (e.g., "=== Building cx ===") for build-all
+    //---------------------------------------------------------------------------------------------
+    void appendSeparator(CxString text);
+
 private:
     //---------------------------------------------------------------------------------------------
     // Parse a line and classify it (allocates new BuildOutputLine)
@@ -153,6 +173,10 @@ private:
     int _exitCode;
     int _errorCount;
     int _warningCount;
+
+    // Build context
+    CxString _buildDirectory;
+    CxString _subprojectName;
 
     // List of parsed output lines (stored as pointers for objectAt compatibility)
     CxSList<BuildOutputLine*> _lines;

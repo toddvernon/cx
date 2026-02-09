@@ -112,6 +112,9 @@ class CxString
 	CxString& operator+=( const CxString& sr_ );
 	// append CxString to self
 
+	CxString& operator+=( const char cc_ );
+	// append char to self
+
     int operator==(const CxString& sr_ ) const;
 	// compare CxString to self
 

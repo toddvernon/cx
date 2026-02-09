@@ -97,6 +97,57 @@ BuildOutput::start(CxString command)
 
 
 //-------------------------------------------------------------------------------------------------
+// startNext
+//
+// Start a new build command without clearing previous output.
+// Used for build-all to accumulate output from multiple subprojects.
+// Keeps existing lines, error/warning counts. Resets pipe state only.
+//-------------------------------------------------------------------------------------------------
+int
+BuildOutput::startNext(CxString command)
+{
+    if (command.length() == 0) {
+        return -1;
+    }
+
+    _command = command;
+    _exitCode = -1;
+    _partialLine = "";
+
+    // Redirect stderr to stdout so we capture both
+    CxString fullCommand = command;
+    fullCommand += " 2>&1";
+
+    // Open pipe to command
+    _pipe = popen(fullCommand.data(), "r");
+    if (_pipe == NULL) {
+        _state = BUILD_ERROR;
+        _exitCode = -1;
+        return -1;
+    }
+
+    // Get file descriptor
+    _fd = fileno(_pipe);
+    if (_fd < 0) {
+        pclose(_pipe);
+        _pipe = NULL;
+        _state = BUILD_ERROR;
+        _exitCode = -1;
+        return -1;
+    }
+
+    // Set non-blocking mode
+    int flags = fcntl(_fd, F_GETFL, 0);
+    if (flags != -1) {
+        fcntl(_fd, F_SETFL, flags | O_NONBLOCK);
+    }
+
+    _state = BUILD_RUNNING;
+    return 0;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // poll
 //
 // Non-blocking read from the build process.
@@ -408,7 +459,60 @@ BuildOutput::clear(void)
     _errorCount = 0;
     _warningCount = 0;
     _partialLine = "";
+    _buildDirectory = "";
+    _subprojectName = "";
 
     // Delete all allocated lines and clear the list
     _lines.clearAndDelete();
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// setBuildContext
+//
+// Set the build directory and subproject name for path resolution and UI display.
+//-------------------------------------------------------------------------------------------------
+void
+BuildOutput::setBuildContext(CxString directory, CxString subprojectName)
+{
+    _buildDirectory = directory;
+    _subprojectName = subprojectName;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// getBuildDirectory
+//-------------------------------------------------------------------------------------------------
+CxString
+BuildOutput::getBuildDirectory(void)
+{
+    return _buildDirectory;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// getSubprojectName
+//-------------------------------------------------------------------------------------------------
+CxString
+BuildOutput::getSubprojectName(void)
+{
+    return _subprojectName;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// appendSeparator
+//
+// Append a separator line to the output (e.g., "=== Building cx ===").
+// Used by build-all to visually separate output from different subprojects.
+//-------------------------------------------------------------------------------------------------
+void
+BuildOutput::appendSeparator(CxString text)
+{
+    BuildOutputLine *line = new BuildOutputLine();
+    line->type = BUILD_LINE_SEPARATOR;
+    line->text = text;
+    line->line = 0;
+    line->column = 0;
+    _lines.append(line);
 }

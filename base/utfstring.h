@@ -67,6 +67,9 @@ class CxUTFString
     void fromCxString(const CxString &s, int tabWidth);
     // Parse a CxString (convenience wrapper for fromBytes).
 
+    void fromUTF8Bytes(const char *utf8bytes, int len);
+    // Parse raw UTF-8 bytes. Tabs stored as width-1 (no tab expansion).
+
     CxString toBytes(void) const;
     // Convert back to raw UTF-8 bytes.
     // Tabs are stored as single '\t' characters (no expansion).

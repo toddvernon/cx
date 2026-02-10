@@ -237,6 +237,74 @@ CxUTFString::fromCxString(const CxString &s, int tabWidth)
 
 
 //-------------------------------------------------------------------------------------------------
+// CxUTFString::fromUTF8Bytes
+//
+// Parse raw UTF-8 bytes into an array of CxUTFCharacter.
+// Tabs are stored with display width 1 (no tab-stop expansion).
+// Newlines and carriage returns are NOT consumed - they are line delimiters
+// handled by the caller.
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxUTFString::fromUTF8Bytes(const char *utf8bytes, int len)
+{
+    clear();
+
+    if (utf8bytes == 0 || len <= 0) {
+        return;
+    }
+
+    // First pass: count characters to pre-allocate
+    const char *p = utf8bytes;
+    const char *end = utf8bytes + len;
+    int count = 0;
+
+    while (p < end && *p != 0) {
+        if (*p == '\t') {
+            count++;
+            p++;
+        } else if (*p == '\n' || *p == '\r') {
+            count++;
+            p++;
+        } else {
+            CxUTFCharacter temp;
+            int consumed = temp.fromUTF8(p);
+            if (consumed == 0) break;
+            count++;
+            p += consumed;
+        }
+    }
+
+    if (count == 0) {
+        return;
+    }
+
+    // Allocate space
+    grow(count);
+
+    // Second pass: parse characters
+    p = utf8bytes;
+
+    while (p < end && *p != 0 && _length < count) {
+        if (*p == '\t') {
+            _chars[_length] = CxUTFCharacter::makeTab(1);
+            _length++;
+            p++;
+        } else if (*p == '\n' || *p == '\r') {
+            _chars[_length] = CxUTFCharacter::fromASCII(*p);
+            _length++;
+            p++;
+        } else {
+            int consumed = _chars[_length].fromUTF8(p);
+            if (consumed == 0) break;
+            _length++;
+            p += consumed;
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CxUTFString::toBytes
 //
 // Convert back to raw UTF-8 bytes.

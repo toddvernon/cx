@@ -178,11 +178,17 @@ class CxUTFEditBuffer
     void insertTextAtCursor(CxString text);
     // insert text at cursor position
 
+    void insertTextAtCursor(CxUTFString &text);
+    // insert pre-parsed UTF-8 text at cursor position
+
     void insertCommentBlock(unsigned long lastCol);
     // insert a C++ comment block
 
     void pasteFromCutBuffer(CxString text);
     // paste text from cut buffer
+
+    void pasteFromCutBuffer(CxUTFString &text);
+    // paste pre-parsed UTF-8 text from cut buffer
 
     CxString flattenBuffer(void);
     // flatten buffer to a single string with newlines

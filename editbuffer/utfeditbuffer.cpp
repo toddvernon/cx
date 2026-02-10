@@ -1109,11 +1109,70 @@ CxUTFEditBuffer::insertTextAtCursor(CxString text)
 
 
 //-------------------------------------------------------------------------------------------------
+// CxUTFEditBuffer::insertTextAtCursor (CxUTFString version)
+//
+// Insert pre-parsed UTF-8 text at cursor. Characters are already parsed into
+// CxUTFCharacter objects so no re-parsing is needed.
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxUTFEditBuffer::insertTextAtCursor(CxUTFString &text)
+{
+    if (readOnly) return;
+
+    for (int i = 0; i < text.charCount(); i++) {
+        const CxUTFCharacter *ch = text.at(i);
+
+        if (ch->isTab()) {
+            addTab();
+        } else if (ch->isASCII()) {
+            char c = (char)ch->bytes()[0];
+            if (c == '\n' || c == '\r') {
+                addReturn();
+            } else {
+                addCharacter(c);
+            }
+        } else {
+            // Multi-byte UTF-8 character - insert directly
+            touched = TRUE;
+
+            if (_bufferLineList.entries() == 0) {
+                CxUTFString newLine;
+                newLine.append(*ch);
+                _bufferLineList.append(newLine);
+                cursor.col = 1;
+            } else {
+                CxUTFString *line = _bufferLineList.at(cursor.row);
+                line->insert(cursor.col, *ch);
+                line->recalculateTabWidths(tabSpaces);
+                cursor.col++;
+            }
+            lastRequestCol = cursor.col;
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CxUTFEditBuffer::pasteFromCutBuffer
 //
 //-------------------------------------------------------------------------------------------------
 void
 CxUTFEditBuffer::pasteFromCutBuffer(CxString text)
+{
+    // Reset kill accumulation - any non-kill action breaks the sequence
+    _lastWasKill = false;
+
+    insertTextAtCursor(text);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxUTFEditBuffer::pasteFromCutBuffer (CxUTFString version)
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxUTFEditBuffer::pasteFromCutBuffer(CxUTFString &text)
 {
     // Reset kill accumulation - any non-kill action breaks the sequence
     _lastWasKill = false;

@@ -231,7 +231,18 @@ CxString::insert( char c, int n)
 CxString&
 CxString::operator+=( const CxString& sr_ )
 {
-	append( sr_ );	
+	append( sr_ );
+	return( *this );
+}
+
+//-------------------------------------------------------------------------
+// CxString::operator+=
+//
+//-------------------------------------------------------------------------
+CxString&
+CxString::operator+=( const char cc_ )
+{
+	append( cc_ );
 	return( *this );
 }
 

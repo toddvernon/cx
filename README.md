@@ -12,11 +12,11 @@ This means cx compiles on:
 - Solaris and SunOS from the 1990s
 - NetBSD on whatever hardware you've got
 
-No Boost. No STL. No autoconf. No cmake. Just `make`.
+No Boost. No external dependencies. No autoconf. No cmake. Just `make`.
 
 ## Design Philosophy
 
-cx is built for portability without compromise. The codebase avoids templates, exceptions, and modern C++ features that break on older compilers. Every module compiles cleanly on systems from 1993 to today.
+cx is built for portability without compromise. The codebase uses only minimal internal templates for containers, avoids exceptions and modern C++ features that break on older compilers. Every module compiles cleanly on systems from 1993 to today.
 
 But portability doesn't mean primitive. On modern systems, cx provides:
 - Full UTF-8 string handling

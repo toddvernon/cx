@@ -334,8 +334,10 @@ clean:
 
 archive:
 	@echo "Creating cxlibs_unix.tar..."
+	@echo "  (extracts to cx/ when untarred from parent directory)"
 	@test -d ../ARCHIVE || mkdir ../ARCHIVE
 	@tar cvf ../ARCHIVE/cxlibs_unix.tar \
+		--transform 's,^\./,cx/,' \
 		--exclude='*.o' \
 		--exclude='*.a' \
 		--exclude='.git' \

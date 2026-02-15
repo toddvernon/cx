@@ -1,4 +1,15 @@
-
+//-------------------------------------------------------------------------------------------------
+//
+//  vardb.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  vardb.h
+//
+//-------------------------------------------------------------------------------------------------
 
 #ifndef __vardb_h__
 #define __vardb_h__

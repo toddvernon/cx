@@ -1,3 +1,15 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  vardb.cpp
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  vardb.cpp
+//
+//-------------------------------------------------------------------------------------------------
 
 #include <math.h>
 
@@ -177,6 +189,3 @@ CxExpressionIntrinsicVariableDatabase::VariableEvaluate( CxString name, double *
 
     return( VARIABLE_UNDEFINED );
 }
-
-
-

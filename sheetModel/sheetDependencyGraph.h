@@ -1,13 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
 //  sheetDependencyGraph.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  CxSheetDependencyGraph Class
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  (c) Copyright 2026 T.Vernon
-//  ALL RIGHTS RESERVED
 //
 //-------------------------------------------------------------------------------------------------
 

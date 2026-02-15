@@ -1,19 +1,15 @@
+//-------------------------------------------------------------------------------------------------
 //
-// Copyright (c) 2001-2003 International Computer Science Institute
+//  timeval.cpp
+//  cx
 //
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software")
-// to deal in the Software without restriction, subject to the conditions
-// listed in the XORP LICENSE file. These conditions include: you must
-// preserve this copyright notice, and you cannot mention the copyright
-// holders in advertising related to the Software without their permission.
-// The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
-// notice is a summary of the XORP LICENSE file; the license in that file is
-// legally binding.
-
-// $XORP: xorp/libxorp/timeval.hh,v 1.15 2003/09/17 22:33:13 atanu Exp $
-
-
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  copy of this software and associated documentation files (the "Software")
+//
+//-------------------------------------------------------------------------------------------------
 
 #include <cx/base/timeval.h>
 
@@ -235,8 +231,3 @@ positive_random_uniform(const CxTimeVal& center, const double& factor)
 
     return random_uniform(0,0);
 }
-
-
-
-
-

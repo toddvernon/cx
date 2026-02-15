@@ -1,3 +1,16 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  threadpool.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  threadpool.h
+//
+//-------------------------------------------------------------------------------------------------
+
 #ifndef _CxThreadPool_h_
 #define _CxThreadPool_h_
 

@@ -1,3 +1,16 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  tokenizer.cpp
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  tokenizer.cpp
+//
+//-------------------------------------------------------------------------------------------------
+
 #include <stdio.h>
 #include <iostream>
 #include <fcntl.h>
@@ -1269,4 +1282,3 @@ ERROR_DONE:
     return( SYNTAX_ERROR );
 
 }
-

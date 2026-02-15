@@ -1,33 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
 //  utfeditbuffer.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  CxUTFEditBuffer Class
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  (c) Copyright 2025 T.Vernon
-//  ALL RIGHTS RESERVED
-//
-//  The software and information contained herein are proprietary to, and
-//  comprise valuable trade secrets of, T.Vernon , which
-//  intends to preserve as trade secrets such software and information.
-//  This software is furnished pursuant to a written license agreement and
-//  may be used, copied, transmitted, and stored only in accordance with
-//  the terms of such license and with the inclusion of the above copyright
-//  notice.  This software and information or any other copies thereof may
-//  not be provided or otherwise made available to any other person.
-//
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  CxUTFEditBuffer is a UTF-8 aware edit buffer that parallels CxEditBuffer.
-//  It uses CxUTFString for line storage, which means:
-//    - cursor.col is a CHARACTER index, not a byte offset
-//    - No tab extension byte handling needed - tabs are single characters
-//    - Multi-byte UTF-8 characters work correctly for navigation
-//
-//  The API matches CxEditBuffer so they can be swapped via typedef.
 //
 //-------------------------------------------------------------------------------------------------
 

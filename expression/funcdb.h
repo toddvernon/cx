@@ -1,3 +1,15 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  funcdb.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  funcdb.h
+//
+//-------------------------------------------------------------------------------------------------
 
 #ifndef __funcdb_h__
 #define __funcdb_h__

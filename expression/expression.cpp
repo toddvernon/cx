@@ -1,8 +1,13 @@
 //-------------------------------------------------------------------------------------------------
-// CxExpression Class
 //
-// Parse a mathmatial expression into a token list then evaluate returning a double as the
-// answer
+//  expression.cpp
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  answer
 //
 //-------------------------------------------------------------------------------------------------
 
@@ -2685,6 +2690,3 @@ CxExpression::debugPrintf( const char * format, ... )
 	printf("%s", buffer);
 #endif
 }
-
-
-

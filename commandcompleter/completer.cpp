@@ -1,11 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
 //  completer.cpp
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  Hierarchical command completion with literal prefix matching.
-//
-//  Created by Todd Vernon on 2/4/26.
-//  Copyright (c) 2026 Todd Vernon. All rights reserved.
 //
 //-------------------------------------------------------------------------------------------------
 

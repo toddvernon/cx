@@ -1,20 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
 //  completer.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  Hierarchical command completion with literal prefix matching.
-//
-//  This module provides a tree-based completion system where each level can have
-//  candidates that either complete to a value or transition to a child completer.
-//
-//  Features:
-//  - Literal prefix matching: "goto" matches "goto-line"
-//  - Auto-completion to common prefix when all matches share one
-//  - Support for filtered display names (show "horizontal" instead of "box-horizontal")
-//  - Child completers for multi-level command sequences
-//
-//  Created by Todd Vernon on 2/4/26.
-//  Copyright (c) 2026 Todd Vernon. All rights reserved.
 //
 //-------------------------------------------------------------------------------------------------
 

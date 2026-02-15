@@ -1,35 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
 //  utfstring.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  CxUTFString Class
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  (c) Copyright 2025 T.Vernon
-//  ALL RIGHTS RESERVED
-//
-//  The software and information contained herein are proprietary to, and
-//  comprise valuable trade secrets of, T.Vernon , which
-//  intends to preserve as trade secrets such software and information.
-//  This software is furnished pursuant to a written license agreement and
-//  may be used, copied, transmitted, and stored only in accordance with
-//  the terms of such license and with the inclusion of the above copyright
-//  notice.  This software and information or any other copies thereof may
-//  not be provided or otherwise made available to any other person.
-//
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  CxUTFString represents a line of text as an array of CxUTFCharacter objects.
-//  Each element in the array is one grapheme cluster (what users perceive as a character).
-//
-//  Key features:
-//    - Character-indexed access (not byte-indexed)
-//    - Cursor position = array index
-//    - Handles tabs with variable display width
-//    - Supports insert, remove, substring operations
-//    - Converts to/from raw UTF-8 bytes for file I/O
 //
 //-------------------------------------------------------------------------------------------------
 

@@ -1,9 +1,15 @@
+//-------------------------------------------------------------------------------------------------
 //
-//  updatehints.h
-//  EditBuffer
+//  edithint.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  Created by Todd Vernon on 3/12/22.
 //
+//-------------------------------------------------------------------------------------------------
 
 #ifndef updatehints_h
 #define updatehints_h

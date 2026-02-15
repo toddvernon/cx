@@ -1,3 +1,16 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  mutex.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  mutex.h
+//
+//-------------------------------------------------------------------------------------------------
+
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>

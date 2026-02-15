@@ -1,80 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
-// CxEditLine
+//  editline.cpp
+//  cx
 //
-// CxEditLine Class
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
-//-------------------------------------------------------------------------------------------------
-//
-// (c) Copyright 2022 T.Vernon
-// ALL RIGHTS RESERVED
-//
-// The software and information contained herein are proprietary to, and
-// comprise valuable trade secrets of, T.Vernon , which
-// intends to preserve as trade secrets such software and information.
-// This software is furnished pursuant to a written license agreement and
-// may be used, copied, transmitted, and stored only in accordance with
-// the terms of such license and with the inclusion of the above copyright
-// notice.  This software and information or any other copies thereof may
-// not be provided or otherwise made available to any other person.
-//
-//
-//-------------------------------------------------------------------------------------------------
-//
-// This class handles all the virtual buffer editing functions.  A buffer is
-// a series of line objects.  Each line object is a line of text and a line
-// of corrisponding character attrubutes for each character in the line.
-//
-// Editbuffers never have line termination withing the buffer.  Rather the fact that it is
-// and individual line in the buffer indicates it is a logical line.  When buffers are read in
-// or written out the line termination is removed or applied respectively.
-//
-// Edit buffers have a virtual cursor that is always located somewhere.  The cursor moves
-// according to expected rules of an editor.  The cursor advances as text is typed.  The
-// cursor moves backwards if backspace is typed.  The arrow keys move through the buffer as
-// expected.
-//
-// Code can move the virtual cursor to any location in the buffer by specifying a row, col
-// combination that is zero based.  If a location is requested that is not possible invalid
-// location is indicated by the return values.  The cursor will never leave the edit area and
-// is always located a valid position in the buffer.
-//
-// Any virtual cursor position in the buffer is defined by one of these states.
-//
-// 1) POS_VALID_INITIAL     - position (0,0) in the buffer that has no text or
-//                            backing store allocated.  After text is entered the buffer
-//                            never be in this state again.
-//
-// 2) POS_VALID_INSERT      - the cursor is currently over a character in the buffer and any
-//                            character added will inserted at this location.
-//
-// 3) POS_VALID_APPEND_COL  - the last position of a text line that cursor is on.  Any character
-//                            added will result in an append action as this position is one
-//                            col past the backing store of the line.
-// ----
-//
-// 4) POS_INVALID_ROW       - the cursor would be at an invalid row if positioned.  The
-//                            edit buffer should never be in this state using normal editing
-//                            keys.  This is returned from code that is trying to incorrectly
-//                            address a location that does not exist.  The cursor will not
-//                            be placed at this location.
-//
-// 5) POS_INVALID_COL       - the cursor would be at an invalid col if positioned.  The
-//                            edit buffer should never be in this state using normal editing
-//                            keys.  This is returned from code that is trying to incorrectly
-//                            address a location that does not exist.  The cursor will not
-//                            be placed at this location.
-//
-//-------------------------------------------------------------------------------------------------
-//
-// Tabs are represented in the buffer as a tab character followed by n tab extension
-// characters that are decimal 255 (octal 377).  Tabs align on n character columns for instance
-// 4, 8 etc.  The number of extension characters are dependant on the column the tab resides
-// on.  For instance in the string "A/tboy" the tab characters resides on column 1.  In the buffer
-// this will be represented as [A][/t][tab-ext][tab-ext][b][o][y].  The number of tab extension
-// characters are the number of characters it takes to get the string to the next character
-// multiple of the tab.  These characters are used by the code for correct cursor navigation
-// and removed before buffer is written to disk.
+//  CxEditLine Class
 //
 //-------------------------------------------------------------------------------------------------
 
@@ -542,5 +475,3 @@ CxEditLine::addCharacter(char c)
     
     return( editHint );
 }
-
-

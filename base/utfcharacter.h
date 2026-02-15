@@ -1,34 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
 //  utfcharacter.h
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  CxUTFCharacter Class
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  (c) Copyright 2025 T.Vernon
-//  ALL RIGHTS RESERVED
-//
-//  The software and information contained herein are proprietary to, and
-//  comprise valuable trade secrets of, T.Vernon , which
-//  intends to preserve as trade secrets such software and information.
-//  This software is furnished pursuant to a written license agreement and
-//  may be used, copied, transmitted, and stored only in accordance with
-//  the terms of such license and with the inclusion of the above copyright
-//  notice.  This software and information or any other copies thereof may
-//  not be provided or otherwise made available to any other person.
-//
-//
-//-------------------------------------------------------------------------------------------------
-//
-//  CxUTFCharacter represents a single grapheme cluster - what a user perceives as one character.
-//  This may contain:
-//    - A single ASCII byte (most common case)
-//    - A multi-byte UTF-8 sequence (2-4 bytes)
-//    - A base character plus one or more combining marks
-//    - A tab character with associated display width
-//
-//  The class handles UTF-8 decoding, combining mark detection, and display width calculation.
 //
 //-------------------------------------------------------------------------------------------------
 

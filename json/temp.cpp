@@ -1,10 +1,16 @@
-
-
-//-------------------------------------------------------------------------
-// CxString::operator<<
+//-------------------------------------------------------------------------------------------------
 //
-//-------------------------------------------------------------------------
-/* static */ 
+//  temp.cpp
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
+//
+//  temp.cpp
+//
+//-------------------------------------------------------------------------------------------------
+
 void CxJSONObject::walktree(const nx_json* json, CxJSONBase *cxjObject ) 
 {
 	if (!json) {
@@ -207,8 +213,3 @@ void CxJSONObject::walktree(const nx_json* json, CxJSONBase *cxjObject )
       		break;
   	}
 }
-
-
-
-
-

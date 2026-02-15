@@ -1,9 +1,15 @@
+//-------------------------------------------------------------------------------------------------
 //
 //  stringutils.cpp
-//  EditBuffer
+//  cx
+//
+//  Copyright 2022-2025 Todd Vernon. All rights reserved.
+//  Licensed under the Apache License, Version 2.0
+//  See LICENSE file for details.
 //
 //  Created by Todd Vernon on 3/22/22.
 //
+//-------------------------------------------------------------------------------------------------
 
 #include "stringutils.h"
 

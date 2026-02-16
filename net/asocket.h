@@ -12,6 +12,14 @@
 //-------------------------------------------------------------------------------------------------
 
 #include <stdio.h>
+
+//-------------------------------------------------------------------------
+// SunOS 4.x system headers don't have C++ extern "C" guards
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+extern "C" {
+#endif
+
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -21,6 +29,10 @@
 #include <sys/mman.h>
 #include <signal.h>
 #include <fcntl.h>
+
+#if defined(_SUNOS_)
+}
+#endif
 
 #include <iostream>
 

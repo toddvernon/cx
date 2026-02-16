@@ -13,6 +13,7 @@
 
 #include <cx/base/string.h>
 #include <cx/net/inaddri.h>
+#include <cx/net/socketi.h>
 
 
 

@@ -50,6 +50,7 @@ CxTime::CxTime( time_t s_ )
 CxTime::CxTime( int year, int month, int day, int hour, int min, int sec )
 {
     struct tm theTime;
+    memset(&theTime, 0, sizeof(struct tm));
 
     theTime.tm_sec  = sec;           // 0 - 59
     theTime.tm_min  = min;           // 0 - 59
@@ -57,6 +58,7 @@ CxTime::CxTime( int year, int month, int day, int hour, int min, int sec )
     theTime.tm_mday = day;           // 1 - 31
     theTime.tm_mon  = month - 1;     // 1 - 12
     theTime.tm_year = year  - 1900;  // 1900 - 2038
+    theTime.tm_isdst = -1;           // let mktime determine DST
 
     _epochSeconds = mktime( &theTime );
 }

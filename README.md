@@ -57,6 +57,71 @@ make
 
 Libraries are built to `../lib/<platform>_<arch>/` (e.g., `lib/darwin_arm64/`).
 
+### Building on Vintage Unix (No Git)
+
+For platforms without git (SunOS, IRIX, older Solaris, etc.), build archives on a modern machine first:
+
+**Step 1: Create archives on a machine with git**
+
+```bash
+# Clone all repos on Mac or Linux
+mkdir -p ~/dev/cx/cx_apps
+cd ~/dev/cx
+
+git clone https://github.com/toddvernon/cx.git
+git clone https://github.com/toddvernon/cx_tests.git
+git clone https://github.com/toddvernon/cm.git cx_apps/cm
+
+# Create tar archives
+cd cx && make archive
+cd ../cx_tests && make archive
+cd ../cx_apps/cm && make archive
+```
+
+Archives are created in `~/dev/cx/ARCHIVE/`:
+- `cxlibs_unix.tar` — cx library source
+- `cxtest_unix.tar` — test suite
+- `cm_unix.tar` — CMacs editor
+
+**Step 2: Transfer to target machine**
+
+```bash
+# FTP or copy the archives to the target
+ftp target-machine
+> cd /home/user
+> mkdir cx
+> cd cx
+> put ARCHIVE/cxlibs_unix.tar
+> put ARCHIVE/cxtest_unix.tar
+> put ARCHIVE/cm_unix.tar
+> quit
+```
+
+**Step 3: Extract and build on target**
+
+```bash
+# On the target machine
+cd ~/cx
+
+# Extract each archive (they include path prefixes)
+tar xvf cxlibs_unix.tar      # extracts to cx/
+tar xvf cxtest_unix.tar      # extracts to cx_tests/
+tar xvf cm_unix.tar          # extracts to cx_apps/cm/
+
+# Create lib directory
+mkdir lib
+
+# Build in order
+cd cx && make
+cd ../cx_tests && make
+cd ../cx_apps/cm && make
+
+# Run tests
+cd ../cx_tests && make test
+```
+
+See `PLATFORM_SUPPORT.md` for details on which libraries and tests are available per platform.
+
 ### If Something Goes Wrong
 
 - **Vintage Unix?** You'll need GNU Make and GCC 2.8.1 or later. The makefile uses GNU Make syntax (`ifeq`, `$(shell)`, `:=`). Both are available at [gnu.org](https://www.gnu.org/software/).

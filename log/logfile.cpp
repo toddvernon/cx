@@ -16,6 +16,18 @@
 #include <pthread.h>
 #endif
 
+//-------------------------------------------------------------------------
+// SunOS 4.x needs extern "C" for sys/time.h and explicit gettimeofday decl
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+extern "C" {
+#include <sys/time.h>
+int gettimeofday(struct timeval *tp, struct timezone *tzp);
+}
+#else
+#include <sys/time.h>
+#endif
+
 #include <sys/stat.h>
 #include <cx/base/string.h>
 #include <cx/base/file.h>

@@ -13,6 +13,15 @@
 
 #include <cx/base/string.h>
 
+//-------------------------------------------------------------------------
+// SunOS 4.x needs extern "C" declaration for bcmp
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+extern "C" {
+int bcmp(const char *b1, const char *b2, int length);
+}
+#endif
+
 
 //-------------------------------------------------------------------------
 // CxString::CxString
@@ -466,7 +475,7 @@ CxString::index( CxString s_, int startpos_ ) const
 
 	for (c=startpos_; c<i; c++ ) {
         
-        if (!bcmp( (void *) &_data[c], (void *) s_.data(), s_.length() )) {
+        if (!bcmp( (const char *) &_data[c], (const char *) s_.data(), s_.length() )) {
         
         // if (!strncmp( (const char *) &_data[c], (const char *) s_.data(), s_.length())) {
             return(c);

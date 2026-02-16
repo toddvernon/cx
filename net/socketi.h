@@ -13,6 +13,14 @@
 
 #include <iostream>
 #include <stdio.h>
+
+//-------------------------------------------------------------------------
+// SunOS 4.x system headers don't have C++ extern "C" guards
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+extern "C" {
+#endif
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -25,6 +33,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+
+#if defined(_SUNOS_)
+}
+#endif
 
 //-------------------------------------------------------------------------
 // specific things related to linux
@@ -49,8 +61,8 @@ typedef int socklen_t;
 
 #define SOCKLEN_T int
 
-// must include socket library function prototypes
-
+// must include socket library function prototypes (with C linkage)
+extern "C" {
 int socket(int domain, int type, int protocol);
 int bind(int s, struct sockaddr *name, int namelen);
 int listen(int s, int backlog);
@@ -58,7 +70,7 @@ void bzero(char *b, int length);
 int select(int width, fd_set *redfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
 int accept(int s, struct sockaddr *addr, int *addrlen);
 int getpeername(int s, struct sockaddr *name, int *namelen);
-int getsockname(int s, struct sockaddr *name, int *namelen); 
+int getsockname(int s, struct sockaddr *name, int *namelen);
 int connect(int s, struct sockaddr *name, int namelen);
 int send(int s, char *msg, int len, int flags);
 int recv(int s, char *buf, int len, int flags);
@@ -66,6 +78,7 @@ int sendto(int s, char *msg, int len, int flags, struct sockaddr *to, int tolen)
 int recvfrom(int s, char *buf, int len, int flags, struct sockaddr *from, int *fromlen);
 int shutdown(int s, int how);
 int gethostname(char *name, int namelen);
+}
 
 #endif
 

@@ -15,12 +15,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+//-------------------------------------------------------------------------
+// SunOS 4.x system headers don't have C++ extern "C" guards
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+extern "C" {
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+
+#if defined(_SUNOS_)
+}
+#endif
 
 
 //-------------------------------------------------------------------------

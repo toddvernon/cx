@@ -12,16 +12,27 @@
 //-------------------------------------------------------------------------------------------------
 
 #include <stdio.h>
+
+//-------------------------------------------------------------------------
+// SunOS 4.x system headers don't have C++ extern "C" guards
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+extern "C" {
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
 #include <strings.h>
+
+#if defined(_SUNOS_)
+}
+#endif
 
 #include <cx/base/string.h>
 
@@ -44,8 +55,6 @@
 //-------------------------------------------------------------------------
 #if defined(_SUNOS_)
 #define SOCKLEN_T int
-#include <netinet/in.h>
-int gethostname(char *name, int namelen);
 #endif
     
 #ifndef _CxINADDRIMPL_H_

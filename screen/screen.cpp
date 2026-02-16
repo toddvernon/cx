@@ -15,6 +15,39 @@
 #include <signal.h>
 #include <termios.h>
 
+//-------------------------------------------------------------------------
+// SunOS 4.x: termios.h and sys/ioctl.h both define these macros.
+// Undefine them before including sys/ioctl.h to avoid redefinition warnings.
+// Also need extern "C" for sys/ioctl.h and ioctl() declaration.
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_)
+#undef ECHO
+#undef NL0
+#undef NL1
+#undef TAB0
+#undef TAB1
+#undef TAB2
+#undef XTABS
+#undef CR0
+#undef CR1
+#undef CR2
+#undef CR3
+#undef FF0
+#undef FF1
+#undef BS0
+#undef BS1
+#undef TOSTOP
+#undef FLUSHO
+#undef PENDIN
+#undef NOFLSH
+extern "C" {
+#include <sys/ioctl.h>
+int ioctl(int fd, int request, ...);
+}
+#else
+#include <sys/ioctl.h>
+#endif
+
 #include <cx/base/string.h>
 #include <cx/screen/screen.h>
 

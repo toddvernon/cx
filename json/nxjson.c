@@ -32,6 +32,13 @@ extern "C" {
 #include <assert.h>
 #include <errno.h>
 
+/* SunOS 4.x headers don't properly declare these functions */
+#if defined(_SUNOS_)
+extern int fprintf(FILE *, const char *, ...);
+extern long strtol(const char *, char **, int);
+extern double strtod(const char *, char **);
+#endif
+
 #include "nxjson.h"
 
 // redefine NX_JSON_CALLOC & NX_JSON_FREE to use custom allocator

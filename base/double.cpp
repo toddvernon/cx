@@ -171,19 +171,19 @@ CxDouble::operator double( void )
 
 CxDouble::operator int(void)
 {
-    int iValue = value;
+    int iValue = (int)value;
     return( iValue );
 }
 
 CxDouble::operator float(void)
 {
-    float fValue = value;
+    float fValue = (float)value;
     return( fValue );
 }
 
 CxDouble::operator long(void)
 {
-    long lValue = value;
+    long lValue = (long)value;
     return( lValue );
 }
 

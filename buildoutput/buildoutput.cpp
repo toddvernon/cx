@@ -25,9 +25,13 @@
 
 //-------------------------------------------------------------------------
 // SunOS 4.x doesn't have ssize_t - define it
+// Also needs extern "C" declaration for pclose
 //-------------------------------------------------------------------------
 #if defined(_SUNOS_)
 typedef long ssize_t;
+extern "C" {
+int pclose(FILE *stream);
+}
 #endif
 
 

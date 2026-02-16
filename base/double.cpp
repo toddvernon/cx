@@ -13,6 +13,13 @@
 
 #include <cx/base/double.h>
 
+//-------------------------------------------------------------------------
+// Older platforms don't have C99 fpclassify - use portable math tricks
+//-------------------------------------------------------------------------
+#if defined(_SUNOS_) || defined(_IRIX6_) || defined(_NEXT_)
+#define CX_NO_FPCLASSIFY
+#endif
+
 
 //-------------------------------------------------------------------------
 // CxDouble::<constructor>
@@ -237,7 +244,12 @@ CxDouble::compare( CxDouble otherDouble )
 int
 CxDouble::isNAN( void )
 {
+#if defined(CX_NO_FPCLASSIFY)
+    // NaN is the only value not equal to itself
+    if ( value != value ) return ( TRUE );
+#else
     if ( fpclassify(value ) == FP_NAN ) return ( TRUE );
+#endif
     return( FALSE );
 }
 
@@ -248,7 +260,12 @@ CxDouble::isNAN( void )
 int
 CxDouble::isINFINITE ( void )
 {
+#if defined(CX_NO_FPCLASSIFY)
+    // Infinity: not NaN, not zero, and value == value * 2
+    if ( value == value && value != 0.0 && value == value * 2.0 ) return ( TRUE );
+#else
     if ( fpclassify(value ) == FP_INFINITE ) return ( TRUE );
+#endif
     return( FALSE );
 }
 
@@ -259,7 +276,11 @@ CxDouble::isINFINITE ( void )
 int
 CxDouble::isZERO( void )
 {
+#if defined(CX_NO_FPCLASSIFY)
+    if ( value == 0.0 ) return ( TRUE );
+#else
     if ( fpclassify(value ) == FP_ZERO ) return ( TRUE );
+#endif
     return( FALSE );
 }
 
@@ -270,7 +291,13 @@ CxDouble::isZERO( void )
 int
 CxDouble::isSUBNORMAL( void )
 {
+#if defined(CX_NO_FPCLASSIFY)
+    // subnormal if non-zero, finite, and very small magnitude
+    double absVal = (value < 0.0) ? -value : value;
+    if ( value == value && value != 0.0 && value != value * 2.0 && absVal < 2.2250738585072014e-308 ) return ( TRUE );
+#else
     if ( fpclassify(value ) == FP_SUBNORMAL ) return ( TRUE );
+#endif
     return( FALSE );
 }
 
@@ -282,7 +309,13 @@ CxDouble::isSUBNORMAL( void )
 int
 CxDouble::isNORMAL( void )
 {
+#if defined(CX_NO_FPCLASSIFY)
+    // normal if finite, non-zero, and not subnormal
+    double absVal = (value < 0.0) ? -value : value;
+    if ( value == value && value != 0.0 && value != value * 2.0 && absVal >= 2.2250738585072014e-308 ) return ( TRUE );
+#else
     if ( fpclassify(value ) == FP_NORMAL ) return ( TRUE );
+#endif
     return( FALSE );
 }
 

@@ -77,7 +77,20 @@ CxJSONMember::removeObject(void)
 /* virtual */
 void CxJSONMember::print(std::ostream& str ) const
 {
-    str << "\"" << _var << "\":" << *_object;                 
+    str << "\"" << _var << "\":" << *_object;
+}
+
+CxString CxJSONMember::toJsonString(void) const
+{
+    CxString result("\"");
+    result += _var;
+    result += "\":";
+    if (_object != NULL) {
+        result += _object->toJsonString();
+    } else {
+        result += "null";
+    }
+    return result;
 }
 
 
@@ -85,7 +98,7 @@ void CxJSONMember::print(std::ostream& str ) const
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONMember& member_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONMember& member_ )
 {
     member_.print(str );
     return(str);

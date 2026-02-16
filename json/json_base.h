@@ -16,6 +16,7 @@
 
 
 #include <iostream>
+#include <cx/base/string.h>
 
 class CxJSONBase;
 
@@ -38,16 +39,19 @@ class CxJSONBase
     CxJSONBase::JSONObjectType
 	type(void);
 
+    virtual CxString toJsonString(void) const;
+    // returns the JSON representation as a CxString (portable, no sstream needed)
+
   protected:
 
     JSONObjectType _type;
 
 	virtual void print(std::ostream& str ) const;
- 
+
   private:
-	
-	friend std::ostream& operator<<(std::ostream& str, const CxJSONBase& base_ );    
-    // outputs a CxString to an ostream 
+
+	friend std::ostream& operator<<(std::ostream& str, const CxJSONBase& base_ );
+    // outputs a CxString to an ostream
 
 };
 

@@ -70,14 +70,22 @@ void CxJSONNumber::print(std::ostream& str ) const
     str << _d;
 }
 
+/* virtual */
+CxString CxJSONNumber::toJsonString(void) const
+{
+    char buf[64];
+    sprintf(buf, "%g", _d);
+    return CxString(buf);
+}
+
 
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONNumber& number_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONNumber& number_ )
 {
-    number_.print( str); 
+    number_.print( str);
     return(str);
 }
  

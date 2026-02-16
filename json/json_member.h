@@ -50,6 +50,8 @@ class CxJSONMember
 
     void dump(void);
 
+    CxString toJsonString(void) const;
+
   protected:
 
     virtual void print(std::ostream& str ) const;

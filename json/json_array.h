@@ -42,8 +42,10 @@ class CxJSONArray: public CxJSONBase
 	int 
 	entries(void) const;
 
-	void 
+	void
 	clear(void);
+
+    virtual CxString toJsonString(void) const;
 
   protected:
 

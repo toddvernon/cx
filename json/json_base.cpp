@@ -43,6 +43,12 @@ void CxJSONBase::print( std::ostream& str ) const
     str << "CxBase";
 }
 
+/* virtual */
+CxString CxJSONBase::toJsonString(void) const
+{
+    return CxString("null");
+}
+
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //

@@ -91,16 +91,39 @@ void CxJSONArray::print(std::ostream& str ) const
         str << *b;
 
         first = 0;
-    }   
+    }
     str << "]";
-}       
-   
+}
+
+/* virtual */
+CxString CxJSONArray::toJsonString(void) const
+{
+    CxString result("[");
+    int first = 1;
+
+    for (unsigned int c=0; c< _objectList.entries(); c++) {
+        CxJSONBase *b =  _objectList.at(c);
+
+        if (!first) result += ",";
+
+        if (b != NULL) {
+            result += b->toJsonString();
+        } else {
+            result += "null";
+        }
+
+        first = 0;
+    }
+    result += "]";
+    return result;
+}
+
 
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONArray& a_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONArray& a_ )
 {
 	a_.print(str);
     return(str);

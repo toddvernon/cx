@@ -98,11 +98,42 @@ void CxJSONString::print(std::ostream& str ) const
 }
 
 
+/* virtual */
+CxString CxJSONString::toJsonString(void) const
+{
+    CxString result("\"");
+    CxString& s = const_cast<CxString&>(_string);
+    for (unsigned long i = 0; i < s.length(); i++) {
+        char c = (char)s.charAt(i);
+        switch (c) {
+            case '"':  result += "\\\""; break;
+            case '\\': result += "\\\\"; break;
+            case '\n': result += "\\n"; break;
+            case '\r': result += "\\r"; break;
+            case '\t': result += "\\t"; break;
+            case '\b': result += "\\b"; break;
+            case '\f': result += "\\f"; break;
+            default:
+                if ((unsigned char)c < 0x20) {
+                    char buf[8];
+                    sprintf(buf, "\\u%04x", (unsigned char)c);
+                    result += buf;
+                } else {
+                    result += c;
+                }
+                break;
+        }
+    }
+    result += "\"";
+    return result;
+}
+
+
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONString& s_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONString& s_ )
 {
     s_.print(str);
     return(str);

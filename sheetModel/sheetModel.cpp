@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
 
 #include "sheetModel.h"
 #include "sheetVariableDatabase.h"
@@ -667,10 +666,6 @@ CxSheetModel::saveSheet(CxString filepath)
 
     root->append(new CxJSONMember("cells", cellsArray));
 
-    // Serialize to string using ostringstream
-    std::ostringstream oss;
-    oss << *root;
-
     // Write to file
     CxFile outFile;
     if (!outFile.open(filepath, "w")) {
@@ -678,7 +673,8 @@ CxSheetModel::saveSheet(CxString filepath)
         return 0;
     }
 
-    CxString jsonStr(oss.str().c_str());
+    // Serialize to string using portable toJsonString() method
+    CxString jsonStr = root->toJsonString();
     outFile.printf("%s\n", jsonStr.data());
     outFile.close();
 

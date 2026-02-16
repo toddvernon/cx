@@ -147,11 +147,32 @@ void CxJSONObject::print(std::ostream& str ) const
     str << "}";
 }
 
+/* virtual */
+CxString CxJSONObject::toJsonString(void) const
+{
+    CxString result("{");
+    int first = 1;
+
+    for (unsigned int c=0; c< _memberList.entries(); c++) {
+        CxJSONMember *m =  _memberList.at(c);
+
+        if (!first) result += ",";
+
+        if (m != NULL) {
+            result += m->toJsonString();
+        }
+
+        first = 0;
+    }
+    result += "}";
+    return result;
+}
+
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONObject& o_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONObject& o_ )
 {
     o_.print(str );
     return(str);

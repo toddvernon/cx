@@ -46,6 +46,8 @@ class CxJSONBoolean: public CxJSONBase
 
 	void dump(void);
 
+    virtual CxString toJsonString(void) const;
+
   protected:
 
     virtual void print(std::ostream& str ) const;

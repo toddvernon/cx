@@ -35,14 +35,20 @@ CxJSONNull::~CxJSONNull(void)
 /* virtual */
 void CxJSONNull::print(std::ostream& str ) const
 {
-    str << "null"; 
+    str << "null";
 }
- 
+
+/* virtual */
+CxString CxJSONNull::toJsonString(void) const
+{
+    return CxString("null");
+}
+
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONNull& n_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONNull& n_ )
 {
     n_.print( str );
     return(str);

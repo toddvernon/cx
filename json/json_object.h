@@ -50,12 +50,13 @@ class CxJSONObject: public CxJSONBase
 	int 
 	entries(void) const;
 
-	void 
+	void
 	clear(void);
 
+    virtual CxString toJsonString(void) const;
 
   protected:
- 
+
     virtual void print(std::ostream& str ) const;
 
   private:

@@ -74,14 +74,21 @@ void CxJSONBoolean::print(std::ostream& str ) const
     CxString s = "false";
     if (_i) s = "true";
 
-    str << s;                 
+    str << s;
 }
- 
+
+/* virtual */
+CxString CxJSONBoolean::toJsonString(void) const
+{
+    if (_i) return CxString("true");
+    return CxString("false");
+}
+
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONBoolean& b_ )    
+std::ostream& operator<<(std::ostream& str, const CxJSONBoolean& b_ )
 {
     b_.print( str );
     return(str);

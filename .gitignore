@@ -25,6 +25,7 @@ obj/
 .idea/
 *.xcworkspace/
 *.xcodeproj/
+*.bbprojectd/
 
 # Build Directories
 # Platform-specific build output directories

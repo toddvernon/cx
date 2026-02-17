@@ -36,6 +36,7 @@ The make target excludes build outputs and other cruft that should not be distri
 - Never hardcode specific kernel versions for Linux - flags like `CPPFLAGS` and `CCFLAGS` should apply to all Linux versions
 - Solaris is an exception: different Solaris versions (4.1.x, 5.6, 5.7, 5.10) require different defines (`_SUNOS_`, `_SOLARIS6_`, `_SOLARIS10_`)
 - When adding or modifying makefiles, follow the patterns in existing lib makefiles (e.g., `base/makefile`)
+- Makefiles must be portable across old make implementations (SunOS, IRIX, BSD). Only use features and automatic variables already present in the existing makefiles. Do not introduce GNU make extensions such as `$(filter ...)`, `$(wildcard ...)`, `$(patsubst ...)`, etc.
 
 ## Non-negotiable constraints
 - DO NOT use the C++ Standard Library: no `std::` anywhere.

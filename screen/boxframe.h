@@ -42,6 +42,7 @@ public:
     void draw(void);                                    // frame only
     void drawWithTitle(CxString title);                 // frame + title bar
     void drawWithTitleAndFooter(CxString title, CxString footer);
+    void drawFooter(CxString footer);                   // redraw footer only
 
     // Optional: set colors (uses current screen colors if not set)
     void setFrameColor(CxColor *fg, CxColor *bg);

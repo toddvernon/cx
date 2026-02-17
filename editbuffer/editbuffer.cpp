@@ -969,9 +969,17 @@ CxEditBuffer::cursorDownRequest(void)
 int
 CxEditBuffer::loadText(CxString filepath_, int preload)
 {
-    CxFile inFile;
-
     filePath = filepath_;
+
+    // If not preloading, just store the path for lazy loading later.
+    // This avoids disk I/O for every file in a project at startup.
+    if (!preload) {
+        inMemory = FALSE;
+        return( true );
+    }
+
+    // Preload requested - open and read the file
+    CxFile inFile;
 
     // open the file
     if (!inFile.open( filePath, "r")) {
@@ -980,9 +988,8 @@ CxEditBuffer::loadText(CxString filepath_, int preload)
         return( false );
     }
 
-    // if the caller wants the file loaded into memory then do so, otherwise just keep
-    // the reference to it to load later.
-    if (preload) {
+    // Load the file into memory
+    {
 
         // Get file size using stat
         struct stat fileStat = inFile.getStat();
@@ -1010,10 +1017,6 @@ CxEditBuffer::loadText(CxString filepath_, int preload)
         _bufferLineList.initLazy(rawBuffer, bytesRead, tabSpaces);
 
         inMemory = TRUE;
-
-    } else {
-
-        inMemory = FALSE;
     }
 
     // close the file

@@ -16,7 +16,7 @@
 //-------------------------------------------------------------------------
 // Older platforms don't have C99 fpclassify - use portable math tricks
 //-------------------------------------------------------------------------
-#if defined(_SUNOS_) || defined(_IRIX6_) || defined(_NEXT_)
+#if defined(_SUNOS_) || defined(_SOLARIS6_) || defined(_IRIX6_) || defined(_NEXT_)
 #define CX_NO_FPCLASSIFY
 #endif
 

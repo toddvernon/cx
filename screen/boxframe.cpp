@@ -350,6 +350,47 @@ CxBoxFrame::drawWithTitleAndFooter(CxString title, CxString footer)
 
 
 //-------------------------------------------------------------------------------------------------
+// CxBoxFrame::drawFooter
+//
+// Redraw just the footer line (for incremental updates).
+// Assumes frame was previously drawn with drawWithTitleAndFooter.
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxBoxFrame::drawFooter(CxString footer)
+{
+    // Set colors if specified
+    if (_colorsSet) {
+        CxScreen::setForegroundColor(_fg);
+        CxScreen::setBackgroundColor(_bg);
+    }
+
+    int width = _right - _left + 1;
+
+    // Draw footer line at _bottom - 1
+    CxString line;
+    line += BOX_VERTICAL;
+    line += "  ";
+    line += footer;
+
+    // Pad to fill width
+    int used = 1 + 2 + footer.length();
+    for (int c = used; c < width - 1; c++) {
+        line += " ";
+    }
+    line += BOX_VERTICAL;
+
+    _screen->placeCursor(_bottom - 1, _left);
+    _screen->writeText(line);
+
+    // Reset colors if we set them
+    if (_colorsSet) {
+        CxScreen::resetColors();
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CxBoxFrame::clearContent
 //
 // Clear the content area inside the frame

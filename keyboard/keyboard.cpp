@@ -422,14 +422,13 @@ CxKeyboard::setupTerminalFeatures(void)
     _newt.c_lflag &= ~(ICANON | ECHO | ECHOK | ECHOE | ECHONL | ISIG | IEXTEN);
 
 
-	// set timeout on waiting for a character.  We do this so we can detect
-	// an escape key pressed by itself.  If the escape key pressed by itself
-	// will result reading the esc but a subsequent read will timeout.  If an
-	// escape sequence is sent the second read will not timeout because the
-	// code in the sequence will be immediately avaliable.
+	// Set blocking read mode - select() handles timeout for portability.
+	// VTIME units vary across Unix systems (tenths of seconds on POSIX,
+	// but may be seconds on old SunOS). Using select() with explicit
+	// microsecond timeout is consistent across all platforms.
 	//
-    _newt.c_cc[VMIN]  = 0; // min characters before return
-    _newt.c_cc[VTIME] = 1; // 100ms timeout
+    _newt.c_cc[VMIN]  = 1; // wait for at least 1 character
+    _newt.c_cc[VTIME] = 0; // no timeout - select() handles this
 
     tcsetattr(fileno(stdin), TCSANOW, &_newt);     
 }
@@ -454,54 +453,90 @@ CxKeyboard::teardownTerminalFeatures(void)
 char
 CxKeyboard::readKey(CxKeyboard::BLOCKING mode = WAIT)
 {
-    int done = 0;
     int nread;
     char c;
-  
+    fd_set fds;
+    struct timeval tv;
+
     if (mode == CxKeyboard::WAIT) {
 
-        while (!done) {
+        while (1) {
 
-            nread = read(STDIN_FILENO, &c, 1);
+            // Use select() with 100ms timeout - portable across all Unix systems
+            FD_ZERO(&fds);
+            FD_SET(STDIN_FILENO, &fds);
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000;  // 100ms timeout
 
-            if (nread == -1) {
+            int ready = select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);
 
+            if (ready == -1) {
                 if (errno != EINTR) {
-                    printf("error in call to read in WAIT mode\n");
-                    printf("Oh dear, something went wrong with read()! %d, %s\n", errno, strerror(errno));
+                    printf("error in call to select in WAIT mode\n");
+                    printf("select() failed: %d, %s\n", errno, strerror(errno));
                     exit(0);
                 }
+                // EINTR - interrupted by signal, just retry
+                continue;
             }
 
-            if (nread == 0) {
-                // No key pressed - call idle callbacks (fires every ~100ms)
+            if (ready == 0) {
+                // Timeout - no key pressed, call idle callbacks
                 for (int i = 0; i < idleCallbackQueue.entries(); i++) {
                     CxFunctor *f = idleCallbackQueue.at(i);
                     (*f)();
                 }
+                continue;
             }
 
-            if (nread != 0) {
-                done = true;
+            // Data available - read it
+            nread = read(STDIN_FILENO, &c, 1);
+
+            if (nread == -1) {
+                if (errno != EINTR) {
+                    printf("error in call to read in WAIT mode\n");
+                    printf("read() failed: %d, %s\n", errno, strerror(errno));
+                    exit(0);
+                }
+                continue;
+            }
+
+            if (nread > 0) {
+                return c;
             }
         }
     }
-        
+
     if (mode == CxKeyboard::NO_WAIT) {
-        
+
+        // Use select() with 100ms timeout for escape sequence detection
+        FD_ZERO(&fds);
+        FD_SET(STDIN_FILENO, &fds);
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;  // 100ms timeout
+
+        int ready = select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);
+
+        if (ready <= 0) {
+            // Timeout or error - no data available
+            return((char) 255);
+        }
+
         nread = read(STDIN_FILENO, &c, 1);
-        
+
         if (nread == -1) {
             printf("error in call to read in NO_WAIT mode\n");
             exit(0);
         }
-    
+
         if (nread == 0) {
             return((char) 255);
         }
+
+        return c;
     }
-    
-    return c;
+
+    return (char) 255;
 }
 
 

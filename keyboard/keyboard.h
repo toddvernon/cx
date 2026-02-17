@@ -17,6 +17,10 @@
 #include <iostream>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/time.h>   // timeval for select() timeout
+#if !defined(_SUNOS_)
+#include <sys/select.h> // select() - not needed on SunOS 4.1.x (in sys/types.h)
+#endif
 
 #include <cx/base/string.h>
 #include <cx/base/hashmap.h>

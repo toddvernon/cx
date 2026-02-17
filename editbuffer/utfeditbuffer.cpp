@@ -390,15 +390,23 @@ CxUTFEditBuffer::cursorGotoLine(unsigned long row_)
 int
 CxUTFEditBuffer::loadText(CxString filepath_, int preload)
 {
-    CxFile inFile;
-
     filePath = filepath_;
+
+    // If not preloading, just store the path for lazy loading later.
+    // This avoids disk I/O for every file in a project at startup.
+    if (!preload) {
+        inMemory = FALSE;
+        return TRUE;
+    }
+
+    // Preload requested - open and read the file
+    CxFile inFile;
 
     if (!inFile.open(filePath, "r")) {
         return FALSE;
     }
 
-    if (preload) {
+    {
         struct stat fileStat = inFile.getStat();
         unsigned long fileSize = (unsigned long)fileStat.st_size;
 
@@ -437,8 +445,6 @@ CxUTFEditBuffer::loadText(CxString filepath_, int preload)
 
         delete[] rawBuffer;
         inMemory = TRUE;
-    } else {
-        inMemory = FALSE;
     }
 
     inFile.close();

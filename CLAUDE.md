@@ -6,11 +6,11 @@ CX is a portable C++ library with modules: base, b64, commandline, editbuffer, e
 ## Naming Conventions
 When the user refers to:
 - **"cx"** - means all cx repositories together: `cx/cx` (this library), `cx/cx_tests` (tests), and `cx/cx_apps/cm` (editor app)
-- **"cm"** - means the CMacs editor application at `cx/cx_apps/cm`
+- **"cm"** - means the cmacs editor application at `cx/cx_apps/cm`
 - **"cx library"** or **"cx/cx"** - means specifically this shared library
 
 ## Related Repositories
-- **CMacs editor**: `../cx_apps/cm/` - terminal text editor that uses this library
+- **cmacs editor**: `../cx_apps/cm/` - terminal text editor that uses this library
 
 ## Change Policy
 - **Always show proposed changes before applying them** - describe what will be modified and wait for approval before editing files
@@ -23,6 +23,13 @@ When the user refers to:
 ```bash
 make
 ```
+
+## Creating Archives
+Always use the make target to create distribution archives - never run tar manually:
+```bash
+make archive    # creates ../ARCHIVE/cxlibs_unix.tar
+```
+The make target excludes build outputs and other cruft that should not be distributed.
 
 ## Makefile guidelines
 - Platform detection should use `uname -s` (OS name), not `uname -r` (kernel version)

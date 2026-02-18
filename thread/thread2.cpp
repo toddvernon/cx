@@ -41,7 +41,7 @@ CxThreadDuple::~CxThreadDuple( void )
 int
 CxThreadDuple::start( void )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     pthread_create( &_threadId1, NULL, CxThreadDuple::srun1, (void*) this);
     pthread_create( &_threadId2, NULL, CxThreadDuple::srun2, (void*) this);
 #endif
@@ -56,7 +56,7 @@ CxThreadDuple::start( void )
 void
 CxThreadDuple::join( void )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     pthread_join( _threadId1, NULL );
     pthread_join( _threadId2, NULL );
 #endif
@@ -138,7 +138,7 @@ CxThreadDuple::suggestQuit( void )
 void
 CxThreadDuple::sendSignal1( int sig_ )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 	pthread_kill( _threadId1, sig_ );
 #endif
 }
@@ -150,7 +150,7 @@ CxThreadDuple::sendSignal1( int sig_ )
 void
 CxThreadDuple::sendSignal2( int sig_ )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 	pthread_kill( _threadId2, sig_ );
 #endif
 }

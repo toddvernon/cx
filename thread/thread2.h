@@ -26,7 +26,7 @@
 #endif
 
 
-#if defined(_LINUX_) || defined(_SOLARIS_) || defined(_OSX_) || defined(_NETBSD_)
+#if defined(_LINUX_) || defined(_SOLARIS_) || defined(_OSX_) || defined(_NETBSD_) || defined(_IRIX6_)
 #include <pthread.h>
 #include <signal.h>
 #endif
@@ -77,7 +77,7 @@ class CxThreadDuple
 
     int       _suggestQuit;
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     pthread_t _threadId1;
     pthread_t _threadId2;
 #endif

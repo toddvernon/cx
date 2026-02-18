@@ -41,8 +41,8 @@ CxThread::~CxThread( void )
 int
 CxThread::start( void )
 {
-#if defined(_LINUX_) || defined(_OSX_)
-    pthread_create( &_threadId, NULL, CxThread::srun, (void*) this); 
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+    pthread_create( &_threadId, NULL, CxThread::srun, (void*) this);
 #endif
     return 0;
 }
@@ -55,7 +55,7 @@ CxThread::start( void )
 void
 CxThread::join( void )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     pthread_join( _threadId, NULL );
 #endif
 }
@@ -114,7 +114,7 @@ CxThread::suggestQuit( void )
 void
 CxThread::sendSignal( int sig_ )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 	pthread_kill( _threadId, sig_ );
 #endif
 }

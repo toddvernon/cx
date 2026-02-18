@@ -22,7 +22,7 @@
 //-------------------------------------------------------------------------
 CxRecursiveMutex::CxRecursiveMutex( void )
 {
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     _thCount = 0;
 #endif
 
@@ -40,7 +40,7 @@ CxRecursiveMutex::CxRecursiveMutex( void )
 CxRecursiveMutex::~CxRecursiveMutex( void )
 {
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 #endif
 
 #ifdef WIN32
@@ -57,7 +57,7 @@ void
 CxRecursiveMutex::acquire( void )
 {
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 
     CX_THREAD_TYPE mySelf = CX_THREAD_SELF;
 
@@ -96,7 +96,7 @@ void
 CxRecursiveMutex::release( void )
 {
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 
     CX_THREAD_TYPE mySelf = CX_THREAD_SELF;
 

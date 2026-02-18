@@ -23,7 +23,7 @@
 #include <cx/base/string.h>
 
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 #include <pthread.h>
 #endif
 
@@ -61,13 +61,13 @@ class CxMutex
 	tryResult tryAcquire( void );
 	// try to acquire the mutex
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
 	pthread_mutex_t *pthread_mutex(void);
 #endif
 
   private:
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     pthread_mutex_t _mutex;
 #endif
 

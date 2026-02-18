@@ -30,7 +30,7 @@
 #endif
 
 
-#if defined(_LINUX_) || defined(_SOLARIS_) || defined(_OSX_) || defined(_NETBSD_)
+#if defined(_LINUX_) || defined(_SOLARIS_) || defined(_OSX_) || defined(_NETBSD_) || defined(_IRIX6_)
 #include <pthread.h>
 #endif
 
@@ -40,7 +40,7 @@
 
 
 
-#if defined(_LINUX_) || defined(_SOLARIS_) || defined(_OSX_) || defined(_NETBSD_)
+#if defined(_LINUX_) || defined(_SOLARIS_) || defined(_OSX_) || defined(_NETBSD_) || defined(_IRIX6_)
 #define CX_NO_THREAD 0
 #define CX_THREAD_TYPE pthread_t
 #define CX_THREAD_SELF pthread_self()
@@ -77,7 +77,7 @@ class CxRecursiveMutex
 
   private:
 
-#if defined(_LINUX_) || defined(_OSX_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
     int                 _thCount;
     CxMutex             _mutex;
     CxMutex             _guardMutex;

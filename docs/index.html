@@ -35,12 +35,12 @@
 
         /* Hero Section */
         .hero {
-            padding: 60px 0 40px;
+            padding: 80px 0 60px;
             text-align: center;
         }
 
         .hero h1 {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: 700;
             margin-bottom: 10px;
             background: linear-gradient(135deg, var(--accent), var(--accent-light));
@@ -53,7 +53,7 @@
             font-size: 1.6rem;
             color: var(--text);
             margin-bottom: 15px;
-            max-width: 700px;
+            max-width: 800px;
             margin-left: auto;
             margin-right: auto;
             font-weight: 500;
@@ -62,7 +62,7 @@
         .hero .tagline-sub {
             font-size: 1.1rem;
             color: var(--text-muted);
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
@@ -136,9 +136,10 @@
             border-color: var(--text);
         }
 
-        /* Problem Section */
+        /* The Problem Section */
         .problem {
             padding: 80px 0;
+            background: var(--bg-card);
         }
 
         .problem h2 {
@@ -147,35 +148,63 @@
             margin-bottom: 20px;
         }
 
-        .problem .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 1.2rem;
+        .problem .content {
             max-width: 800px;
-            margin: 0 auto 40px;
-            line-height: 1.7;
+            margin: 0 auto;
+            text-align: center;
         }
 
-        .philosophy-grid {
+        .problem p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .problem .highlight {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 30px;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .problem .highlight p {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+        }
+
+        .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 30px;
         }
 
-        .philosophy-card {
+        .feature-card {
             background: var(--bg-card);
             padding: 30px;
             border-radius: 12px;
             border: 1px solid rgba(0,0,0,0.08);
         }
 
-        .philosophy-card h3 {
+        .feature-card h3 {
             font-size: 1.3rem;
             margin-bottom: 12px;
             color: var(--accent-light);
         }
 
-        .philosophy-card p {
+        .feature-card p {
             color: var(--text-muted);
         }
 
@@ -193,63 +222,60 @@
 
         .module-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             max-width: 1000px;
             margin: 0 auto;
         }
 
         .module-item {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-            padding: 12px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.08);
         }
 
-        .module-item code {
-            background: #1d1d1f;
-            color: #6ee7b7;
-            padding: 4px 12px;
-            border-radius: 6px;
+        .module-item h4 {
+            font-size: 1.1rem;
+            color: var(--accent-light);
+            margin-bottom: 8px;
             font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            font-size: 0.85rem;
-            min-width: 160px;
-            text-align: center;
-            white-space: nowrap;
         }
 
-        .module-item span {
+        .module-item p {
             color: var(--text-muted);
             font-size: 0.95rem;
         }
 
-        /* Code Examples Section */
-        .examples {
+        /* Code Example Section */
+        .code-example {
             padding: 80px 0;
         }
 
-        .examples h2 {
+        .code-example h2 {
             text-align: center;
             font-size: 2.2rem;
-            margin-bottom: 50px;
+            margin-bottom: 20px;
         }
 
-        .example-grid {
+        .code-example .intro {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .code-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 30px;
         }
 
         @media (max-width: 900px) {
-            .example-grid {
+            .code-grid {
                 grid-template-columns: 1fr;
             }
-        }
-
-        .example-item h3 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            color: var(--accent-light);
         }
 
         .code-block {
@@ -259,11 +285,19 @@
             overflow-x: auto;
         }
 
+        .code-block h3 {
+            color: #86868b;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
         .code-block pre {
             font-family: 'SF Mono', Monaco, 'Courier New', monospace;
             font-size: 0.85rem;
             color: #f5f5f7;
-            line-height: 1.7;
+            line-height: 1.6;
+            margin: 0;
         }
 
         .code-block .comment {
@@ -271,7 +305,7 @@
         }
 
         .code-block .keyword {
-            color: #c084fc;
+            color: #ff7ab2;
         }
 
         .code-block .type {
@@ -283,22 +317,22 @@
         }
 
         .code-block .number {
-            color: #fb923c;
+            color: #a5b4fc;
         }
 
-        /* Platform Section */
-        .platform-support {
+        /* Platform Matrix */
+        .platforms {
             padding: 80px 0;
             background: var(--bg-card);
         }
 
-        .platform-support h2 {
+        .platforms h2 {
             text-align: center;
             font-size: 2.2rem;
             margin-bottom: 20px;
         }
 
-        .platform-support .subtitle {
+        .platforms .subtitle {
             text-align: center;
             color: var(--text-muted);
             font-size: 1.1rem;
@@ -309,46 +343,50 @@
         .platform-table {
             max-width: 800px;
             margin: 0 auto;
-            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .platform-table table {
             width: 100%;
+            border-collapse: collapse;
         }
 
         .platform-table th {
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 15px 20px;
             text-align: left;
-            padding: 12px 20px;
-            border-bottom: 2px solid rgba(0,0,0,0.1);
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-weight: 600;
         }
 
         .platform-table td {
-            padding: 14px 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
-        .platform-table td:first-child {
-            font-weight: 600;
+        .platform-table tr:last-child td {
+            border-bottom: none;
         }
 
-        .platform-table td:last-child {
+        .platform-table .platform-name {
+            font-weight: 500;
+        }
+
+        .platform-table .year {
             color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        .support-full {
-            color: #16a34a;
-            font-weight: 600;
+        .check {
+            color: #22c55e;
+            font-weight: bold;
         }
 
-        .support-most {
-            color: #ca8a04;
-            font-weight: 600;
-        }
-
-        .support-core {
-            color: var(--text-muted);
-            font-weight: 600;
+        .partial {
+            color: #f59e0b;
         }
 
         /* Install Section */
@@ -382,49 +420,44 @@
             color: #86868b;
         }
 
-        /* Related Projects */
-        .related {
+        /* Philosophy Section */
+        .philosophy {
             padding: 80px 0;
             background: var(--bg-card);
         }
 
-        .related h2 {
+        .philosophy h2 {
             text-align: center;
             font-size: 2.2rem;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
 
-        .related-grid {
+        .philosophy-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 30px;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
-        .related-card {
-            background: var(--bg-dark);
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.08);
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.2s, box-shadow 0.2s;
+        .philosophy-item {
+            text-align: center;
         }
 
-        .related-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-
-        .related-card h3 {
+        .philosophy-item h3 {
             font-size: 1.3rem;
-            margin-bottom: 10px;
-            color: var(--accent-light);
+            margin-bottom: 12px;
+            color: var(--text);
         }
 
-        .related-card p {
+        .philosophy-item p {
             color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .philosophy-item .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
         }
 
         /* Footer */
@@ -449,15 +482,7 @@
             }
 
             .hero .tagline {
-                font-size: 1.1rem;
-            }
-
-            .example-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .module-grid {
-                grid-template-columns: 1fr;
+                font-size: 1.2rem;
             }
         }
     </style>
@@ -467,10 +492,10 @@
         <div class="container">
             <h1>cx</h1>
             <p class="tagline">
-                A portable C++ library with zero external dependencies.
+                C++ without the dependencies.
             </p>
             <p class="tagline-sub">
-                Builds on everything from your M3 Mac to a 1993 SPARCstation. Strings, containers, file I/O, JSON, networking, terminal handling, and more&mdash;all implemented from scratch. No Boost. No STL. No autoconf. No cmake. Just <code>make</code>.
+                A portable C++ library that builds on everything from your M3 Mac to a 1993 SPARCstation. Zero external dependencies. No STL. No Boost. No autoconf. Just <code>make</code>.
             </p>
             <div class="hero-platforms">
                 <span><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>macOS</span>
@@ -490,25 +515,50 @@
     <section class="problem">
         <div class="container">
             <h2>The Problem</h2>
-            <p class="subtitle">
-                Most C++ libraries assume the C++ Standard Library exists and works correctly. That's fine for modern systems, but it breaks down fast on vintage Unix machines, embedded systems, or anything where the C++ runtime is incomplete or missing.
-            </p>
-            <div class="philosophy-grid">
-                <div class="philosophy-card">
+            <div class="content">
+                <p>
+                    Most C++ libraries assume the C++ Standard Library exists and works correctly. That's fine until you need to support vintage Unix, embedded systems, or anything where the C++ runtime is incomplete.
+                </p>
+                <p>
+                    cx provides a complete foundation: strings, containers, file I/O, JSON, networking, terminal handling. All implemented from scratch. The same source compiles unchanged on systems from 1993 to today.
+                </p>
+                <div class="highlight">
+                    <p>
+                        <strong>No Boost. No STL. No autoconf. No cmake. No package managers.</strong><br>
+                        Just <code>make</code>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Why cx?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Zero Dependencies</h3>
+                    <p>Everything implemented from scratch. No external libraries. No package managers. Builds anywhere you have a C++ compiler.</p>
+                </div>
+                <div class="feature-card">
                     <h3>No Standard Library</h3>
-                    <p>No <code>std::string</code>, <code>std::vector</code>, <code>std::map</code>. Everything is implemented from scratch so it compiles everywhere.</p>
+                    <p>No std::string, std::vector, std::map. cx provides its own strings and containers that work on systems where the C++ runtime is broken or missing.</p>
                 </div>
-                <div class="philosophy-card">
+                <div class="feature-card">
+                    <h3>1993 to Today</h3>
+                    <p>The same source compiles on your M3 Mac and on SunOS 4.1.x, IRIX 6.5, and Solaris workstations from the early 1990s.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Platform Adaptive</h3>
+                    <p>Modern features on modern systems: UTF-8 with grapheme clusters, 24-bit RGB colors, threading. Graceful degradation on vintage systems.</p>
+                </div>
+                <div class="feature-card">
                     <h3>Minimal Templates</h3>
-                    <p>Only for containers (<code>CxSList&lt;T&gt;</code>, <code>CxHashmap&lt;K,V&gt;</code>, <code>CxHandle&lt;T&gt;</code>). No template metaprogramming.</p>
+                    <p>Templates only where essential: containers and smart pointers. No template metaprogramming. Compiles with GCC 2.8.1.</p>
                 </div>
-                <div class="philosophy-card">
-                    <h3>No Modern C++ Required</h3>
-                    <p>No <code>auto</code>, <code>nullptr</code>, lambdas, range-for, or <code>constexpr</code>. Compiles with GCC 2.8.1 from 1998.</p>
-                </div>
-                <div class="philosophy-card">
-                    <h3>Platform Isolation</h3>
-                    <p>OS-specific code is behind <code>#ifdef</code> guards. The API is identical on every platform, from macOS to SunOS 4.1.</p>
+                <div class="feature-card">
+                    <h3>Just Make</h3>
+                    <p>No autoconf scripts. No cmake configuration. No dependency resolution. Clone, run <code>make</code>, done.</p>
                 </div>
             </div>
         </div>
@@ -516,151 +566,189 @@
 
     <section class="modules">
         <div class="container">
-            <h2>What's Included</h2>
+            <h2>15 Modules</h2>
             <div class="module-grid">
-                <div class="module-item"><code>base</code> <span>Strings, containers, files, buffers, exceptions, reference counting</span></div>
-                <div class="module-item"><code>editbuffer</code> <span>Text editing buffer with cursor movement, insert/delete, UTF-8</span></div>
-                <div class="module-item"><code>screen</code> <span>Terminal control: cursor, colors (ANSI and 24-bit RGB), resize</span></div>
-                <div class="module-item"><code>keyboard</code> <span>Raw keyboard input with escape sequence parsing</span></div>
-                <div class="module-item"><code>json</code> <span>JSON parsing and generation without external libraries</span></div>
-                <div class="module-item"><code>net</code> <span>TCP/IP sockets with platform abstraction</span></div>
-                <div class="module-item"><code>thread</code> <span>Pthreads wrapper: threads, mutexes, condition variables</span></div>
-                <div class="module-item"><code>process</code> <span>Process spawning and output capture</span></div>
-                <div class="module-item"><code>buildoutput</code> <span>Compiler output parsing (GCC/Clang error formats)</span></div>
-                <div class="module-item"><code>commandcompleter</code> <span>Tab-completion engine with hierarchical completion</span></div>
-                <div class="module-item"><code>regex</code> <span>POSIX regex wrapper (Linux/macOS)</span></div>
-                <div class="module-item"><code>log</code> <span>Structured logging with configurable output</span></div>
-                <div class="module-item"><code>expression</code> <span>Mathematical expression parser and evaluator</span></div>
-                <div class="module-item"><code>tz</code> <span>Timezone handling over embedded CCTZ (Google, Apache 2.0)</span></div>
-                <div class="module-item"><code>b64</code> <span>Base64 encoding and decoding</span></div>
+                <div class="module-item">
+                    <h4>base</h4>
+                    <p>Strings, containers, files, buffers, exceptions</p>
+                </div>
+                <div class="module-item">
+                    <h4>editbuffer</h4>
+                    <p>Text editing with cursor and UTF-8</p>
+                </div>
+                <div class="module-item">
+                    <h4>screen</h4>
+                    <p>Terminal control and RGB colors</p>
+                </div>
+                <div class="module-item">
+                    <h4>keyboard</h4>
+                    <p>Raw input with escape parsing</p>
+                </div>
+                <div class="module-item">
+                    <h4>json</h4>
+                    <p>Parse and generate JSON</p>
+                </div>
+                <div class="module-item">
+                    <h4>net</h4>
+                    <p>TCP/IP sockets</p>
+                </div>
+                <div class="module-item">
+                    <h4>thread</h4>
+                    <p>Threads, mutexes, pools</p>
+                </div>
+                <div class="module-item">
+                    <h4>process</h4>
+                    <p>Spawn and capture output</p>
+                </div>
+                <div class="module-item">
+                    <h4>buildoutput</h4>
+                    <p>Compiler error parsing</p>
+                </div>
+                <div class="module-item">
+                    <h4>commandcompleter</h4>
+                    <p>Tab-completion engine</p>
+                </div>
+                <div class="module-item">
+                    <h4>regex</h4>
+                    <p>POSIX regex wrapper</p>
+                </div>
+                <div class="module-item">
+                    <h4>log</h4>
+                    <p>Structured logging</p>
+                </div>
+                <div class="module-item">
+                    <h4>expression</h4>
+                    <p>Math expression evaluator</p>
+                </div>
+                <div class="module-item">
+                    <h4>tz</h4>
+                    <p>C++ timezone abstraction over CCTZ</p>
+                </div>
+                <div class="module-item">
+                    <h4>b64</h4>
+                    <p>Base64 encode/decode</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <section class="examples">
+    <section class="code-example">
         <div class="container">
-            <h2>API Highlights</h2>
-            <div class="example-grid">
-                <div class="example-item">
-                    <h3>Strings</h3>
-                    <div class="code-block">
-<pre><span class="type">CxString</span> s = <span class="string">"hello"</span>;
-s += <span class="string">" world"</span>;
-s.append(<span class="string">"!"</span>);
-<span class="keyword">int</span> pos = s.firstChar(<span class="string">'w'</span>);        <span class="comment">// 6</span>
-<span class="type">CxString</span> sub = s.subString(<span class="number">0</span>, <span class="number">5</span>);  <span class="comment">// "hello"</span>
-<span class="type">CxString</span> upper = <span class="type">CxString</span>::toUpper(s);
+            <h2>Simple API</h2>
+            <p class="intro">
+                cx provides familiar APIs without external dependencies. Strings, containers, JSON, networking - all work the way you'd expect.
+            </p>
+            <div class="code-grid">
+                <div class="code-block">
+                    <h3>Strings &amp; Containers</h3>
+<pre><span class="comment">// Strings work like std::string</span>
+<span class="type">CxString</span> name = <span class="string">"cx"</span>;
+name += <span class="string">" library"</span>;
+<span class="type">int</span> pos = name.firstChar(<span class="string">'l'</span>);
 
-<span class="comment">// UTF-8 with grapheme cluster support</span>
+<span class="comment">// UTF-8 with grapheme clusters</span>
 <span class="type">CxUTFString</span> utf;
-utf.fromBytes(utf8_data, len, <span class="number">4</span>);  <span class="comment">// 4-space tabs</span>
-<span class="keyword">int</span> chars = utf.charCount();       <span class="comment">// grapheme clusters</span>
-<span class="keyword">int</span> width = utf.displayWidth();    <span class="comment">// screen columns</span></pre>
-                    </div>
-                </div>
-                <div class="example-item">
-                    <h3>Containers</h3>
-                    <div class="code-block">
-<pre><span class="comment">// Linked list</span>
-<span class="type">CxSList</span>&lt;<span class="keyword">int</span>&gt; numbers;
-numbers.append(<span class="number">1</span>);
-numbers.append(<span class="number">2</span>);
-<span class="keyword">for</span> (<span class="type">CxSList</span>&lt;<span class="keyword">int</span>&gt;::<span class="type">Iterator</span> it = numbers.begin();
-     it != numbers.end(); ++it) {
-    printf(<span class="string">"%d\n"</span>, *it);
-}
+utf.fromBytes(data, len, <span class="number">4</span>);
+<span class="type">int</span> width = utf.displayWidth();
+
+<span class="comment">// Type-safe linked list</span>
+<span class="type">CxSList</span>&lt;<span class="type">CxString</span>&gt; files;
+files.append(<span class="string">"main.cpp"</span>);
 
 <span class="comment">// Hash map</span>
-<span class="type">CxHashmap</span>&lt;<span class="type">CxString</span>, <span class="keyword">int</span>&gt; ages;
-ages.insert(<span class="string">"alice"</span>, <span class="number">30</span>);
-<span class="keyword">int</span> *age = ages.find(<span class="string">"alice"</span>);</pre>
-                    </div>
+<span class="type">CxHashmap</span>&lt;<span class="type">CxString</span>, <span class="type">int</span>&gt; ages;
+ages.insert(<span class="string">"alice"</span>, <span class="number">30</span>);</pre>
                 </div>
-                <div class="example-item">
-                    <h3>JSON</h3>
-                    <div class="code-block">
-<pre><span class="comment">// Parse</span>
-<span class="type">CxJSONBase</span> *root = <span class="type">CxJSONFactory</span>::parse(
-    <span class="string">"{\"name\": \"cx\"}"</span>);
-<span class="type">CxJSONObject</span> *obj = (<span class="type">CxJSONObject</span> *)root;
-<span class="type">CxJSONString</span> *name =
-    (<span class="type">CxJSONString</span> *)obj-&gt;getMember(<span class="string">"name"</span>);
+                <div class="code-block">
+                    <h3>JSON &amp; Terminal</h3>
+<pre><span class="comment">// Parse JSON</span>
+<span class="type">CxJSONBase</span> *root =
+  <span class="type">CxJSONFactory</span>::parse(json_text);
+<span class="type">CxJSONObject</span> *obj =
+  (<span class="type">CxJSONObject</span> *)root;
 
-<span class="comment">// Generate</span>
-<span class="type">CxJSONObject</span> *config = <span class="keyword">new</span> <span class="type">CxJSONObject</span>();
-config-&gt;addMember(<span class="string">"version"</span>,
-    <span class="keyword">new</span> <span class="type">CxJSONNumber</span>(<span class="number">1.0</span>));
-<span class="type">CxString</span> json = config-&gt;toJsonString();</pre>
-                    </div>
-                </div>
-                <div class="example-item">
-                    <h3>Terminal</h3>
-                    <div class="code-block">
-<pre><span class="type">CxScreen</span> screen;
-screen.openAlternateScreen();
-<span class="type">CxScreen</span>::placeCursor(<span class="number">10</span>, <span class="number">20</span>);
+<span class="comment">// Generate JSON</span>
+<span class="type">CxJSONObject</span> *cfg = <span class="keyword">new</span> <span class="type">CxJSONObject</span>();
+cfg->addMember(<span class="string">"name"</span>,
+  <span class="keyword">new</span> <span class="type">CxJSONString</span>(<span class="string">"cx"</span>));
+
+<span class="comment">// Terminal with RGB color</span>
 <span class="type">CxScreen</span>::setForegroundColor(
-    <span class="keyword">new</span> <span class="type">CxRGBColor</span>(<span class="number">255</span>, <span class="number">100</span>, <span class="number">50</span>));
-screen.writeText(<span class="string">"Hello in orange"</span>);
-<span class="type">CxScreen</span>::resetColors();
-
-<span class="comment">// Networking</span>
-<span class="type">CxSocket</span> sock;
-<span class="type">CxInAddress</span> addr(<span class="string">"example.com"</span>, <span class="number">80</span>);
-sock.connect(&amp;addr);
-sock.send(<span class="string">"GET / HTTP/1.0\r\n\r\n"</span>);
-<span class="type">CxString</span> response = sock.receive();</pre>
-                    </div>
+  <span class="keyword">new</span> <span class="type">CxRGBColor</span>(<span class="number">255</span>, <span class="number">100</span>, <span class="number">50</span>));
+screen.writeText(<span class="string">"Hello"</span>);</pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="platform-support">
+    <section class="platforms">
         <div class="container">
             <h2>Platform Support</h2>
-            <p class="subtitle">The same source compiles unchanged across three decades of Unix systems.</p>
-            <table class="platform-table">
-                <thead>
+            <p class="subtitle">
+                From your latest Mac to a 1993 SPARCstation. The same source, unchanged.
+            </p>
+            <div class="platform-table">
+                <table>
                     <tr>
                         <th>Platform</th>
+                        <th>Year</th>
                         <th>Support</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>macOS</td>
-                        <td class="support-full">Full</td>
-                        <td>Apple Clang 12+</td>
                     </tr>
                     <tr>
-                        <td>Linux</td>
-                        <td class="support-full">Full</td>
-                        <td>GCC 4.8 &ndash; 14.x</td>
+                        <td class="platform-name">macOS (ARM64, x86_64)</td>
+                        <td class="year">2020+</td>
+                        <td><span class="check">Full</span></td>
                     </tr>
                     <tr>
-                        <td>NetBSD</td>
-                        <td class="support-full">Full</td>
-                        <td></td>
+                        <td class="platform-name">Linux (x86_64)</td>
+                        <td class="year">2010+</td>
+                        <td><span class="check">Full</span></td>
                     </tr>
                     <tr>
-                        <td>Solaris 5.6 / 5.7 / 5.10</td>
-                        <td class="support-most">Most modules</td>
-                        <td>No regex module</td>
+                        <td class="platform-name">NetBSD</td>
+                        <td class="year">Various</td>
+                        <td><span class="check">Full</span></td>
                     </tr>
                     <tr>
-                        <td>IRIX 6.5</td>
-                        <td class="support-most">Most modules</td>
-                        <td>No tz module</td>
+                        <td class="platform-name">Solaris 5.6 / 5.7 / 5.10</td>
+                        <td class="year">1997-2005</td>
+                        <td><span class="partial">Most modules</span></td>
                     </tr>
                     <tr>
-                        <td>SunOS 4.1.x</td>
-                        <td class="support-core">Core</td>
-                        <td>No thread, regex, or tz</td>
+                        <td class="platform-name">IRIX 6.5</td>
+                        <td class="year">1998</td>
+                        <td><span class="partial">Most modules</span></td>
                     </tr>
-                </tbody>
-            </table>
+                    <tr>
+                        <td class="platform-name">SunOS 4.1.x</td>
+                        <td class="year">1993</td>
+                        <td><span class="partial">Core modules</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="philosophy">
+        <div class="container">
+            <h2>Design Philosophy</h2>
+            <div class="philosophy-grid">
+                <div class="philosophy-item">
+                    <div class="icon">&#x1F4E6;</div>
+                    <h3>Self-Contained</h3>
+                    <p>Everything you need is in the box. No hunting for compatible versions of external libraries. No dependency conflicts.</p>
+                </div>
+                <div class="philosophy-item">
+                    <div class="icon">&#x1F527;</div>
+                    <h3>Minimal C++</h3>
+                    <p>No auto, nullptr, lambdas, or range-for. Code compiles with compilers from 1998. Templates only for containers.</p>
+                </div>
+                <div class="philosophy-item">
+                    <div class="icon">&#x1F30D;</div>
+                    <h3>Portable First</h3>
+                    <p>Platform-specific code is isolated behind #ifdef guards. The API is identical everywhere. Write once, build anywhere.</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -668,33 +756,15 @@ sock.send(<span class="string">"GET / HTTP/1.0\r\n\r\n"</span>);
         <div class="container">
             <h2>Quick Start</h2>
             <div class="install-code">
-<pre><span class="comment"># Clone and build</span>
+<pre><span class="comment"># Clone</span>
 mkdir -p ~/dev/cx && cd ~/dev/cx
 git clone https://github.com/toddvernon/cx.git
+
+<span class="comment"># Build</span>
 cd cx && make
 
-<span class="comment"># Link against cx in your makefile</span>
-LIBS = -L../lib/darwin_arm64 -lcx_base -lcx_screen -lcx_json
-INC  = -I../../..
-
-<span class="comment"># That's it. No configure scripts,</span>
-<span class="comment"># no dependency resolution, no package managers.</span></pre>
-            </div>
-        </div>
-    </section>
-
-    <section class="related">
-        <div class="container">
-            <h2>Built With cx</h2>
-            <div class="related-grid">
-                <a href="https://toddvernon.github.io/cm/" class="related-card">
-                    <h3>cmacs</h3>
-                    <p>A portable terminal text editor. The grown-up nano&mdash;with syntax highlighting, project management, and integrated builds. Runs on macOS, Linux, and vintage Unix.</p>
-                </a>
-                <a href="https://github.com/toddvernon/cx_tests" class="related-card">
-                    <h3>cx_tests</h3>
-                    <p>Test suite for the cx library. Covers all modules with unit and integration tests.</p>
-                </a>
+<span class="comment"># Libraries are built to ../lib/&lt;platform&gt;_&lt;arch&gt;/</span>
+ls ../lib/darwin_arm64/*.a</pre>
             </div>
         </div>
     </section>
@@ -703,9 +773,10 @@ INC  = -I../../..
         <div class="container">
             <p>
                 cx is open source under the Apache 2.0 License.<br>
+                The tz module includes <a href="https://github.com/google/cctz">CCTZ</a> (Google, Apache 2.0).<br>
                 <a href="https://github.com/toddvernon/cx">GitHub</a> &middot;
                 <a href="https://github.com/toddvernon/cx#api-highlights">Documentation</a> &middot;
-                <a href="https://toddvernon.github.io/cm/">cmacs Editor</a> &middot;
+                <a href="https://github.com/toddvernon/cm">cmacs Editor</a> &middot;
                 <a href="https://github.com/toddvernon">@toddvernon</a>
             </p>
         </div>

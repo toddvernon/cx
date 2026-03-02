@@ -389,6 +389,10 @@ CxSheetModel::setCell(CxSheetCellCoordinate coord, CxSheetCell cell)
 //
 // Load the sheet from disk. Sheet is stored in json format
 // Returns 1 on success, 0 on failure
+//
+// Unknown keys in cell objects are collected into appAttributes, allowing
+// applications to store custom attributes that survive round-trips through
+// processing engines that don't know about them.
 //-------------------------------------------------------------------------
 int
 CxSheetModel::loadSheet(CxString filepath)
@@ -489,22 +493,6 @@ CxSheetModel::loadSheet(CxString filepath)
                 if (valueMember != NULL && valueMember->object()->type() == CxJSONBase::NUMBER) {
                     cell.setDouble(CxDouble(((CxJSONNumber *)valueMember->object())->get()));
                 }
-
-                // Load display settings
-                CxJSONMember *decMember = cellObj->find("decimalPlaces");
-                if (decMember != NULL && decMember->object()->type() == CxJSONBase::NUMBER) {
-                    cell.displayDecimalPlaces = (int)((CxJSONNumber *)decMember->object())->get();
-                }
-
-                CxJSONMember *currMember = cellObj->find("currency");
-                if (currMember != NULL && currMember->object()->type() == CxJSONBase::BOOLEAN) {
-                    cell.displayCurrency = ((CxJSONBoolean *)currMember->object())->get();
-                }
-
-                CxJSONMember *commaMember = cellObj->find("commas");
-                if (commaMember != NULL && commaMember->object()->type() == CxJSONBase::BOOLEAN) {
-                    cell.displayCommas = ((CxJSONBoolean *)commaMember->object())->get();
-                }
             }
             else if (type == "formula") {
                 CxJSONMember *formulaMember = cellObj->find("formula");
@@ -516,38 +504,51 @@ CxSheetModel::loadSheet(CxString filepath)
                     }
                     cell.setFormula(formulaText);
                 }
-
-                // Load display settings
-                CxJSONMember *decMember = cellObj->find("decimalPlaces");
-                if (decMember != NULL && decMember->object()->type() == CxJSONBase::NUMBER) {
-                    cell.displayDecimalPlaces = (int)((CxJSONNumber *)decMember->object())->get();
-                }
-
-                CxJSONMember *currMember = cellObj->find("currency");
-                if (currMember != NULL && currMember->object()->type() == CxJSONBase::BOOLEAN) {
-                    cell.displayCurrency = ((CxJSONBoolean *)currMember->object())->get();
-                }
-
-                CxJSONMember *commaMember = cellObj->find("commas");
-                if (commaMember != NULL && commaMember->object()->type() == CxJSONBase::BOOLEAN) {
-                    cell.displayCommas = ((CxJSONBoolean *)commaMember->object())->get();
-                }
             }
 
-            // Load formatting attributes (common to all cell types)
-            CxJSONMember *boldMember = cellObj->find("bold");
-            if (boldMember != NULL && boldMember->object()->type() == CxJSONBase::BOOLEAN) {
-                cell.bold = ((CxJSONBoolean *)boldMember->object())->get() ? 1 : 0;
-            }
+            //---------------------------------------------------------------------
+            // Collect unknown keys into appAttributes
+            // Known keys: "cell", "type", "value", "text", "formula"
+            // Everything else is an app attribute that we preserve
+            //---------------------------------------------------------------------
+            for (int j = 0; j < cellObj->entries(); j++) {
+                CxJSONMember* member = cellObj->at(j);
+                if (member == NULL) continue;
 
-            CxJSONMember *fgColorMember = cellObj->find("fgColor");
-            if (fgColorMember != NULL && fgColorMember->object()->type() == CxJSONBase::STRING) {
-                cell.fgColor = ((CxJSONString *)fgColorMember->object())->get();
-            }
+                CxString key = member->var();
 
-            CxJSONMember *bgColorMember = cellObj->find("bgColor");
-            if (bgColorMember != NULL && bgColorMember->object()->type() == CxJSONBase::STRING) {
-                cell.bgColor = ((CxJSONString *)bgColorMember->object())->get();
+                // Skip known keys
+                if (key == "cell" || key == "type" || key == "value" ||
+                    key == "text" || key == "formula") {
+                    continue;
+                }
+
+                // This is an app attribute - add to cell's appAttributes
+                // Clone the member value based on its type
+                CxJSONBase* valueCopy = NULL;
+                CxJSONBase* origValue = member->object();
+                if (origValue != NULL) {
+                    switch (origValue->type()) {
+                        case CxJSONBase::STRING:
+                            valueCopy = new CxJSONString(((CxJSONString*)origValue)->get());
+                            break;
+                        case CxJSONBase::NUMBER:
+                            valueCopy = new CxJSONNumber(((CxJSONNumber*)origValue)->get());
+                            break;
+                        case CxJSONBase::BOOLEAN:
+                            valueCopy = new CxJSONBoolean(((CxJSONBoolean*)origValue)->get());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                if (valueCopy != NULL) {
+                    if (cell.appAttributes == NULL) {
+                        cell.appAttributes = new CxJSONObject();
+                    }
+                    cell.appAttributes->append(new CxJSONMember(key, valueCopy));
+                }
             }
 
             // Insert cell into model (setCell will update maxRowUsed/maxColUsed)
@@ -582,18 +583,17 @@ CxSheetModel::loadSheet(CxString filepath)
 //   "version": 1,
 //   "currentPosition": "A1",
 //   "cells": [
-//     {"cell": "A1", "type": "double", "value": 42.5,
-//      "decimalPlaces": 2, "currency": false, "commas": false},
-//     {"cell": "B1", "type": "text", "text": "Hello",
-//      "bold": true, "fgColor": "RGB:255,0,0", "bgColor": "ANSI:WHITE"},
+//     {"cell": "A1", "type": "double", "value": 42.5, "bold": true, "fgColor": "RGB:255,0,0"},
+//     {"cell": "B1", "type": "text", "text": "Hello", "bgColor": "ANSI:YELLOW"},
 //     {"cell": "A2", "type": "formula", "formula": "=A1+10"}
 //   ]
 // }
 //
-// Formatting attributes (optional, compatible with .cmrc color format):
-//   - bold: true/false
-//   - fgColor: "ANSI:COLOR_NAME", "RGB:r,g,b", or "XTERM256:COLOR_NAME"
-//   - bgColor: "ANSI:COLOR_NAME", "RGB:r,g,b", or "XTERM256:COLOR_NAME"
+// App attributes are merged directly into each cell's JSON object as first-class keys.
+// This allows applications to store display/formatting attributes without sheetModel
+// needing to know about them. The keys appear as regular JSON members, making files
+// easy to hand-edit and process with standard JSON tools.
+//
 //-------------------------------------------------------------------------
 int
 CxSheetModel::saveSheet(CxString filepath)
@@ -643,9 +643,6 @@ CxSheetModel::saveSheet(CxString filepath)
             case CxSheetCell::DOUBLE:
                 cellObj->append(new CxJSONMember("type", new CxJSONString("double")));
                 cellObj->append(new CxJSONMember("value", new CxJSONNumber(cell->getDouble().value)));
-                cellObj->append(new CxJSONMember("decimalPlaces", new CxJSONNumber(cell->displayDecimalPlaces)));
-                cellObj->append(new CxJSONMember("currency", new CxJSONBoolean(cell->displayCurrency)));
-                cellObj->append(new CxJSONMember("commas", new CxJSONBoolean(cell->displayCommas)));
                 break;
 
             case CxSheetCell::FORMULA:
@@ -653,9 +650,6 @@ CxSheetModel::saveSheet(CxString filepath)
                 // Prepend "=" for readability (like Excel)
                 cellObj->append(new CxJSONMember("formula",
                     new CxJSONString(CxString("=") + cell->getFormulaText())));
-                cellObj->append(new CxJSONMember("decimalPlaces", new CxJSONNumber(cell->displayDecimalPlaces)));
-                cellObj->append(new CxJSONMember("currency", new CxJSONBoolean(cell->displayCurrency)));
-                cellObj->append(new CxJSONMember("commas", new CxJSONBoolean(cell->displayCommas)));
                 break;
 
             default:
@@ -664,15 +658,35 @@ CxSheetModel::saveSheet(CxString filepath)
                 continue;
         }
 
-        // Add formatting attributes (only if set to non-default values)
-        if (cell->bold) {
-            cellObj->append(new CxJSONMember("bold", new CxJSONBoolean(1)));
-        }
-        if (cell->fgColor.length() > 0) {
-            cellObj->append(new CxJSONMember("fgColor", new CxJSONString(cell->fgColor)));
-        }
-        if (cell->bgColor.length() > 0) {
-            cellObj->append(new CxJSONMember("bgColor", new CxJSONString(cell->bgColor)));
+        // Merge appAttributes into the cell object (if present)
+        // Each key from appAttributes becomes a first-class member of the cell JSON
+        if (cell->appAttributes != NULL) {
+            for (int i = 0; i < cell->appAttributes->entries(); i++) {
+                CxJSONMember* member = cell->appAttributes->at(i);
+                if (member != NULL) {
+                    // Clone the member value based on its type
+                    CxJSONBase* valueCopy = NULL;
+                    CxJSONBase* origValue = member->object();
+                    if (origValue != NULL) {
+                        switch (origValue->type()) {
+                            case CxJSONBase::STRING:
+                                valueCopy = new CxJSONString(((CxJSONString*)origValue)->get());
+                                break;
+                            case CxJSONBase::NUMBER:
+                                valueCopy = new CxJSONNumber(((CxJSONNumber*)origValue)->get());
+                                break;
+                            case CxJSONBase::BOOLEAN:
+                                valueCopy = new CxJSONBoolean(((CxJSONBoolean*)origValue)->get());
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    if (valueCopy != NULL) {
+                        cellObj->append(new CxJSONMember(member->var(), valueCopy));
+                    }
+                }
+            }
         }
 
         cellsArray->append(cellObj);

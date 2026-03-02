@@ -19,6 +19,7 @@
 #include <cx/base/string.h>
 #include <cx/base/double.h>
 #include <cx/expression/expression.h>
+#include <cx/json/json_object.h>
 
 #ifndef _CxSheetCell_
 #define _CxSheetCell_
@@ -32,6 +33,38 @@
 // contain a numeric value (CxDouble), or contain a formula (CxExpression).
 // The formula is parsed once when set; the CxSheetModel sets the variable database
 // before evaluation during recalculate().
+//
+// APP ATTRIBUTES (appAttributes)
+// ------------------------------
+// The appAttributes field provides a mechanism for application-layer data to be stored
+// with cells without sheetModel needing to understand or interpret that data. This keeps
+// the sheetModel library focused on computation (values, formulas, dependencies) while
+// allowing applications to store display/formatting attributes.
+//
+// How it works:
+//   - appAttributes is a CxJSONObject* that stores arbitrary key-value pairs
+//   - During save, sheetModel merges these keys directly into the cell's JSON object
+//   - During load, sheetModel collects any unknown keys into appAttributes
+//   - sheetModel never interprets these values - they are opaque
+//
+// Round-trip preservation:
+//   A processing engine that only uses sheetModel for computation will automatically
+//   preserve app attributes it doesn't understand. For example:
+//     1. App "ss" saves a cell with {"bold": true, "fgColor": "RGB:255,0,0"}
+//     2. A computation engine loads the sheet, does calculations, saves it
+//     3. The bold and fgColor attributes are preserved even though the engine
+//        never touched them
+//
+// File format example:
+//   {
+//     "cells": [
+//       {"cell": "A1", "type": "double", "value": 42.5, "bold": true, "fgColor": "RGB:255,0,0"},
+//       {"cell": "B1", "type": "text", "text": "Hello", "bgColor": "ANSI:YELLOW"}
+//     ]
+//   }
+//
+// Note: The keys appear as first-class JSON members (not a nested string), making
+// files easy to hand-edit and process with standard JSON tools.
 //
 //-------------------------------------------------------------------------------------------------
 
@@ -98,16 +131,21 @@ class CxSheetCell
     CxDouble doubleValue;       // if cell is double this is populated
     CxDouble evaluatedValue;    // cached result for DOUBLE or evaluated FORMULA
 
-    int displayDecimalPlaces;   // number of decimal places to display
-    int displayCurrency;        // show $ symbol
-    int displayCommas;          // display thousands separators
+    CxJSONObject* appAttributes;  // application-defined attributes (see class comment above)
 
-    // Cell formatting attributes (compatible with .cmrc color format)
-    // Color strings use format: "ANSI:COLOR_NAME", "RGB:r,g,b", or "XTERM256:COLOR_NAME"
-    // Empty string means no color specified (use default)
-    int bold;                   // 1 = bold text, 0 = normal
-    CxString fgColor;           // foreground color (e.g., "RGB:255,0,0" or "ANSI:RED")
-    CxString bgColor;           // background color (e.g., "RGB:255,255,255" or "ANSI:WHITE")
+    // Helper methods for appAttributes
+    void setAppAttribute(const char* key, const char* value);
+    void setAppAttribute(const char* key, int value);
+    void setAppAttribute(const char* key, double value);
+    void setAppAttribute(const char* key, bool value);
+
+    CxString getAppAttributeString(const char* key, const char* defaultValue = "") const;
+    int getAppAttributeInt(const char* key, int defaultValue = 0) const;
+    double getAppAttributeDouble(const char* key, double defaultValue = 0.0) const;
+    bool getAppAttributeBool(const char* key, bool defaultValue = false) const;
+
+    bool hasAppAttribute(const char* key) const;
+    void removeAppAttribute(const char* key);
 };
 
 

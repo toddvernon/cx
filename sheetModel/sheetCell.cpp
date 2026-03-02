@@ -16,6 +16,76 @@
 #include <string.h>
 
 #include "sheetCell.h"
+#include <cx/json/json_member.h>
+#include <cx/json/json_string.h>
+#include <cx/json/json_number.h>
+#include <cx/json/json_boolean.h>
+
+
+//-------------------------------------------------------------------------
+// Static helper: clone a JSON value based on its type
+//-------------------------------------------------------------------------
+static CxJSONBase*
+cloneJSONValue(CxJSONBase* value)
+{
+    if (value == NULL) return NULL;
+
+    switch (value->type()) {
+        case CxJSONBase::STRING:
+            return new CxJSONString(((CxJSONString*)value)->get());
+        case CxJSONBase::NUMBER:
+            return new CxJSONNumber(((CxJSONNumber*)value)->get());
+        case CxJSONBase::BOOLEAN:
+            return new CxJSONBoolean(((CxJSONBoolean*)value)->get());
+        default:
+            // For other types (OBJECT, ARRAY), return NULL - not needed for appAttributes
+            return NULL;
+    }
+}
+
+
+//-------------------------------------------------------------------------
+// Static helper: clone a CxJSONObject (shallow copy of members)
+//-------------------------------------------------------------------------
+static CxJSONObject*
+cloneJSONObject(CxJSONObject* src)
+{
+    if (src == NULL) return NULL;
+
+    CxJSONObject* copy = new CxJSONObject();
+    for (int i = 0; i < src->entries(); i++) {
+        CxJSONMember* member = src->at(i);
+        if (member != NULL) {
+            CxJSONBase* valueCopy = cloneJSONValue(member->object());
+            if (valueCopy != NULL) {
+                copy->append(new CxJSONMember(member->var(), valueCopy));
+            }
+        }
+    }
+    return copy;
+}
+
+
+//-------------------------------------------------------------------------
+// Static helper: remove a member by key from a CxJSONObject
+//-------------------------------------------------------------------------
+static void
+removeJSONMember(CxJSONObject* obj, const char* key)
+{
+    if (obj == NULL) return;
+
+    // Find and remove the member with matching key
+    for (int i = 0; i < obj->entries(); i++) {
+        CxJSONMember* member = obj->at(i);
+        if (member != NULL && member->var() == key) {
+            CxJSONMember* removed = obj->removeAt(i);
+            if (removed != NULL) {
+                delete removed;
+            }
+            return;
+        }
+    }
+}
 
 
 //-------------------------------------------------------------------------
@@ -26,10 +96,7 @@
 CxSheetCell::CxSheetCell(void)
 : cellType(EMPTY)
 , formula(NULL)
-, displayDecimalPlaces(2)
-, displayCurrency(0)
-, displayCommas(0)
-, bold(0)
+, appAttributes(NULL)
 {
 }
 
@@ -43,10 +110,7 @@ CxSheetCell::CxSheetCell(CxString textValue)
 : cellType(TEXT)
 , text(textValue)
 , formula(NULL)
-, displayDecimalPlaces(2)
-, displayCurrency(0)
-, displayCommas(0)
-, bold(0)
+, appAttributes(NULL)
 {
 }
 
@@ -61,10 +125,7 @@ CxSheetCell::CxSheetCell(CxDouble numericValue)
 , formula(NULL)
 , doubleValue(numericValue)
 , evaluatedValue(numericValue)
-, displayDecimalPlaces(2)
-, displayCurrency(0)
-, displayCommas(0)
-, bold(0)
+, appAttributes(NULL)
 {
 }
 
@@ -80,18 +141,17 @@ CxSheetCell::CxSheetCell(const CxSheetCell& other)
 , formula(NULL)
 , doubleValue(other.doubleValue)
 , evaluatedValue(other.evaluatedValue)
-, displayDecimalPlaces(other.displayDecimalPlaces)
-, displayCurrency(other.displayCurrency)
-, displayCommas(other.displayCommas)
-, bold(other.bold)
-, fgColor(other.fgColor)
-, bgColor(other.bgColor)
+, appAttributes(NULL)
 {
     // Deep copy of formula if present
     if (other.formula != NULL) {
-        // Reconstruct from the formula text
         formula = new CxExpression(other.text);
         formula->Parse();
+    }
+
+    // Deep copy of appAttributes if present
+    if (other.appAttributes != NULL) {
+        appAttributes = cloneJSONObject(other.appAttributes);
     }
 }
 
@@ -106,6 +166,10 @@ CxSheetCell::~CxSheetCell(void)
     if (formula != NULL) {
         delete formula;
         formula = NULL;
+    }
+    if (appAttributes != NULL) {
+        delete appAttributes;
+        appAttributes = NULL;
     }
 }
 
@@ -125,21 +189,26 @@ CxSheetCell::operator=(const CxSheetCell& other)
             formula = NULL;
         }
 
+        // Clean up existing appAttributes
+        if (appAttributes != NULL) {
+            delete appAttributes;
+            appAttributes = NULL;
+        }
+
         cellType = other.cellType;
         text = other.text;
         doubleValue = other.doubleValue;
         evaluatedValue = other.evaluatedValue;
-        displayDecimalPlaces = other.displayDecimalPlaces;
-        displayCurrency = other.displayCurrency;
-        displayCommas = other.displayCommas;
-        bold = other.bold;
-        fgColor = other.fgColor;
-        bgColor = other.bgColor;
 
         // Deep copy of formula if present
         if (other.formula != NULL) {
             formula = new CxExpression(other.text);
             formula->Parse();
+        }
+
+        // Deep copy of appAttributes if present
+        if (other.appAttributes != NULL) {
+            appAttributes = cloneJSONObject(other.appAttributes);
         }
     }
     return *this;
@@ -150,6 +219,7 @@ CxSheetCell::operator=(const CxSheetCell& other)
 // CxSheetCell::clear
 //
 // Reset cell to EMPTY state
+// Note: appAttributes are preserved - clearing a cell doesn't remove its formatting
 //-------------------------------------------------------------------------
 void
 CxSheetCell::clear(void)
@@ -165,10 +235,9 @@ CxSheetCell::clear(void)
     doubleValue = CxDouble();
     evaluatedValue = CxDouble();
 
-    // Reset formatting (but preserve display settings like decimalPlaces)
-    bold = 0;
-    fgColor = CxString();
-    bgColor = CxString();
+    // Note: appAttributes are intentionally NOT cleared here.
+    // Clearing a cell's content doesn't remove its formatting attributes.
+    // Use removeAppAttribute() or delete appAttributes explicitly if needed.
 }
 
 
@@ -276,4 +345,172 @@ CxDouble
 CxSheetCell::getEvaluatedValue(void) const
 {
     return evaluatedValue;
+}
+
+
+//-------------------------------------------------------------------------
+// App Attributes Helper Methods
+//
+// These methods provide convenient access to the appAttributes JSON object.
+// The appAttributes object is created lazily when first needed.
+//-------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+// CxSheetCell::setAppAttribute (string value)
+//-------------------------------------------------------------------------
+void
+CxSheetCell::setAppAttribute(const char* key, const char* value)
+{
+    if (appAttributes == NULL) {
+        appAttributes = new CxJSONObject();
+    }
+
+    // Remove existing key if present, then add new value
+    removeJSONMember(appAttributes, key);
+    appAttributes->append(new CxJSONMember(key, new CxJSONString(value)));
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::setAppAttribute (int value)
+//-------------------------------------------------------------------------
+void
+CxSheetCell::setAppAttribute(const char* key, int value)
+{
+    if (appAttributes == NULL) {
+        appAttributes = new CxJSONObject();
+    }
+
+    removeJSONMember(appAttributes, key);
+    appAttributes->append(new CxJSONMember(key, new CxJSONNumber((double)value)));
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::setAppAttribute (double value)
+//-------------------------------------------------------------------------
+void
+CxSheetCell::setAppAttribute(const char* key, double value)
+{
+    if (appAttributes == NULL) {
+        appAttributes = new CxJSONObject();
+    }
+
+    removeJSONMember(appAttributes, key);
+    appAttributes->append(new CxJSONMember(key, new CxJSONNumber(value)));
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::setAppAttribute (bool value)
+//-------------------------------------------------------------------------
+void
+CxSheetCell::setAppAttribute(const char* key, bool value)
+{
+    if (appAttributes == NULL) {
+        appAttributes = new CxJSONObject();
+    }
+
+    removeJSONMember(appAttributes, key);
+    appAttributes->append(new CxJSONMember(key, new CxJSONBoolean(value ? 1 : 0)));
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::getAppAttributeString
+//-------------------------------------------------------------------------
+CxString
+CxSheetCell::getAppAttributeString(const char* key, const char* defaultValue) const
+{
+    if (appAttributes == NULL) {
+        return CxString(defaultValue);
+    }
+
+    CxJSONMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONBase::STRING) {
+        return ((CxJSONString*)member->object())->get();
+    }
+
+    return CxString(defaultValue);
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::getAppAttributeInt
+//-------------------------------------------------------------------------
+int
+CxSheetCell::getAppAttributeInt(const char* key, int defaultValue) const
+{
+    if (appAttributes == NULL) {
+        return defaultValue;
+    }
+
+    CxJSONMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONBase::NUMBER) {
+        return (int)((CxJSONNumber*)member->object())->get();
+    }
+
+    return defaultValue;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::getAppAttributeDouble
+//-------------------------------------------------------------------------
+double
+CxSheetCell::getAppAttributeDouble(const char* key, double defaultValue) const
+{
+    if (appAttributes == NULL) {
+        return defaultValue;
+    }
+
+    CxJSONMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONBase::NUMBER) {
+        return ((CxJSONNumber*)member->object())->get();
+    }
+
+    return defaultValue;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::getAppAttributeBool
+//-------------------------------------------------------------------------
+bool
+CxSheetCell::getAppAttributeBool(const char* key, bool defaultValue) const
+{
+    if (appAttributes == NULL) {
+        return defaultValue;
+    }
+
+    CxJSONMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONBase::BOOLEAN) {
+        return ((CxJSONBoolean*)member->object())->get() != 0;
+    }
+
+    return defaultValue;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::hasAppAttribute
+//-------------------------------------------------------------------------
+bool
+CxSheetCell::hasAppAttribute(const char* key) const
+{
+    if (appAttributes == NULL) {
+        return false;
+    }
+
+    return appAttributes->find(key) != NULL;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetCell::removeAppAttribute
+//-------------------------------------------------------------------------
+void
+CxSheetCell::removeAppAttribute(const char* key)
+{
+    removeJSONMember(appAttributes, key);
 }

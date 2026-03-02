@@ -27,7 +27,7 @@
 // CxSheetCellCoordinate
 //
 // Represents a cell address in the spreadsheet. Supports both numeric (row, col) and
-// classic spreadsheet notation (A:1, $C:$6, AA:100). Tracks whether row and column
+// classic spreadsheet notation (A1, $C$6, AA100). Tracks whether row and column
 // references are absolute ($) or relative for copy/paste operations.
 //
 //-------------------------------------------------------------------------------------------------
@@ -37,13 +37,13 @@ class CxSheetCellCoordinate
   public:
 
     CxSheetCellCoordinate(void);
-    // default constructor - creates coordinate at A:1 (0,0)
+    // default constructor - creates coordinate at A1 (0,0)
 
     CxSheetCellCoordinate(unsigned long row, unsigned long col);
     // construct from numeric row and column (0-based)
 
     CxSheetCellCoordinate(CxString address);
-    // construct from spreadsheet address string (e.g., "C:6", "$AA:$100")
+    // construct from spreadsheet address string (e.g., "C6", "$AA$100")
     // parses absolute markers ($) and stores them
 
     CxSheetCellCoordinate(const CxSheetCellCoordinate& other);
@@ -72,10 +72,10 @@ class CxSheetCellCoordinate
 
     // String representation methods
     CxString toAddress(void) const;
-    // returns address without $ markers (e.g., "C:6")
+    // returns address without $ markers (e.g., "C6")
 
     CxString toAbsoluteAddress(void) const;
-    // returns address with $ markers where set (e.g., "$C:$6")
+    // returns address with $ markers where set (e.g., "$C$6")
 
     CxString colToLetters(unsigned long col) const;
     // converts column number to letters (0=A, 25=Z, 26=AA, etc.)

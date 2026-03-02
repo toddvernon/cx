@@ -22,7 +22,7 @@
 //-------------------------------------------------------------------------
 // CxSheetCellCoordinate::CxSheetCellCoordinate
 //
-// Default constructor - creates coordinate at A:1 (0,0)
+// Default constructor - creates coordinate at A1 (0,0)
 //-------------------------------------------------------------------------
 CxSheetCellCoordinate::CxSheetCellCoordinate(void)
 : rowNum(0)
@@ -264,7 +264,7 @@ CxSheetCellCoordinate::lettersToCol(CxString letters) const
 //-------------------------------------------------------------------------
 // CxSheetCellCoordinate::toAddress
 //
-// Returns address without $ markers (e.g., "C:6")
+// Returns address without $ markers (e.g., "C6")
 // Row is displayed as 1-based (row 0 displays as "1")
 //-------------------------------------------------------------------------
 CxString
@@ -273,7 +273,6 @@ CxSheetCellCoordinate::toAddress(void) const
     CxString result;
 
     result = colToLetters(colNum);
-    result = result + ":";
     result = result + CxString((unsigned long)(rowNum + 1));
 
     return result;
@@ -283,7 +282,7 @@ CxSheetCellCoordinate::toAddress(void) const
 //-------------------------------------------------------------------------
 // CxSheetCellCoordinate::toAbsoluteAddress
 //
-// Returns address with $ markers where set (e.g., "$C:$6")
+// Returns address with $ markers where set (e.g., "$C$6")
 //-------------------------------------------------------------------------
 CxString
 CxSheetCellCoordinate::toAbsoluteAddress(void) const
@@ -294,7 +293,6 @@ CxSheetCellCoordinate::toAbsoluteAddress(void) const
         result = "$";
     }
     result = result + colToLetters(colNum);
-    result = result + ":";
     if (rowAbsolute) {
         result = result + "$";
     }
@@ -308,7 +306,7 @@ CxSheetCellCoordinate::toAbsoluteAddress(void) const
 // CxSheetCellCoordinate::parseAddress
 //
 // Parses address string, returns 1 on success, 0 on failure
-// Handles formats: "C:6", "$C:6", "C:$6", "$C:$6", "AA:100"
+// Handles formats: "C6", "$C6", "C$6", "$C$6", "AA100"
 //-------------------------------------------------------------------------
 int
 CxSheetCellCoordinate::parseAddress(CxString address)
@@ -346,12 +344,6 @@ CxSheetCellCoordinate::parseAddress(CxString address)
     }
 
     colNum = lettersToCol(colLetters);
-
-    // Expect colon separator
-    if (pos >= len || str[pos] != ':') {
-        return 0;
-    }
-    pos++;
 
     // Check for row absolute marker
     if (pos < len && str[pos] == '$') {

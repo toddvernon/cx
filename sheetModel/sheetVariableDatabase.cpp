@@ -123,9 +123,9 @@ CxSheetVariableDatabase::VariableEvaluate(CxString name, double* result)
     // reference. Set the flag and return 0 to break the cycle.
     //
     // Examples that would hit this:
-    // - A1 = A:1 + 1 (self-reference)
-    // - A1 = B:1 + 1, B1 = A:1 + 1 (mutual reference)
-    // - A1 = B:1, B1 = C:1, C1 = A:1 (chain reference)
+    // - A1 = A1 + 1 (self-reference)
+    // - A1 = B1 + 1, B1 = A1 + 1 (mutual reference)
+    // - A1 = B1, B1 = C1, C1 = A1 (chain reference)
     //
     // The circularReferenceDetected flag is checked by recalculateCell()
     // to set the cell's value to 0 (the expected behavior for circular refs).
@@ -166,7 +166,7 @@ CxSheetVariableDatabase::VariableEvaluate(CxString name, double* result)
             //    that's a circular reference
             // 4. Pop and return the result
             //
-            // Example for mutual reference (A1=B:1+1, B1=A:1+1):
+            // Example for mutual reference (A1=B1+1, B1=A1+1):
             // - Evaluating A1: stack=[A1]
             // - A1 refs B1, evaluate B1: stack=[A1,B1]
             // - B1 refs A1, but A1 is on stack! → circular reference

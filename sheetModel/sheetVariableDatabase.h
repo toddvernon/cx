@@ -37,10 +37,10 @@ class CxSheetModel;
 // CxSheetVariableDatabase
 //
 // A variable database implementation for CxExpression that resolves cell references
-// (like "A:1", "$B:$2") to their evaluated values from the spreadsheet model.
+// (like "A1", "$B$2") to their evaluated values from the spreadsheet model.
 //
 // Variable names are expected to be cell coordinates in spreadsheet notation.
-// When a formula contains a reference like "A:1 + B:2", this class looks up
+// When a formula contains a reference like "A1 + B2", this class looks up
 // those cells and returns their evaluated values.
 //
 // NOTE: Circular reference detection is handled by CxSheetDependencyGraph during

@@ -199,6 +199,17 @@ class CxSheetDependencyGraph
     void clear(void);
     // Remove all dependency information. Used when resetting the spreadsheet.
 
+    CxSList<CxSheetCellCoordinate> topologicalSort(CxSList<CxSheetCellCoordinate> cells);
+    // Given a set of cells, return them in topological order.
+    // Uses Kahn's algorithm. If cell X depends on cell Y, then Y appears before X.
+    //
+    // This is public to support recalculateAll() which needs to sort all formula
+    // cells by their dependencies for correct evaluation order after loading.
+    //
+    // If there's a cycle (circular reference), returns cells in arbitrary order.
+    // Circular references are detected elsewhere (during evaluation).
+
+
   private:
 
     //---------------------------------------------------------------------------------------------
@@ -236,13 +247,6 @@ class CxSheetDependencyGraph
     CxSList<CxSheetCellCoordinate> findAllAffectedCellsMultiple(
         CxSList<CxSheetCellCoordinate> startCells);
     // Same as above but starting from multiple cells.
-
-    CxSList<CxSheetCellCoordinate> topologicalSort(CxSList<CxSheetCellCoordinate> cells);
-    // Given a set of cells, return them in topological order.
-    // Uses Kahn's algorithm (see class documentation above).
-    //
-    // If there's a cycle (circular reference), returns cells in arbitrary order.
-    // Circular references are detected elsewhere (during evaluation).
 
     int isInList(CxSList<CxSheetCellCoordinate>& list, CxSheetCellCoordinate coord);
     // Helper: returns 1 if coord is in list, 0 otherwise.

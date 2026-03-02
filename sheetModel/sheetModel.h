@@ -154,6 +154,12 @@ class CxSheetModel
     void setReadOnly(int readOnly);
     // set the read only flag
 
+    CxSList<CxSheetCellCoordinate> getLastAffectedCells(void);
+    // Returns the list of cells affected by the last setCell() or load operation.
+    // This includes the directly changed cell and all cells that were recalculated
+    // due to formula dependencies. The list is in evaluation order (dependencies first).
+    // Use this after setCell() to know which cells need to be redrawn.
+
 
   private:
 
@@ -222,6 +228,11 @@ class CxSheetModel
 
     CxSheetVariableDatabase* variableDatabase;
     // variable database for formula evaluation (owned pointer)
+
+    CxSList<CxSheetCellCoordinate> _lastAffectedCells;
+    // Cells affected by the last setCell() or load operation.
+    // Populated by recalculate() and recalculateAll().
+    // Includes the directly changed cell and all dependent formula cells.
 };
 
 

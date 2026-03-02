@@ -264,6 +264,20 @@ CxSheetModel::getCurrentPosition(void)
 
 
 //-------------------------------------------------------------------------
+// CxSheetModel::getLastAffectedCells
+//
+// Returns the list of cells affected by the last setCell() or load operation.
+// This includes the directly changed cell and all cells that were recalculated
+// due to formula dependencies. The list is in evaluation order.
+//-------------------------------------------------------------------------
+CxSList<CxSheetCellCoordinate>
+CxSheetModel::getLastAffectedCells(void)
+{
+    return _lastAffectedCells;
+}
+
+
+//-------------------------------------------------------------------------
 // CxSheetModel::getCell
 //
 // Gets a copy of the CxSheetCell at the cell coordinate
@@ -322,7 +336,7 @@ CxSheetModel::setCell(CxSheetCellCoordinate coord, CxSheetCell cell)
     // STEP 2: Insert the cell into the hashmap
     //
     // For formula cells, we need to re-parse with our variableDatabase
-    // so that cell references like "A:1" can be recognized.
+    // so that cell references like "A1" can be recognized.
     //-------------------------------------------------------------------------
     if (cell.cellType == CxSheetCell::FORMULA && cell.formula != NULL) {
         // Get the formula text before inserting
@@ -420,7 +434,7 @@ CxSheetModel::loadSheet(CxString filepath)
     //-------------------------------------------------------------------------
     loadingInProgress = 1;
 
-    // Load current position if present (stored as cell address like "A:1")
+    // Load current position if present (stored as cell address like "A1")
     CxJSONMember *posMember = root->find("currentPosition");
     if (posMember != NULL && posMember->object()->type() == CxJSONBase::STRING) {
         CxString posAddr = ((CxJSONString *)posMember->object())->get();
@@ -441,7 +455,7 @@ CxSheetModel::loadSheet(CxString filepath)
 
             CxJSONObject *cellObj = (CxJSONObject *)cellBase;
 
-            // Get cell address (e.g., "A:1", "B:2")
+            // Get cell address (e.g., "A1", "B2")
             CxJSONMember *cellMember = cellObj->find("cell");
             CxJSONMember *typeMember = cellObj->find("type");
 
@@ -566,13 +580,13 @@ CxSheetModel::loadSheet(CxString filepath)
 // JSON format:
 // {
 //   "version": 1,
-//   "currentPosition": "A:1",
+//   "currentPosition": "A1",
 //   "cells": [
-//     {"cell": "A:1", "type": "double", "value": 42.5,
+//     {"cell": "A1", "type": "double", "value": 42.5,
 //      "decimalPlaces": 2, "currency": false, "commas": false},
-//     {"cell": "B:1", "type": "text", "text": "Hello",
+//     {"cell": "B1", "type": "text", "text": "Hello",
 //      "bold": true, "fgColor": "RGB:255,0,0", "bgColor": "ANSI:WHITE"},
-//     {"cell": "A:2", "type": "formula", "formula": "=A:1+10"}
+//     {"cell": "A2", "type": "formula", "formula": "=A1+10"}
 //   ]
 // }
 //
@@ -590,7 +604,7 @@ CxSheetModel::saveSheet(CxString filepath)
     // Add version
     root->append(new CxJSONMember("version", new CxJSONNumber(1)));
 
-    // Add current position as cell address (e.g., "A:1")
+    // Add current position as cell address (e.g., "A1")
     root->append(new CxJSONMember("currentPosition",
         new CxJSONString(currentCellPosition.toAddress())));
 
@@ -615,7 +629,7 @@ CxSheetModel::saveSheet(CxString filepath)
 
         CxJSONObject *cellObj = new CxJSONObject();
 
-        // Add cell address (e.g., "A:1", "B:2")
+        // Add cell address (e.g., "A1", "B2")
         cellObj->append(new CxJSONMember("cell", new CxJSONString(key->toAddress())));
 
         // Add type-specific data
@@ -813,6 +827,12 @@ CxSheetModel::recalculate(void)
         return;
     }
 
+    // Clear the affected cells list - we'll populate it as we go
+    _lastAffectedCells.clear();
+
+    // The directly changed cell is always affected
+    _lastAffectedCells.append(lastChangedCell);
+
     // Clear the evaluation stack before starting a new recalculation batch
     variableDatabase->clearEvaluationStack();
 
@@ -846,6 +866,7 @@ CxSheetModel::recalculate(void)
     for (int i = 0; i < (int)cellsToRecalc.entries(); i++) {
         CxSheetCellCoordinate coord = cellsToRecalc.at(i);
         recalculateCell(coord);
+        _lastAffectedCells.append(coord);
     }
 }
 
@@ -870,9 +891,9 @@ CxSheetModel::recalculate(void)
 // check this flag and set the cell's value to 0 for circular references.
 //
 // This handles:
-// - Self-references: A1 = A:1 + 1 → evaluates to 0
-// - Mutual references: A1 = B:1 + 1, B1 = A:1 + 1 → both evaluate to 0
-// - Chain references: A1 = B:1, B1 = C:1, C1 = A:1 → all evaluate to 0
+// - Self-references: A1 = A1 + 1 → evaluates to 0
+// - Mutual references: A1 = B1 + 1, B1 = A1 + 1 → both evaluate to 0
+// - Chain references: A1 = B1, B1 = C1, C1 = A1 → all evaluate to 0
 //-------------------------------------------------------------------------
 void
 CxSheetModel::recalculateCell(CxSheetCellCoordinate coord)
@@ -938,12 +959,15 @@ CxSheetModel::recalculateCell(CxSheetCellCoordinate coord)
 void
 CxSheetModel::recalculateAll(void)
 {
+    // Clear the affected cells list - we'll populate it with all cells
+    _lastAffectedCells.clear();
+
     // Clear the evaluation stack before starting
     variableDatabase->clearEvaluationStack();
 
     //-------------------------------------------------------------------------
-    // Collect all formula cells and build a list of their coordinates.
-    // We'll then get them in topological order from the dependency graph.
+    // Collect all cells - the affected list should include everything.
+    // Also collect formula cells separately for recalculation.
     //-------------------------------------------------------------------------
     CxSList<CxSheetCellCoordinate> formulaCells;
 
@@ -953,58 +977,31 @@ CxSheetModel::recalculateAll(void)
         const CxSheetCellCoordinate* key = iter.getKey();
         CxSheetCell* cell = iter.getEntry();
 
-        if (key != NULL && cell != NULL && cell->cellType == CxSheetCell::FORMULA) {
-            formulaCells.append(*key);
+        if (key != NULL && cell != NULL) {
+            // All cells are affected during a full recalc (e.g., after load)
+            _lastAffectedCells.append(*key);
+
+            if (cell->cellType == CxSheetCell::FORMULA) {
+                formulaCells.append(*key);
+            }
         }
     }
 
     //-------------------------------------------------------------------------
-    // Get all cells in topological order.
-    // We use getCellsToRecalculateMultiple with all formula cells as the
-    // "changed" cells - this gives us everything in the right order.
-    //
-    // Actually, for a full recalc, we just need to sort all formula cells
-    // by their dependencies. We can use the topological sort directly
-    // since we want all of them.
+    // Sort formula cells in topological order using the dependency graph.
+    // This ensures that if formula X depends on formula Y, Y is evaluated first.
     //-------------------------------------------------------------------------
+    CxSList<CxSheetCellCoordinate> sortedFormulas =
+        dependencyGraph.topologicalSort(formulaCells);
 
-    // For each formula cell, we need to evaluate in dependency order.
-    // The simplest approach: iterate until all are evaluated.
-    // A cell can be evaluated if all its dependencies are either:
-    // - Non-formula cells (always ready)
-    // - Formula cells that have already been evaluated this round
-
-    // For now, use a simpler approach: evaluate in multiple passes
-    // until everything is done. This handles dependencies correctly
-    // even without explicit sorting.
-
-    int maxPasses = (int)formulaCells.entries() + 1;  // Safety limit
-    int evaluated = 0;
-
-    // Track which cells we've already evaluated this round
-    CxSList<CxSheetCellCoordinate> evaluatedCells;
-
-    for (int pass = 0; pass < maxPasses && evaluated < (int)formulaCells.entries(); pass++) {
-        for (int i = 0; i < (int)formulaCells.entries(); i++) {
-            CxSheetCellCoordinate coord = formulaCells.at(i);
-
-            // Skip if already evaluated
-            int alreadyDone = 0;
-            for (int j = 0; j < (int)evaluatedCells.entries(); j++) {
-                if (evaluatedCells.at(j) == coord) {
-                    alreadyDone = 1;
-                    break;
-                }
-            }
-            if (alreadyDone) {
-                continue;
-            }
-
-            // Try to evaluate this cell
-            recalculateCell(coord);
-            evaluatedCells.append(coord);
-            evaluated++;
-        }
+    //-------------------------------------------------------------------------
+    // Evaluate each formula cell in topological order.
+    // Because of the ordering, when we evaluate cell X, all cells that X
+    // references have already been evaluated.
+    //-------------------------------------------------------------------------
+    for (int i = 0; i < (int)sortedFormulas.entries(); i++) {
+        CxSheetCellCoordinate coord = sortedFormulas.at(i);
+        recalculateCell(coord);
     }
 }
 
@@ -1023,7 +1020,7 @@ CxSheetModel::recalculateAll(void)
 // EXAMPLE:
 // --------
 // If cell C1 has formula "=A1+B1":
-//   - formula->GetVariableList() returns ["A:1", "B:1"]
+//   - formula->GetVariableList() returns ["A1", "B1"]
 //   - We call dependencyGraph.addDependency(C1, A1)
 //   - We call dependencyGraph.addDependency(C1, B1)
 //
@@ -1038,7 +1035,7 @@ CxSheetModel::updateDependencies(CxSheetCellCoordinate coord, CxSheetCell* cell)
     }
 
     // Get the list of variable names (cell references) from the formula.
-    // For "=A1+B1", this returns ["A:1", "B:1"]
+    // For "=A1+B1", this returns ["A1", "B1"]
     CxSList<CxString> varList = cell->formula->GetVariableList();
 
     // Register each cell reference as a dependency

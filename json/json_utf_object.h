@@ -1,53 +1,58 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_object.h
+//  json_utf_object.h
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFObject Class - UTF-8 aware JSON object
 //
 //-------------------------------------------------------------------------------------------------
 
 #include <cx/base/string.h>
+#include <cx/base/utfstring.h>
 #include <cx/base/slist.h>
 
-#include <cx/json/json_base.h>
-#include <cx/json/json_member.h>
+#include <cx/json/json_utf_base.h>
+#include <cx/json/json_utf_member.h>
 
 
-#ifndef _CXJSON_OBJECT_
-#define _CXJSON_OBJECT_
+#ifndef _CXJSON_UTF_OBJECT_
+#define _CXJSON_UTF_OBJECT_
 
 
 
 //-------------------------------------------------------------------------
-// CxJSONObject
+// CxJSONUTFObject
 //
+// JSON object with UTF-8 aware keys and values.
 //-------------------------------------------------------------------------
-class CxJSONObject: public CxJSONBase
+class CxJSONUTFObject: public CxJSONUTFBase
 {
   public:
 
-	CxJSONObject( void );
+	CxJSONUTFObject( void );
 
-	~CxJSONObject( void );
+	~CxJSONUTFObject( void );
 
-	void 
-	append(CxJSONMember *m);
+	void
+	append(CxJSONUTFMember *m);
 
-    CxJSONMember *
+    CxJSONUTFMember *
 	at( int c) const;
 
-	CxJSONMember *
+	CxJSONUTFMember *
 	removeAt( int i );
 
-	CxJSONMember *
-	find( CxString name);
+	CxJSONUTFMember *
+	find( CxUTFString name);
 
-	int 
+	CxJSONUTFMember *
+	find( const char *utf8name);
+
+	int
 	entries(void) const;
 
 	void
@@ -62,10 +67,10 @@ class CxJSONObject: public CxJSONBase
 
   private:
 
-    CxSList< CxJSONMember *> _memberList;
+    CxSList< CxJSONUTFMember *> _memberList;
 
-    friend std::ostream& operator<<(std::ostream& str, const CxJSONObject& o_ );
-    // outputs a CxString to an ostream
+    friend std::ostream& operator<<(std::ostream& str, const CxJSONUTFObject& o_ );
+    // outputs to an ostream
 
 };
 

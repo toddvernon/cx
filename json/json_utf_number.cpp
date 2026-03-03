@@ -1,102 +1,96 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_boolean.cpp
+//  json_utf_number.cpp
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFNumber Class - UTF-8 aware JSON number
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <cx/json/json_boolean.h>
-
-
+#include <cx/json/json_utf_number.h>
 
 
 //-------------------------------------------------------------------------
-// CxJSONBoolean::CxJSONBoolean
+// CxJSONUTFNumber::CxJSONUTFNumber
 //
 //-------------------------------------------------------------------------
-CxJSONBoolean::CxJSONBoolean(void)
+CxJSONUTFNumber::CxJSONUTFNumber(void)
 {
-    _type   = CxJSONBase::BOOLEAN;
-	_i = false;
+    _type   = CxJSONUTFBase::NUMBER;
+	_d = 0.0;
 }
 
-
 //-------------------------------------------------------------------------
-// CxJSONBoolean::CxJSONBoolean
+// CxJSONUTFNumber::CxJSONUTFNumber
 //
 //-------------------------------------------------------------------------
-CxJSONBoolean::CxJSONBoolean(int i )
+CxJSONUTFNumber::CxJSONUTFNumber(double d)
 {
-    _type   = CxJSONBase::BOOLEAN;
-	_i = i;
+    _type   = CxJSONUTFBase::NUMBER;
+	_d = d;
 }
 
-
 //-------------------------------------------------------------------------
-// CxJSONBoolean::~CxJSONBoolean
+// CxJSONUTFNumber::~CxJSONUTFNumber
 //
 //-------------------------------------------------------------------------
-CxJSONBoolean::~CxJSONBoolean(void)
+CxJSONUTFNumber::~CxJSONUTFNumber(void)
 {
 }
 
 
 //-------------------------------------------------------------------------
-// CxJSONBoolean::set
+// CxJSONUTFNumber::set
 //
 //-------------------------------------------------------------------------
 void
-CxJSONBoolean::set( int i )
+CxJSONUTFNumber::set( double d )
 {
-	_i = i;
+	_d = d;
 }
 
 
 //-------------------------------------------------------------------------
-// CxJSONBoolean::get
+// CxJSONUTFNumber::get
 //
 //-------------------------------------------------------------------------
-int 
-CxJSONBoolean::get( void )
+double
+CxJSONUTFNumber::get( void )
 {
-	return( _i );
+	return( _d );
 }
 
 /* virtual */
-void CxJSONBoolean::print(std::ostream& str ) const
+void CxJSONUTFNumber::print(std::ostream& str ) const
 {
-    CxString s = "false";
-    if (_i) s = "true";
-
-    str << s;
+    str << _d;
 }
 
 /* virtual */
-CxString CxJSONBoolean::toJsonString(void) const
+CxString CxJSONUTFNumber::toJsonString(void) const
 {
-    if (_i) return CxString("true");
-    return CxString("false");
+    char buf[64];
+    sprintf(buf, "%g", _d);
+    return CxString(buf);
 }
 
 /* virtual */
-CxString CxJSONBoolean::toPrettyJsonString(int indent) const
+CxString CxJSONUTFNumber::toPrettyJsonString(int indent) const
 {
     return toJsonString();
 }
 
+
 //-------------------------------------------------------------------------
-// CxString::operator<<
+// CxJSONUTFNumber::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONBoolean& b_ )
+std::ostream& operator<<(std::ostream& str, const CxJSONUTFNumber& number_ )
 {
-    b_.print( str );
+    number_.print( str);
     return(str);
 }
- 

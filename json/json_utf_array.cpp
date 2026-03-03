@@ -1,74 +1,74 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_array.cpp
+//  json_utf_array.cpp
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxJSONArray Class
+//  CxJSONUTFArray Class - UTF-8 aware JSON array
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <cx/json/json_array.h>
+#include <cx/json/json_utf_array.h>
 
 
 //-------------------------------------------------------------------------
-// CxJSONArray::CxJSONArray
+// CxJSONUTFArray::CxJSONUTFArray
 //
 //-------------------------------------------------------------------------
-CxJSONArray::CxJSONArray(void)
+CxJSONUTFArray::CxJSONUTFArray(void)
 {
-    _type = CxJSONBase::ARRAY;
+    _type = CxJSONUTFBase::ARRAY;
 }
 
 //-------------------------------------------------------------------------
-// CxJSONArray::~CxJSONArray
+// CxJSONUTFArray::~CxJSONUTFArray
 //
 //-------------------------------------------------------------------------
-CxJSONArray::~CxJSONArray(void)
+CxJSONUTFArray::~CxJSONUTFArray(void)
 {
 	clear();
 }
 
 void
-CxJSONArray::append( CxJSONBase *o)
+CxJSONUTFArray::append( CxJSONUTFBase *o)
 {
 	_objectList.append(o);
 }
 
 //-------------------------------------------------------------------------
-// CxJSONArray::entries
+// CxJSONUTFArray::entries
 //
 //-------------------------------------------------------------------------
 int
-CxJSONArray::entries( void ) const
+CxJSONUTFArray::entries( void ) const
 {
     return (_objectList.entries() );
 }
 
 
 //-------------------------------------------------------------------------
-// CxJSONArray::at
+// CxJSONUTFArray::at
 //
 //-------------------------------------------------------------------------
-CxJSONBase *
-CxJSONArray::at( int i ) const
+CxJSONUTFBase *
+CxJSONUTFArray::at( int i ) const
 {
-    CxJSONBase *o = _objectList.at( i );
+    CxJSONUTFBase *o = _objectList.at( i );
     return(o);
 }
 
 //-------------------------------------------------------------------------
-// CxJSONArray::clear
+// CxJSONUTFArray::clear
 //
 //-------------------------------------------------------------------------
 void
-CxJSONArray::clear(void)
+CxJSONUTFArray::clear(void)
 {
     for (unsigned int c=0; c<_objectList.entries(); c++) {
-        CxJSONBase *o = _objectList.at(c);
+        CxJSONUTFBase *o = _objectList.at(c);
 		delete o;
 	}
 
@@ -78,13 +78,13 @@ CxJSONArray::clear(void)
 
 
 /* virtual */
-void CxJSONArray::print(std::ostream& str ) const
+void CxJSONUTFArray::print(std::ostream& str ) const
 {
     int first = 1;
 
     str << "[";
     for (unsigned int c=0; c< _objectList.entries(); c++) {
-        CxJSONBase *b =  _objectList.at(c);
+        CxJSONUTFBase *b =  _objectList.at(c);
 
 		if (!first) str << ",";
 
@@ -96,13 +96,13 @@ void CxJSONArray::print(std::ostream& str ) const
 }
 
 /* virtual */
-CxString CxJSONArray::toJsonString(void) const
+CxString CxJSONUTFArray::toJsonString(void) const
 {
     CxString result("[");
     int first = 1;
 
     for (unsigned int c=0; c< _objectList.entries(); c++) {
-        CxJSONBase *b =  _objectList.at(c);
+        CxJSONUTFBase *b =  _objectList.at(c);
 
         if (!first) result += ",";
 
@@ -119,7 +119,7 @@ CxString CxJSONArray::toJsonString(void) const
 }
 
 /* virtual */
-CxString CxJSONArray::toPrettyJsonString(int indent) const
+CxString CxJSONUTFArray::toPrettyJsonString(int indent) const
 {
     CxString result("[\n");
     CxString indentStr;
@@ -134,7 +134,7 @@ CxString CxJSONArray::toPrettyJsonString(int indent) const
     int first = 1;
 
     for (unsigned int c = 0; c < _objectList.entries(); c++) {
-        CxJSONBase *b = _objectList.at(c);
+        CxJSONUTFBase *b = _objectList.at(c);
 
         if (!first) result += ",\n";
 
@@ -156,12 +156,11 @@ CxString CxJSONArray::toPrettyJsonString(int indent) const
 
 
 //-------------------------------------------------------------------------
-// CxString::operator<<
+// CxJSONUTFArray::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONArray& a_ )
+std::ostream& operator<<(std::ostream& str, const CxJSONUTFArray& a_ )
 {
 	a_.print(str);
     return(str);
 }
- 

@@ -21,6 +21,7 @@
 #include "sheetCellRange.h"
 #include <cx/expression/expression.h>
 #include <cx/base/file.h>
+// Regular JSON for parsing (CxJSONFactory returns CxJSONBase*)
 #include <cx/json/json_factory.h>
 #include <cx/json/json_member.h>
 #include <cx/json/json_string.h>
@@ -29,6 +30,15 @@
 #include <cx/json/json_null.h>
 #include <cx/json/json_object.h>
 #include <cx/json/json_array.h>
+
+// UTF-8 JSON for saving and appAttributes
+#include <cx/json/json_utf_member.h>
+#include <cx/json/json_utf_string.h>
+#include <cx/json/json_utf_number.h>
+#include <cx/json/json_utf_boolean.h>
+#include <cx/json/json_utf_null.h>
+#include <cx/json/json_utf_object.h>
+#include <cx/json/json_utf_array.h>
 
 
 //-------------------------------------------------------------------------
@@ -522,6 +532,7 @@ CxSheetModel::loadSheet(CxString filepath)
             // Collect unknown keys into appAttributes
             // Known keys: "cell", "type", "value", "text", "formula"
             // Everything else is an app attribute that we preserve
+            // Note: We convert from CxJSON* (parse result) to CxJSONUTF* (for storage)
             //---------------------------------------------------------------------
             for (int j = 0; j < cellObj->entries(); j++) {
                 CxJSONMember* member = cellObj->at(j);
@@ -536,19 +547,19 @@ CxSheetModel::loadSheet(CxString filepath)
                 }
 
                 // This is an app attribute - add to cell's appAttributes
-                // Clone the member value based on its type
-                CxJSONBase* valueCopy = NULL;
+                // Convert from parsed CxJSON* to CxJSONUTF* for storage
+                CxJSONUTFBase* valueCopy = NULL;
                 CxJSONBase* origValue = member->object();
                 if (origValue != NULL) {
                     switch (origValue->type()) {
                         case CxJSONBase::STRING:
-                            valueCopy = new CxJSONString(((CxJSONString*)origValue)->get());
+                            valueCopy = new CxJSONUTFString(((CxJSONString*)origValue)->get().data());
                             break;
                         case CxJSONBase::NUMBER:
-                            valueCopy = new CxJSONNumber(((CxJSONNumber*)origValue)->get());
+                            valueCopy = new CxJSONUTFNumber(((CxJSONNumber*)origValue)->get());
                             break;
                         case CxJSONBase::BOOLEAN:
-                            valueCopy = new CxJSONBoolean(((CxJSONBoolean*)origValue)->get());
+                            valueCopy = new CxJSONUTFBoolean(((CxJSONBoolean*)origValue)->get());
                             break;
                         default:
                             break;
@@ -557,9 +568,9 @@ CxSheetModel::loadSheet(CxString filepath)
 
                 if (valueCopy != NULL) {
                     if (cell.appAttributes == NULL) {
-                        cell.appAttributes = new CxJSONObject();
+                        cell.appAttributes = new CxJSONUTFObject();
                     }
-                    cell.appAttributes->append(new CxJSONMember(key, valueCopy));
+                    cell.appAttributes->append(new CxJSONUTFMember(key.data(), valueCopy));
                 }
             }
 
@@ -610,18 +621,18 @@ CxSheetModel::loadSheet(CxString filepath)
 int
 CxSheetModel::saveSheet(CxString filepath)
 {
-    // Create the root JSON object
-    CxJSONObject *root = new CxJSONObject();
+    // Create the root JSON object (using UTF-8 aware classes)
+    CxJSONUTFObject *root = new CxJSONUTFObject();
 
     // Add version
-    root->append(new CxJSONMember("version", new CxJSONNumber(1)));
+    root->append(new CxJSONUTFMember("version", new CxJSONUTFNumber(1)));
 
     // Add current position as cell address (e.g., "A1")
-    root->append(new CxJSONMember("currentPosition",
-        new CxJSONString(currentCellPosition.toAddress())));
+    root->append(new CxJSONUTFMember("currentPosition",
+        new CxJSONUTFString(currentCellPosition.toAddress().data())));
 
     // Add cells array
-    CxJSONArray *cellsArray = new CxJSONArray();
+    CxJSONUTFArray *cellsArray = new CxJSONUTFArray();
 
     // Iterate through all cells and add to array
     CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> iter(&cellHashMap);
@@ -634,34 +645,41 @@ CxSheetModel::saveSheet(CxString filepath)
             continue;
         }
 
-        // Skip empty cells
-        if (cell->getType() == CxSheetCell::EMPTY) {
+        // Skip empty cells that have no appAttributes
+        // (cells with appAttributes like symbolFill should be saved)
+        if (cell->getType() == CxSheetCell::EMPTY && cell->appAttributes == NULL) {
             continue;
         }
 
-        CxJSONObject *cellObj = new CxJSONObject();
+        CxJSONUTFObject *cellObj = new CxJSONUTFObject();
 
         // Add cell address (e.g., "A1", "B2")
-        cellObj->append(new CxJSONMember("cell", new CxJSONString(key->toAddress())));
+        cellObj->append(new CxJSONUTFMember("cell", new CxJSONUTFString(key->toAddress().data())));
 
         // Add type-specific data
         switch (cell->getType()) {
 
             case CxSheetCell::TEXT:
-                cellObj->append(new CxJSONMember("type", new CxJSONString("text")));
-                cellObj->append(new CxJSONMember("text", new CxJSONString(cell->getText())));
+                cellObj->append(new CxJSONUTFMember("type", new CxJSONUTFString("text")));
+                cellObj->append(new CxJSONUTFMember("text", new CxJSONUTFString(cell->getText().data())));
                 break;
 
             case CxSheetCell::DOUBLE:
-                cellObj->append(new CxJSONMember("type", new CxJSONString("double")));
-                cellObj->append(new CxJSONMember("value", new CxJSONNumber(cell->getDouble().value)));
+                cellObj->append(new CxJSONUTFMember("type", new CxJSONUTFString("double")));
+                cellObj->append(new CxJSONUTFMember("value", new CxJSONUTFNumber(cell->getDouble().value)));
                 break;
 
             case CxSheetCell::FORMULA:
-                cellObj->append(new CxJSONMember("type", new CxJSONString("formula")));
+                cellObj->append(new CxJSONUTFMember("type", new CxJSONUTFString("formula")));
                 // Prepend "=" for readability (like Excel)
-                cellObj->append(new CxJSONMember("formula",
-                    new CxJSONString(CxString("=") + cell->getFormulaText())));
+                cellObj->append(new CxJSONUTFMember("formula",
+                    new CxJSONUTFString((CxString("=") + cell->getFormulaText()).data())));
+                break;
+
+            case CxSheetCell::EMPTY:
+                // Empty cells with appAttributes (e.g., symbolFill) - just save the type
+                // The appAttributes will be merged below
+                cellObj->append(new CxJSONUTFMember("type", new CxJSONUTFString("empty")));
                 break;
 
             default:
@@ -674,28 +692,28 @@ CxSheetModel::saveSheet(CxString filepath)
         // Each key from appAttributes becomes a first-class member of the cell JSON
         if (cell->appAttributes != NULL) {
             for (int i = 0; i < cell->appAttributes->entries(); i++) {
-                CxJSONMember* member = cell->appAttributes->at(i);
+                CxJSONUTFMember* member = cell->appAttributes->at(i);
                 if (member != NULL) {
                     // Clone the member value based on its type
-                    CxJSONBase* valueCopy = NULL;
-                    CxJSONBase* origValue = member->object();
+                    CxJSONUTFBase* valueCopy = NULL;
+                    CxJSONUTFBase* origValue = member->object();
                     if (origValue != NULL) {
                         switch (origValue->type()) {
-                            case CxJSONBase::STRING:
-                                valueCopy = new CxJSONString(((CxJSONString*)origValue)->get());
+                            case CxJSONUTFBase::STRING:
+                                valueCopy = new CxJSONUTFString(((CxJSONUTFString*)origValue)->get());
                                 break;
-                            case CxJSONBase::NUMBER:
-                                valueCopy = new CxJSONNumber(((CxJSONNumber*)origValue)->get());
+                            case CxJSONUTFBase::NUMBER:
+                                valueCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)origValue)->get());
                                 break;
-                            case CxJSONBase::BOOLEAN:
-                                valueCopy = new CxJSONBoolean(((CxJSONBoolean*)origValue)->get());
+                            case CxJSONUTFBase::BOOLEAN:
+                                valueCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)origValue)->get());
                                 break;
                             default:
                                 break;
                         }
                     }
                     if (valueCopy != NULL) {
-                        cellObj->append(new CxJSONMember(member->var(), valueCopy));
+                        cellObj->append(new CxJSONUTFMember(member->var().toBytes().data(), valueCopy));
                     }
                 }
             }
@@ -704,7 +722,7 @@ CxSheetModel::saveSheet(CxString filepath)
         cellsArray->append(cellObj);
     }
 
-    root->append(new CxJSONMember("cells", cellsArray));
+    root->append(new CxJSONUTFMember("cells", cellsArray));
 
     // Write to file
     CxFile outFile;
@@ -713,8 +731,8 @@ CxSheetModel::saveSheet(CxString filepath)
         return 0;
     }
 
-    // Serialize to string using portable toJsonString() method
-    CxString jsonStr = root->toJsonString();
+    // Serialize to string using portable toPrettyJsonString() method
+    CxString jsonStr = root->toPrettyJsonString();
     outFile.printf("%s\n", jsonStr.data());
     outFile.close();
 

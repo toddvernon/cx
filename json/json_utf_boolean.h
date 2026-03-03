@@ -1,13 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_number.h
+//  json_utf_boolean.h
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFBoolean Class - UTF-8 aware JSON boolean
 //
 //-------------------------------------------------------------------------------------------------
 
@@ -16,35 +16,35 @@
 #include <cx/base/string.h>
 #include <cx/base/slist.h>
 
-#include <cx/json/json_base.h>
+#include <cx/json/json_utf_base.h>
 
 
-#ifndef _CXJSON_NUMBER_
-#define _CXJSON_NUMBER_
+#ifndef _CXJSON_UTF_BOOLEAN_
+#define _CXJSON_UTF_BOOLEAN_
 
 
 
 //-------------------------------------------------------------------------
-// CxJSONNumber
+// CxJSONUTFBoolean
 //
 //-------------------------------------------------------------------------
-class CxJSONNumber: public CxJSONBase
+class CxJSONUTFBoolean: public CxJSONUTFBase
 {
   public:
 
-	CxJSONNumber( void );
+	CxJSONUTFBoolean( void );
 
-	CxJSONNumber( double d );
+	CxJSONUTFBoolean( int i );
 
-	~CxJSONNumber( void );
+	~CxJSONUTFBoolean( void );
 
-	void 
-	set(double d);
+	void
+	set(int i);
 
-	double
+	int
 	get( void );
 
-    void dump(void);
+	void dump(void);
 
     virtual CxString toJsonString(void) const;
     virtual CxString toPrettyJsonString(int indent = 0) const;
@@ -53,14 +53,12 @@ class CxJSONNumber: public CxJSONBase
 
     virtual void print(std::ostream& str ) const;
 
-
   private:
 
-	double _d;
+	int _i;
 
-    friend std::ostream& operator<<(std::ostream& str, const CxJSONNumber& base_ );
-    // outputs a CxString to an ostream
-
+    friend std::ostream& operator<<(std::ostream& str, const CxJSONUTFBoolean& base_ );
+    // outputs to an ostream
 };
 
 

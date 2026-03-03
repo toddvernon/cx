@@ -1,91 +1,89 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_object.cpp
+//  json_utf_object.cpp
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFObject Class - UTF-8 aware JSON object
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <cx/json/nxjson.h>
+#include <cx/json/json_utf_number.h>
+#include <cx/json/json_utf_boolean.h>
+#include <cx/json/json_utf_string.h>
+#include <cx/json/json_utf_null.h>
 
-#include <cx/json/json_number.h>
-#include <cx/json/json_boolean.h>
-#include <cx/json/json_string.h>
-#include <cx/json/json_null.h>
+#include <cx/json/json_utf_member.h>
+#include <cx/json/json_utf_object.h>
 
-#include <cx/json/json_member.h>
-#include <cx/json/json_object.h>
-
-#include <cx/json/json_array.h>
+#include <cx/json/json_utf_array.h>
 
 
 
 //-------------------------------------------------------------------------
-// CxJSONObject::CxJSONObject
+// CxJSONUTFObject::CxJSONUTFObject
 //
 //-------------------------------------------------------------------------
-CxJSONObject::CxJSONObject(void)
+CxJSONUTFObject::CxJSONUTFObject(void)
 {
-    _type = CxJSONBase::OBJECT;
+    _type = CxJSONUTFBase::OBJECT;
 }
 
 //-------------------------------------------------------------------------
-// CxJSONObject::~CxJSONObject
+// CxJSONUTFObject::~CxJSONUTFObject
 //
 //-------------------------------------------------------------------------
-CxJSONObject::~CxJSONObject(void)
+CxJSONUTFObject::~CxJSONUTFObject(void)
 {
 	clear();
 }
 
 //-------------------------------------------------------------------------
-// CxJSONObject::append
+// CxJSONUTFObject::append
 //
 //-------------------------------------------------------------------------
 void
-CxJSONObject::append( CxJSONMember *v )
+CxJSONUTFObject::append( CxJSONUTFMember *v )
 {
     _memberList.append( v );
 }
 
 
 //-------------------------------------------------------------------------
-// CxJSONObject::entries
+// CxJSONUTFObject::entries
 //
 //-------------------------------------------------------------------------
 int
-CxJSONObject::entries( void ) const
+CxJSONUTFObject::entries( void ) const
 {
     return (_memberList.entries() );
 }
 
 
 //-------------------------------------------------------------------------
-// CxJSONObject::at
+// CxJSONUTFObject::at
 //
 //-------------------------------------------------------------------------
-CxJSONMember *
-CxJSONObject::at( int i ) const
+CxJSONUTFMember *
+CxJSONUTFObject::at( int i ) const
 {
-    CxJSONMember *m = _memberList.at( i );
+    CxJSONUTFMember *m = _memberList.at( i );
     return(m);
 }
 
 //-------------------------------------------------------------------------
-// CxJSONObject::removeAt
+// CxJSONUTFObject::removeAt
 //
 //-------------------------------------------------------------------------
-CxJSONMember *
-CxJSONObject::removeAt( int i )
+CxJSONUTFMember *
+CxJSONUTFObject::removeAt( int i )
 {
 	if (_memberList.entries() > 0) {
 
-		CxJSONMember *m = _memberList.at( i );
+		CxJSONUTFMember *m = _memberList.at( i );
 		_memberList.removeAt( i );
 		return( m );
 	}
@@ -95,15 +93,15 @@ CxJSONObject::removeAt( int i )
 
 
 //-------------------------------------------------------------------------
-// CxJSONObject::at
+// CxJSONUTFObject::find
 //
 //-------------------------------------------------------------------------
-CxJSONMember *
-CxJSONObject::find( CxString name )
+CxJSONUTFMember *
+CxJSONUTFObject::find( CxUTFString name )
 {
     for (unsigned int c=0; c<_memberList.entries(); c++) {
-        
-		CxJSONMember *m = _memberList.at(c);
+
+		CxJSONUTFMember *m = _memberList.at(c);
 
 		if (m->var() == name) {
 			return( m );
@@ -115,14 +113,27 @@ CxJSONObject::find( CxString name )
 
 
 //-------------------------------------------------------------------------
-// CxJSONObject::clear
+// CxJSONUTFObject::find
+//
+//-------------------------------------------------------------------------
+CxJSONUTFMember *
+CxJSONUTFObject::find( const char *utf8name )
+{
+    CxUTFString name;
+    name.fromUTF8Bytes(utf8name, strlen(utf8name));
+    return find(name);
+}
+
+
+//-------------------------------------------------------------------------
+// CxJSONUTFObject::clear
 //
 //-------------------------------------------------------------------------
 void
-CxJSONObject::clear(void)
+CxJSONUTFObject::clear(void)
 {
     for (unsigned int c=0; c<_memberList.entries(); c++) {
-        CxJSONMember *m = _memberList.at(c);
+        CxJSONUTFMember *m = _memberList.at(c);
 		delete m;
 	}
 
@@ -131,13 +142,13 @@ CxJSONObject::clear(void)
 
 
 /* virtual */
-void CxJSONObject::print(std::ostream& str ) const
+void CxJSONUTFObject::print(std::ostream& str ) const
 {
     int first = 1;
 
     str << "{";
     for (unsigned int c=0; c< _memberList.entries(); c++) {
-        CxJSONMember *m =  _memberList.at(c);
+        CxJSONUTFMember *m =  _memberList.at(c);
 
 		if (!first) str << ",";
 		str << *m;
@@ -148,13 +159,13 @@ void CxJSONObject::print(std::ostream& str ) const
 }
 
 /* virtual */
-CxString CxJSONObject::toJsonString(void) const
+CxString CxJSONUTFObject::toJsonString(void) const
 {
     CxString result("{");
     int first = 1;
 
     for (unsigned int c=0; c< _memberList.entries(); c++) {
-        CxJSONMember *m =  _memberList.at(c);
+        CxJSONUTFMember *m =  _memberList.at(c);
 
         if (!first) result += ",";
 
@@ -169,7 +180,7 @@ CxString CxJSONObject::toJsonString(void) const
 }
 
 /* virtual */
-CxString CxJSONObject::toPrettyJsonString(int indent) const
+CxString CxJSONUTFObject::toPrettyJsonString(int indent) const
 {
     CxString result("{\n");
     CxString indentStr;
@@ -184,7 +195,7 @@ CxString CxJSONObject::toPrettyJsonString(int indent) const
     int first = 1;
 
     for (unsigned int c = 0; c < _memberList.entries(); c++) {
-        CxJSONMember *m = _memberList.at(c);
+        CxJSONUTFMember *m = _memberList.at(c);
 
         if (!first) result += ",\n";
 
@@ -203,10 +214,10 @@ CxString CxJSONObject::toPrettyJsonString(int indent) const
 }
 
 //-------------------------------------------------------------------------
-// CxString::operator<<
+// CxJSONUTFObject::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONObject& o_ )
+std::ostream& operator<<(std::ostream& str, const CxJSONUTFObject& o_ )
 {
     o_.print(str );
     return(str);

@@ -47,6 +47,7 @@ class CxJSONBoolean: public CxJSONBase
 	void dump(void);
 
     virtual CxString toJsonString(void) const;
+    virtual CxString toPrettyJsonString(int indent = 0) const;
 
   protected:
 

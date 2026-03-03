@@ -51,6 +51,7 @@ class CxJSONMember
     void dump(void);
 
     CxString toJsonString(void) const;
+    CxString toPrettyJsonString(int indent = 0) const;
 
   protected:
 

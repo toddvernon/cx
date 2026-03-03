@@ -78,6 +78,12 @@ CxString CxJSONNumber::toJsonString(void) const
     return CxString(buf);
 }
 
+/* virtual */
+CxString CxJSONNumber::toPrettyJsonString(int indent) const
+{
+    return toJsonString();
+}
+
 
 //-------------------------------------------------------------------------
 // CxString::operator<<

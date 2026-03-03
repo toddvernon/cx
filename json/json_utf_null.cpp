@@ -1,66 +1,61 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_base.cpp
+//  json_utf_null.cpp
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFNull Class - UTF-8 aware JSON null
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <cx/json/json_base.h>
+#include <cx/json/json_utf_null.h>
 
 
 //-------------------------------------------------------------------------
-// CxJSONBase::CxJSONBase
+// CxJSONUTFNull::CxJSONUTFNull
 //
 //-------------------------------------------------------------------------
-CxJSONBase::CxJSONBase()
+CxJSONUTFNull::CxJSONUTFNull(void)
 {
-    _type = CxJSONBase::BASE;
+    _type   = CxJSONUTFBase::JNULL;
 }
 
-CxJSONBase::JSONObjectType 
-CxJSONBase::type( void )
+//-------------------------------------------------------------------------
+// CxJSONUTFNull::~CxJSONUTFNull
+//
+//-------------------------------------------------------------------------
+CxJSONUTFNull::~CxJSONUTFNull(void)
 {
-	return( _type );
 }
-
-void
-CxJSONBase::dump(void)
-{
-	std::cout << "BASE" << std::endl;
-}
-
 
 
 /* virtual */
-void CxJSONBase::print( std::ostream& str ) const
+void CxJSONUTFNull::print(std::ostream& str ) const
 {
-    str << "CxBase";
+    str << "null";
 }
 
 /* virtual */
-CxString CxJSONBase::toJsonString(void) const
+CxString CxJSONUTFNull::toJsonString(void) const
 {
     return CxString("null");
 }
 
 /* virtual */
-CxString CxJSONBase::toPrettyJsonString(int indent) const
+CxString CxJSONUTFNull::toPrettyJsonString(int indent) const
 {
-    return CxString("null");
+    return toJsonString();
 }
 
 //-------------------------------------------------------------------------
-// CxString::operator<<
+// CxJSONUTFNull::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONBase& base_ )
+std::ostream& operator<<(std::ostream& str, const CxJSONUTFNull& n_ )
 {
-    base_.print( str );
+    n_.print( str );
     return(str);
 }

@@ -98,7 +98,15 @@ LIB_CX_JSON_OBJECTS=\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_member.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_object.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_array.o\
-	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_factory.o
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_factory.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_base.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_string.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_number.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_boolean.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_null.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_member.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_object.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_array.o
 
 NXJSON_OBJECTS=$(LIB_CX_PLATFORM_OBJECT_DIR)/nxjson.o
 
@@ -156,6 +164,14 @@ $(LIB_CX_PLATFORM_OBJECT_DIR)/json_member.o		: json_member.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/json_object.o		: json_object.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/json_array.o 		: json_array.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/json_factory.o	: json_factory.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_base.o	: json_utf_base.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_string.o	: json_utf_string.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_number.o	: json_utf_number.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_boolean.o	: json_utf_boolean.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_null.o	: json_utf_null.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_member.o	: json_utf_member.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_object.o	: json_utf_object.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/json_utf_array.o	: json_utf_array.cpp
 
 $(LIB_CX_PLATFORM_OBJECT_DIR)/nxjson.o: nxjson.c
 	gcc -c -O0 -g -Wall ${CPPFLAGS} nxjson.c -o $(LIB_CX_PLATFORM_OBJECT_DIR)/nxjson.o

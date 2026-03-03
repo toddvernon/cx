@@ -1,13 +1,13 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_number.h
+//  json_utf_number.h
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFNumber Class - UTF-8 aware JSON number
 //
 //-------------------------------------------------------------------------------------------------
 
@@ -16,29 +16,29 @@
 #include <cx/base/string.h>
 #include <cx/base/slist.h>
 
-#include <cx/json/json_base.h>
+#include <cx/json/json_utf_base.h>
 
 
-#ifndef _CXJSON_NUMBER_
-#define _CXJSON_NUMBER_
+#ifndef _CXJSON_UTF_NUMBER_
+#define _CXJSON_UTF_NUMBER_
 
 
 
 //-------------------------------------------------------------------------
-// CxJSONNumber
+// CxJSONUTFNumber
 //
 //-------------------------------------------------------------------------
-class CxJSONNumber: public CxJSONBase
+class CxJSONUTFNumber: public CxJSONUTFBase
 {
   public:
 
-	CxJSONNumber( void );
+	CxJSONUTFNumber( void );
 
-	CxJSONNumber( double d );
+	CxJSONUTFNumber( double d );
 
-	~CxJSONNumber( void );
+	~CxJSONUTFNumber( void );
 
-	void 
+	void
 	set(double d);
 
 	double
@@ -58,8 +58,8 @@ class CxJSONNumber: public CxJSONBase
 
 	double _d;
 
-    friend std::ostream& operator<<(std::ostream& str, const CxJSONNumber& base_ );
-    // outputs a CxString to an ostream
+    friend std::ostream& operator<<(std::ostream& str, const CxJSONUTFNumber& base_ );
+    // outputs to an ostream
 
 };
 

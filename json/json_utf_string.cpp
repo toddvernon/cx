@@ -1,79 +1,97 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_string.cpp
+//  json_utf_string.cpp
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFString Class - UTF-8 aware JSON string
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <cx/json/json_string.h>
+#include <cx/json/json_utf_string.h>
 
 
 //-------------------------------------------------------------------------
-// CxJSONString::CxJSONString
+// CxJSONUTFString::CxJSONUTFString
 //
 //-------------------------------------------------------------------------
-CxJSONString::CxJSONString(void)
+CxJSONUTFString::CxJSONUTFString(void)
 {
-    _type   = CxJSONBase::STRING;
-	_string = "";
+    _type   = CxJSONUTFBase::STRING;
 }
 
 //-------------------------------------------------------------------------
-// CxJSONString::CxJSONString
+// CxJSONUTFString::CxJSONUTFString
 //
 //-------------------------------------------------------------------------
-CxJSONString::CxJSONString( CxString s)
+CxJSONUTFString::CxJSONUTFString( CxUTFString s)
 {
-    _type   = CxJSONBase::STRING;
+    _type   = CxJSONUTFBase::STRING;
 	_string = s;
 }
 
 //-------------------------------------------------------------------------
-// CxJSONString::~CxJSONString
+// CxJSONUTFString::CxJSONUTFString
 //
 //-------------------------------------------------------------------------
-CxJSONString::~CxJSONString(void)
+CxJSONUTFString::CxJSONUTFString( const char *utf8bytes )
+{
+    _type   = CxJSONUTFBase::STRING;
+    _string.fromUTF8Bytes(utf8bytes, strlen(utf8bytes));
+}
+
+//-------------------------------------------------------------------------
+// CxJSONUTFString::~CxJSONUTFString
+//
+//-------------------------------------------------------------------------
+CxJSONUTFString::~CxJSONUTFString(void)
 {
 }
 
 
 //-------------------------------------------------------------------------
-// CxJSONString::set
+// CxJSONUTFString::set
 //
 //-------------------------------------------------------------------------
 void
-CxJSONString::set( CxString s )
+CxJSONUTFString::set( CxUTFString s )
 {
 	_string = s;
 }
 
-
 //-------------------------------------------------------------------------
-// CxJSONString::get
+// CxJSONUTFString::set
 //
 //-------------------------------------------------------------------------
-CxString 
-CxJSONString::get( void )
+void
+CxJSONUTFString::set( const char *utf8bytes )
+{
+    _string.fromUTF8Bytes(utf8bytes, strlen(utf8bytes));
+}
+
+
+//-------------------------------------------------------------------------
+// CxJSONUTFString::get
+//
+//-------------------------------------------------------------------------
+CxUTFString
+CxJSONUTFString::get( void )
 {
 	return( _string );
 }
 
 
 /* virtual */
-void CxJSONString::print(std::ostream& str ) const
+void CxJSONUTFString::print(std::ostream& str ) const
 {
     str << "\"";
-    // Escape special characters for valid JSON output
-    // Cast away const since charAt() isn't marked const but we only read
-    CxString& s = const_cast<CxString&>(_string);
-    for (unsigned long i = 0; i < s.length(); i++) {
-        char c = (char)s.charAt(i);
+    // Get raw UTF-8 bytes and escape special characters
+    CxString bytes = _string.toBytes();
+    for (unsigned long i = 0; i < bytes.length(); i++) {
+        char c = bytes.data()[i];
         switch (c) {
             case '"':  str << "\\\""; break;
             case '\\': str << "\\\\"; break;
@@ -89,6 +107,7 @@ void CxJSONString::print(std::ostream& str ) const
                     sprintf(buf, "\\u%04x", (unsigned char)c);
                     str << buf;
                 } else {
+                    // Regular character (including UTF-8 continuation bytes)
                     str << c;
                 }
                 break;
@@ -99,12 +118,13 @@ void CxJSONString::print(std::ostream& str ) const
 
 
 /* virtual */
-CxString CxJSONString::toJsonString(void) const
+CxString CxJSONUTFString::toJsonString(void) const
 {
     CxString result("\"");
-    CxString& s = const_cast<CxString&>(_string);
-    for (unsigned long i = 0; i < s.length(); i++) {
-        char c = (char)s.charAt(i);
+    // Get raw UTF-8 bytes and escape special characters
+    CxString bytes = _string.toBytes();
+    for (unsigned long i = 0; i < bytes.length(); i++) {
+        char c = bytes.data()[i];
         switch (c) {
             case '"':  result += "\\\""; break;
             case '\\': result += "\\\\"; break;
@@ -129,7 +149,7 @@ CxString CxJSONString::toJsonString(void) const
 }
 
 /* virtual */
-CxString CxJSONString::toPrettyJsonString(int indent) const
+CxString CxJSONUTFString::toPrettyJsonString(int indent) const
 {
     // Strings don't need special formatting - just use toJsonString
     return toJsonString();
@@ -137,12 +157,11 @@ CxString CxJSONString::toPrettyJsonString(int indent) const
 
 
 //-------------------------------------------------------------------------
-// CxString::operator<<
+// CxJSONUTFString::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONString& s_ )
+std::ostream& operator<<(std::ostream& str, const CxJSONUTFString& s_ )
 {
     s_.print(str);
     return(str);
 }
- 

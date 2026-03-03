@@ -44,6 +44,12 @@ CxString CxJSONNull::toJsonString(void) const
     return CxString("null");
 }
 
+/* virtual */
+CxString CxJSONNull::toPrettyJsonString(int indent) const
+{
+    return toJsonString();
+}
+
 //-------------------------------------------------------------------------
 // CxString::operator<<
 //

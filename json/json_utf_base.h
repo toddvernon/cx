@@ -1,46 +1,52 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_base.h
+//  json_utf_base.h
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFBase Class - UTF-8 aware JSON base class
 //
 //-------------------------------------------------------------------------------------------------
 
-#ifndef _CXJSON_BASE_
-#define _CXJSON_BASE_
+#ifndef _CXJSON_UTF_BASE_
+#define _CXJSON_UTF_BASE_
 
 
 #include <iostream>
 #include <cx/base/string.h>
+#include <cx/base/utfstring.h>
 
-class CxJSONBase;
+class CxJSONUTFBase;
 
 
 //-------------------------------------------------------------------------
-// CxJSONBase
+// CxJSONUTFBase
 //
+// Base class for UTF-8 aware JSON types. Uses CxUTFString for proper
+// UTF-8 character handling in string values.
 //-------------------------------------------------------------------------
-class CxJSONBase
+class CxJSONUTFBase
 {
   public:
 
     enum JSONObjectType { BASE, STRING, BOOLEAN, JNULL, NUMBER, OBJECT, ARRAY };
 
-    CxJSONBase(void);
+    CxJSONUTFBase(void);
     // constructor
+
+    virtual ~CxJSONUTFBase(void);
+    // virtual destructor for proper cleanup
 
     void dump( void );
 
-    CxJSONBase::JSONObjectType
+    CxJSONUTFBase::JSONObjectType
 	type(void);
 
     virtual CxString toJsonString(void) const;
-    // returns the JSON representation as a CxString (portable, no sstream needed)
+    // returns the JSON representation as a CxString (raw UTF-8 bytes)
 
     virtual CxString toPrettyJsonString(int indent = 0) const;
     // returns pretty-printed JSON with indentation
@@ -53,8 +59,8 @@ class CxJSONBase
 
   private:
 
-	friend std::ostream& operator<<(std::ostream& str, const CxJSONBase& base_ );
-    // outputs a CxString to an ostream
+	friend std::ostream& operator<<(std::ostream& str, const CxJSONUTFBase& base_ );
+    // outputs to an ostream
 
 };
 

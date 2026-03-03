@@ -16,27 +16,27 @@
 #include <string.h>
 
 #include "sheetCell.h"
-#include <cx/json/json_member.h>
-#include <cx/json/json_string.h>
-#include <cx/json/json_number.h>
-#include <cx/json/json_boolean.h>
+#include <cx/json/json_utf_member.h>
+#include <cx/json/json_utf_string.h>
+#include <cx/json/json_utf_number.h>
+#include <cx/json/json_utf_boolean.h>
 
 
 //-------------------------------------------------------------------------
 // Static helper: clone a JSON value based on its type
 //-------------------------------------------------------------------------
-static CxJSONBase*
-cloneJSONValue(CxJSONBase* value)
+static CxJSONUTFBase*
+cloneJSONUTFValue(CxJSONUTFBase* value)
 {
     if (value == NULL) return NULL;
 
     switch (value->type()) {
-        case CxJSONBase::STRING:
-            return new CxJSONString(((CxJSONString*)value)->get());
-        case CxJSONBase::NUMBER:
-            return new CxJSONNumber(((CxJSONNumber*)value)->get());
-        case CxJSONBase::BOOLEAN:
-            return new CxJSONBoolean(((CxJSONBoolean*)value)->get());
+        case CxJSONUTFBase::STRING:
+            return new CxJSONUTFString(((CxJSONUTFString*)value)->get());
+        case CxJSONUTFBase::NUMBER:
+            return new CxJSONUTFNumber(((CxJSONUTFNumber*)value)->get());
+        case CxJSONUTFBase::BOOLEAN:
+            return new CxJSONUTFBoolean(((CxJSONUTFBoolean*)value)->get());
         default:
             // For other types (OBJECT, ARRAY), return NULL - not needed for appAttributes
             return NULL;
@@ -45,20 +45,20 @@ cloneJSONValue(CxJSONBase* value)
 
 
 //-------------------------------------------------------------------------
-// Static helper: clone a CxJSONObject (shallow copy of members)
+// Static helper: clone a CxJSONUTFObject (shallow copy of members)
 //-------------------------------------------------------------------------
-static CxJSONObject*
-cloneJSONObject(CxJSONObject* src)
+static CxJSONUTFObject*
+cloneJSONUTFObject(CxJSONUTFObject* src)
 {
     if (src == NULL) return NULL;
 
-    CxJSONObject* copy = new CxJSONObject();
+    CxJSONUTFObject* copy = new CxJSONUTFObject();
     for (int i = 0; i < src->entries(); i++) {
-        CxJSONMember* member = src->at(i);
+        CxJSONUTFMember* member = src->at(i);
         if (member != NULL) {
-            CxJSONBase* valueCopy = cloneJSONValue(member->object());
+            CxJSONUTFBase* valueCopy = cloneJSONUTFValue(member->object());
             if (valueCopy != NULL) {
-                copy->append(new CxJSONMember(member->var(), valueCopy));
+                copy->append(new CxJSONUTFMember(member->var(), valueCopy));
             }
         }
     }
@@ -67,18 +67,18 @@ cloneJSONObject(CxJSONObject* src)
 
 
 //-------------------------------------------------------------------------
-// Static helper: remove a member by key from a CxJSONObject
+// Static helper: remove a member by key from a CxJSONUTFObject
 //-------------------------------------------------------------------------
 static void
-removeJSONMember(CxJSONObject* obj, const char* key)
+removeJSONUTFMember(CxJSONUTFObject* obj, const char* key)
 {
     if (obj == NULL) return;
 
     // Find and remove the member with matching key
     for (int i = 0; i < obj->entries(); i++) {
-        CxJSONMember* member = obj->at(i);
-        if (member != NULL && member->var() == key) {
-            CxJSONMember* removed = obj->removeAt(i);
+        CxJSONUTFMember* member = obj->at(i);
+        if (member != NULL && member->var().toBytes() == key) {
+            CxJSONUTFMember* removed = obj->removeAt(i);
             if (removed != NULL) {
                 delete removed;
             }
@@ -151,7 +151,7 @@ CxSheetCell::CxSheetCell(const CxSheetCell& other)
 
     // Deep copy of appAttributes if present
     if (other.appAttributes != NULL) {
-        appAttributes = cloneJSONObject(other.appAttributes);
+        appAttributes = cloneJSONUTFObject(other.appAttributes);
     }
 }
 
@@ -208,7 +208,7 @@ CxSheetCell::operator=(const CxSheetCell& other)
 
         // Deep copy of appAttributes if present
         if (other.appAttributes != NULL) {
-            appAttributes = cloneJSONObject(other.appAttributes);
+            appAttributes = cloneJSONUTFObject(other.appAttributes);
         }
     }
     return *this;
@@ -362,12 +362,12 @@ void
 CxSheetCell::setAppAttribute(const char* key, const char* value)
 {
     if (appAttributes == NULL) {
-        appAttributes = new CxJSONObject();
+        appAttributes = new CxJSONUTFObject();
     }
 
     // Remove existing key if present, then add new value
-    removeJSONMember(appAttributes, key);
-    appAttributes->append(new CxJSONMember(key, new CxJSONString(value)));
+    removeJSONUTFMember(appAttributes, key);
+    appAttributes->append(new CxJSONUTFMember(key, new CxJSONUTFString(value)));
 }
 
 
@@ -378,11 +378,11 @@ void
 CxSheetCell::setAppAttribute(const char* key, int value)
 {
     if (appAttributes == NULL) {
-        appAttributes = new CxJSONObject();
+        appAttributes = new CxJSONUTFObject();
     }
 
-    removeJSONMember(appAttributes, key);
-    appAttributes->append(new CxJSONMember(key, new CxJSONNumber((double)value)));
+    removeJSONUTFMember(appAttributes, key);
+    appAttributes->append(new CxJSONUTFMember(key, new CxJSONUTFNumber((double)value)));
 }
 
 
@@ -393,11 +393,11 @@ void
 CxSheetCell::setAppAttribute(const char* key, double value)
 {
     if (appAttributes == NULL) {
-        appAttributes = new CxJSONObject();
+        appAttributes = new CxJSONUTFObject();
     }
 
-    removeJSONMember(appAttributes, key);
-    appAttributes->append(new CxJSONMember(key, new CxJSONNumber(value)));
+    removeJSONUTFMember(appAttributes, key);
+    appAttributes->append(new CxJSONUTFMember(key, new CxJSONUTFNumber(value)));
 }
 
 
@@ -408,11 +408,11 @@ void
 CxSheetCell::setAppAttribute(const char* key, bool value)
 {
     if (appAttributes == NULL) {
-        appAttributes = new CxJSONObject();
+        appAttributes = new CxJSONUTFObject();
     }
 
-    removeJSONMember(appAttributes, key);
-    appAttributes->append(new CxJSONMember(key, new CxJSONBoolean(value ? 1 : 0)));
+    removeJSONUTFMember(appAttributes, key);
+    appAttributes->append(new CxJSONUTFMember(key, new CxJSONUTFBoolean(value ? 1 : 0)));
 }
 
 
@@ -426,9 +426,9 @@ CxSheetCell::getAppAttributeString(const char* key, const char* defaultValue) co
         return CxString(defaultValue);
     }
 
-    CxJSONMember* member = appAttributes->find(key);
-    if (member != NULL && member->object()->type() == CxJSONBase::STRING) {
-        return ((CxJSONString*)member->object())->get();
+    CxJSONUTFMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONUTFBase::STRING) {
+        return ((CxJSONUTFString*)member->object())->get().toBytes();
     }
 
     return CxString(defaultValue);
@@ -445,9 +445,9 @@ CxSheetCell::getAppAttributeInt(const char* key, int defaultValue) const
         return defaultValue;
     }
 
-    CxJSONMember* member = appAttributes->find(key);
-    if (member != NULL && member->object()->type() == CxJSONBase::NUMBER) {
-        return (int)((CxJSONNumber*)member->object())->get();
+    CxJSONUTFMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONUTFBase::NUMBER) {
+        return (int)((CxJSONUTFNumber*)member->object())->get();
     }
 
     return defaultValue;
@@ -464,9 +464,9 @@ CxSheetCell::getAppAttributeDouble(const char* key, double defaultValue) const
         return defaultValue;
     }
 
-    CxJSONMember* member = appAttributes->find(key);
-    if (member != NULL && member->object()->type() == CxJSONBase::NUMBER) {
-        return ((CxJSONNumber*)member->object())->get();
+    CxJSONUTFMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONUTFBase::NUMBER) {
+        return ((CxJSONUTFNumber*)member->object())->get();
     }
 
     return defaultValue;
@@ -483,9 +483,9 @@ CxSheetCell::getAppAttributeBool(const char* key, bool defaultValue) const
         return defaultValue;
     }
 
-    CxJSONMember* member = appAttributes->find(key);
-    if (member != NULL && member->object()->type() == CxJSONBase::BOOLEAN) {
-        return ((CxJSONBoolean*)member->object())->get() != 0;
+    CxJSONUTFMember* member = appAttributes->find(key);
+    if (member != NULL && member->object()->type() == CxJSONUTFBase::BOOLEAN) {
+        return ((CxJSONUTFBoolean*)member->object())->get() != 0;
     }
 
     return defaultValue;
@@ -512,5 +512,5 @@ CxSheetCell::hasAppAttribute(const char* key) const
 void
 CxSheetCell::removeAppAttribute(const char* key)
 {
-    removeJSONMember(appAttributes, key);
+    removeJSONUTFMember(appAttributes, key);
 }

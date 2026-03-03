@@ -19,7 +19,7 @@
 #include <cx/base/string.h>
 #include <cx/base/double.h>
 #include <cx/expression/expression.h>
-#include <cx/json/json_object.h>
+#include <cx/json/json_utf_object.h>
 
 #ifndef _CxSheetCell_
 #define _CxSheetCell_
@@ -131,7 +131,7 @@ class CxSheetCell
     CxDouble doubleValue;       // if cell is double this is populated
     CxDouble evaluatedValue;    // cached result for DOUBLE or evaluated FORMULA
 
-    CxJSONObject* appAttributes;  // application-defined attributes (see class comment above)
+    CxJSONUTFObject* appAttributes;  // application-defined attributes (see class comment above)
 
     // Helper methods for appAttributes
     void setAppAttribute(const char* key, const char* value);

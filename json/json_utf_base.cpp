@@ -1,65 +1,73 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_base.cpp
+//  json_utf_base.cpp
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFBase Class - UTF-8 aware JSON base class
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <cx/json/json_base.h>
+#include <cx/json/json_utf_base.h>
 
 
 //-------------------------------------------------------------------------
-// CxJSONBase::CxJSONBase
+// CxJSONUTFBase::CxJSONUTFBase
 //
 //-------------------------------------------------------------------------
-CxJSONBase::CxJSONBase()
+CxJSONUTFBase::CxJSONUTFBase()
 {
-    _type = CxJSONBase::BASE;
+    _type = CxJSONUTFBase::BASE;
 }
 
-CxJSONBase::JSONObjectType 
-CxJSONBase::type( void )
+//-------------------------------------------------------------------------
+// CxJSONUTFBase::~CxJSONUTFBase
+//
+//-------------------------------------------------------------------------
+CxJSONUTFBase::~CxJSONUTFBase()
+{
+}
+
+CxJSONUTFBase::JSONObjectType
+CxJSONUTFBase::type( void )
 {
 	return( _type );
 }
 
 void
-CxJSONBase::dump(void)
+CxJSONUTFBase::dump(void)
 {
-	std::cout << "BASE" << std::endl;
+	std::cout << "UTF_BASE" << std::endl;
 }
 
 
 
 /* virtual */
-void CxJSONBase::print( std::ostream& str ) const
+void CxJSONUTFBase::print( std::ostream& str ) const
 {
-    str << "CxBase";
+    str << "CxUTFBase";
 }
 
 /* virtual */
-CxString CxJSONBase::toJsonString(void) const
+CxString CxJSONUTFBase::toJsonString(void) const
 {
     return CxString("null");
 }
 
 /* virtual */
-CxString CxJSONBase::toPrettyJsonString(int indent) const
+CxString CxJSONUTFBase::toPrettyJsonString(int indent) const
 {
     return CxString("null");
 }
 
 //-------------------------------------------------------------------------
-// CxString::operator<<
+// CxJSONUTFBase::operator<<
 //
 //-------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& str, const CxJSONBase& base_ )
+std::ostream& operator<<(std::ostream& str, const CxJSONUTFBase& base_ )
 {
     base_.print( str );
     return(str);

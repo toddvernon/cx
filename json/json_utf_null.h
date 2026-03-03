@@ -1,61 +1,53 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_base.h
+//  json_utf_null.h
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFNull Class - UTF-8 aware JSON null
 //
 //-------------------------------------------------------------------------------------------------
 
-#ifndef _CXJSON_BASE_
-#define _CXJSON_BASE_
-
-
 #include <iostream>
-#include <cx/base/string.h>
 
-class CxJSONBase;
+#include <cx/base/string.h>
+#include <cx/base/slist.h>
+
+#include <cx/json/json_utf_base.h>
+
+
+#ifndef _CXJSON_UTF_NULL_
+#define _CXJSON_UTF_NULL_
+
 
 
 //-------------------------------------------------------------------------
-// CxJSONBase
+// CxJSONUTFNull
 //
 //-------------------------------------------------------------------------
-class CxJSONBase
+class CxJSONUTFNull: public CxJSONUTFBase
 {
   public:
 
-    enum JSONObjectType { BASE, STRING, BOOLEAN, JNULL, NUMBER, OBJECT, ARRAY };
+	CxJSONUTFNull( void );
 
-    CxJSONBase(void);
-    // constructor
-
-    void dump( void );
-
-    CxJSONBase::JSONObjectType
-	type(void);
+	~CxJSONUTFNull( void );
 
     virtual CxString toJsonString(void) const;
-    // returns the JSON representation as a CxString (portable, no sstream needed)
-
     virtual CxString toPrettyJsonString(int indent = 0) const;
-    // returns pretty-printed JSON with indentation
 
   protected:
 
-    JSONObjectType _type;
-
-	virtual void print(std::ostream& str ) const;
+    virtual void print(std::ostream& str ) const;
 
   private:
 
-	friend std::ostream& operator<<(std::ostream& str, const CxJSONBase& base_ );
-    // outputs a CxString to an ostream
-
+    friend std::ostream& operator<<(std::ostream& str, const CxJSONUTFNull& base_ );
+    // outputs to an ostream
 };
+
 
 #endif

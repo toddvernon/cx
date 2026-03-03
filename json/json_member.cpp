@@ -93,6 +93,19 @@ CxString CxJSONMember::toJsonString(void) const
     return result;
 }
 
+CxString CxJSONMember::toPrettyJsonString(int indent) const
+{
+    CxString result("\"");
+    result += _var;
+    result += "\": ";
+    if (_object != NULL) {
+        result += _object->toPrettyJsonString(indent);
+    } else {
+        result += "null";
+    }
+    return result;
+}
+
 
 //-------------------------------------------------------------------------
 // CxString::operator<<

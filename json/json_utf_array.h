@@ -1,65 +1,64 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  json_number.h
+//  json_utf_array.h
 //  cx
 //
 //  Copyright 2022-2025 Todd Vernon. All rights reserved.
 //  Licensed under the Apache License, Version 2.0
 //  See LICENSE file for details.
 //
-//  CxPropEntry, CxPropertyList Class
+//  CxJSONUTFArray Class - UTF-8 aware JSON array
 //
 //-------------------------------------------------------------------------------------------------
 
-#include <iostream>
-
 #include <cx/base/string.h>
 #include <cx/base/slist.h>
+#include <cx/json/json_utf_base.h>
 
-#include <cx/json/json_base.h>
 
-
-#ifndef _CXJSON_NUMBER_
-#define _CXJSON_NUMBER_
+#ifndef _CXJSON_UTF_ARRAY_
+#define _CXJSON_UTF_ARRAY_
 
 
 
 //-------------------------------------------------------------------------
-// CxJSONNumber
+// CxJSONUTFArray
 //
+// JSON array with UTF-8 aware values.
 //-------------------------------------------------------------------------
-class CxJSONNumber: public CxJSONBase
+class CxJSONUTFArray: public CxJSONUTFBase
 {
   public:
 
-	CxJSONNumber( void );
+	CxJSONUTFArray( void );
 
-	CxJSONNumber( double d );
+	~CxJSONUTFArray( void );
 
-	~CxJSONNumber( void );
+	void
+ 	append( CxJSONUTFBase *b );
 
-	void 
-	set(double d);
+    CxJSONUTFBase *
+	at( int c) const;
 
-	double
-	get( void );
+	int
+	entries(void) const;
 
-    void dump(void);
+	void
+	clear(void);
 
     virtual CxString toJsonString(void) const;
     virtual CxString toPrettyJsonString(int indent = 0) const;
 
   protected:
 
-    virtual void print(std::ostream& str ) const;
-
+	virtual void print(std::ostream& str ) const;
 
   private:
 
-	double _d;
+    CxSList< CxJSONUTFBase *> _objectList;
 
-    friend std::ostream& operator<<(std::ostream& str, const CxJSONNumber& base_ );
-    // outputs a CxString to an ostream
+    friend std::ostream& operator<<(std::ostream& str, const CxJSONUTFArray& a_ );
+    // outputs to an ostream
 
 };
 

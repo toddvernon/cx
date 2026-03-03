@@ -346,8 +346,11 @@ CxKeyboard::CxKeyboard( void )
     keyHash.insert("27:91:70",              "CURSOR:<end>");
     keyHash.insert("27:91:72",              "CURSOR:<home>");
     
-    keyHash.insert("27:91:49:59:50:68",     "SHIFT-CURSOR:<shift-arrow-right>");
-    
+    keyHash.insert("27:91:49:59:50:65",     "SHIFT-CURSOR:<shift-arrow-up>");
+    keyHash.insert("27:91:49:59:50:66",     "SHIFT-CURSOR:<shift-arrow-down>");
+    keyHash.insert("27:91:49:59:50:67",     "SHIFT-CURSOR:<shift-arrow-right>");
+    keyHash.insert("27:91:49:59:50:68",     "SHIFT-CURSOR:<shift-arrow-left>");
+
     keyHash.insert("27:91:49:53:126",       "FUNCTION:<F5>");
     keyHash.insert("27:91:49:55:126",       "FUNCTION:<F6>");
     keyHash.insert("27:91:49:59:50:80",     "FUNCTION:<F13>");
@@ -908,10 +911,22 @@ CxKeyboard::handleEscapeSequence(int c)
             return( "27:91:49:59:57:72" );
         }
         
-        if ((c4==59) && (c5==50) && (c6==68)) {
-            return( "27:91:49:59:50:68" );
+        //-----------------------------------------------------------------------------------------
+        // shift-arrow keys
+        //-----------------------------------------------------------------------------------------
+        if ((c4==59) && (c5==50) && (c6==65)) {
+            return( "27:91:49:59:50:65" );  // shift-arrow-up
         }
-        
+        if ((c4==59) && (c5==50) && (c6==66)) {
+            return( "27:91:49:59:50:66" );  // shift-arrow-down
+        }
+        if ((c4==59) && (c5==50) && (c6==67)) {
+            return( "27:91:49:59:50:67" );  // shift-arrow-right
+        }
+        if ((c4==59) && (c5==50) && (c6==68)) {
+            return( "27:91:49:59:50:68" );  // shift-arrow-left
+        }
+
         //-----------------------------------------------------------------------------------------
         // read character 7
         //-----------------------------------------------------------------------------------------

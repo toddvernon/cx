@@ -543,12 +543,49 @@ CxExpression::ParseToTokens( void )
 
 			cptr++;
             
-		} else 
+		} else
 
 		//-----------------------------------------------------------------------------------------
-		// Math Signs							
+		// Comparison operators (check before single-char math signs)
 		//-----------------------------------------------------------------------------------------
-		
+
+		if (*cptr == '<') {
+			cptr++;
+			if (*cptr == '=') {
+				debugPrintf("- ParseToTokens: its a <= sign\n");
+				token_list.append( CxExpressionToken(CxExpressionToken::LE_SIGN, "", 0.0));
+				cptr++;
+			} else if (*cptr == '>') {
+				debugPrintf("- ParseToTokens: its a <> sign\n");
+				token_list.append( CxExpressionToken(CxExpressionToken::NE_SIGN, "", 0.0));
+				cptr++;
+			} else {
+				debugPrintf("- ParseToTokens: its a < sign\n");
+				token_list.append( CxExpressionToken(CxExpressionToken::LT_SIGN, "", 0.0));
+			}
+
+		} else if (*cptr == '>') {
+			cptr++;
+			if (*cptr == '=') {
+				debugPrintf("- ParseToTokens: its a >= sign\n");
+				token_list.append( CxExpressionToken(CxExpressionToken::GE_SIGN, "", 0.0));
+				cptr++;
+			} else {
+				debugPrintf("- ParseToTokens: its a > sign\n");
+				token_list.append( CxExpressionToken(CxExpressionToken::GT_SIGN, "", 0.0));
+			}
+
+		} else if (*cptr == '=') {
+			debugPrintf("- ParseToTokens: its a = sign\n");
+			token_list.append( CxExpressionToken(CxExpressionToken::EQ_SIGN, "", 0.0));
+			cptr++;
+
+		} else
+
+		//-----------------------------------------------------------------------------------------
+		// Math Signs
+		//-----------------------------------------------------------------------------------------
+
 		if (CxExpressionToken::is_in(*cptr,"+-*/")) {
 			
 			switch(*cptr) {
@@ -666,11 +703,12 @@ CxExpression::ParseToTokens( void )
 //-------------------------------------------------------------------------------------------------
 CxExpression::parseStatus
 CxExpression::CheckSyntax( void )
-{	
+{
 	int	args;
 	int localError = 0;
 
 	current_token = 0;
+	error_code = OK;
 
 	//---------------------------------------------------------------------------------------------
 	// Do syntax check for Existing Errors from parse step 
@@ -1016,7 +1054,79 @@ CxExpression::CheckSyntax2(int mode, int *args)
 				break;
 
 
-			//-------------------------------------------------------------------------------------	
+			//-------------------------------------------------------------------------------------
+
+			case CxExpressionToken::LT_SIGN:
+			case CxExpressionToken::GT_SIGN:
+			case CxExpressionToken::LE_SIGN:
+			case CxExpressionToken::GE_SIGN:
+			case CxExpressionToken::EQ_SIGN:
+			case CxExpressionToken::NE_SIGN:
+
+				if (first) {
+					error_code = INVALID_FIRST_SYMBOL;
+					return( PARSE_ERROR );
+				}
+
+				switch( next_token.ttype ) {
+
+					case CxExpressionToken::PLUS_SIGN:
+						break;
+
+					case CxExpressionToken::MINUS_SIGN:
+						break;
+
+					case CxExpressionToken::MULT_SIGN:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+					case CxExpressionToken::DIV_SIGN:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+					case CxExpressionToken::LT_SIGN:
+					case CxExpressionToken::GT_SIGN:
+					case CxExpressionToken::LE_SIGN:
+					case CxExpressionToken::GE_SIGN:
+					case CxExpressionToken::EQ_SIGN:
+					case CxExpressionToken::NE_SIGN:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+					case CxExpressionToken::LEFT_PAREN:
+						break;
+
+					case CxExpressionToken::RIGHT_PAREN:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+					case CxExpressionToken::DOUBLE_NUMBER:
+						break;
+
+					case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
+						break;
+
+					case CxExpressionToken::FUNCTION:
+						break;
+
+					case CxExpressionToken::COMMA:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+					case CxExpressionToken::END:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+					default:
+						error_code = UNEXPECTED_TOKEN;
+						return( PARSE_ERROR );
+
+				}
+				break;
+
+
+			//-------------------------------------------------------------------------------------
 
 
 			case CxExpressionToken::COMMA :
@@ -1180,25 +1290,33 @@ CxExpression::CheckSyntax2(int mode, int *args)
 				}
 
 				switch( next_token.ttype ) {
-		
+
     	            case CxExpressionToken::PLUS_SIGN:
 						break;
-					
+
 	                case CxExpressionToken::MINUS_SIGN:
 						break;
-					
+
         	        case CxExpressionToken::MULT_SIGN:
 						break;
-					
+
 	                case CxExpressionToken::DIV_SIGN:
 						break;
-					
+
+					case CxExpressionToken::LT_SIGN:
+					case CxExpressionToken::GT_SIGN:
+					case CxExpressionToken::LE_SIGN:
+					case CxExpressionToken::GE_SIGN:
+					case CxExpressionToken::EQ_SIGN:
+					case CxExpressionToken::NE_SIGN:
+						break;
+
          	       case CxExpressionToken::LEFT_PAREN:
 						break;
-					
+
                 	case CxExpressionToken::RIGHT_PAREN:
 						break;
-					
+
 	                case CxExpressionToken::DOUBLE_NUMBER:
 						error_code = NUMBER_AFTER_RIGHT_PAREN;
 						return( PARSE_ERROR );
@@ -1245,16 +1363,24 @@ CxExpression::CheckSyntax2(int mode, int *args)
 				switch( next_token.ttype ) {
                 	case CxExpressionToken::PLUS_SIGN:
 						break;
-					
+
 	                case CxExpressionToken::MINUS_SIGN:
 						break;
-					
+
             	    case CxExpressionToken::MULT_SIGN:
 						break;
-					
+
 	                case CxExpressionToken::DIV_SIGN:
 						break;
-						
+
+					case CxExpressionToken::LT_SIGN:
+					case CxExpressionToken::GT_SIGN:
+					case CxExpressionToken::LE_SIGN:
+					case CxExpressionToken::GE_SIGN:
+					case CxExpressionToken::EQ_SIGN:
+					case CxExpressionToken::NE_SIGN:
+						break;
+
                 	case CxExpressionToken::LEFT_PAREN:
 						error_code = LEFT_PAREN_AFTER_NUMBER;
                     	return( PARSE_ERROR );
@@ -1297,16 +1423,24 @@ CxExpression::CheckSyntax2(int mode, int *args)
 				switch( next_token.ttype ) {
                 	case CxExpressionToken::PLUS_SIGN:
 						break;
-					
+
 	                case CxExpressionToken::MINUS_SIGN:
 						break;
-					
+
             	    case CxExpressionToken::MULT_SIGN:
 						break;
-					
+
 	                case CxExpressionToken::DIV_SIGN:
 						break;
-						
+
+					case CxExpressionToken::LT_SIGN:
+					case CxExpressionToken::GT_SIGN:
+					case CxExpressionToken::LE_SIGN:
+					case CxExpressionToken::GE_SIGN:
+					case CxExpressionToken::EQ_SIGN:
+					case CxExpressionToken::NE_SIGN:
+						break;
+
                 	case CxExpressionToken::LEFT_PAREN:
 						error_code = LEFT_PAREN_AFTER_VARIABLE;
                     	return( PARSE_ERROR );
@@ -1554,7 +1688,7 @@ CxExpression::Evaluate(double *result)
 		//---------------------------------------------------------------------------------------------
 		// Start down the recursion tree
 		//---------------------------------------------------------------------------------------------
-		Level2(result);
+		LevelCmp(result);
 
 		//---------------------------------------------------------------------------------------------
 		// Mark the expression as evaluated and cache the result.
@@ -1617,9 +1751,9 @@ CxExpression::Level1(double *result_array, int *args)
 		}
 
 		//-----------------------------------------------------------------------------------------
-		// Start at the top.
+		// Start at LevelCmp to allow comparison operators in function arguments
 		//-----------------------------------------------------------------------------------------
-		Level2(&(result_array[c]));
+		LevelCmp(&(result_array[c]));
 		c++;
 
 		//-----------------------------------------------------------------------------------------
@@ -1642,6 +1776,70 @@ CxExpression::Level1(double *result_array, int *args)
 	}
 
 	*args = c;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// EXPRESSION_LevelCmp :
+//
+//		Handle comparison operators: < > <= >= = <>
+// These have lower precedence than arithmetic, so they evaluate after + -
+//
+// Possible Error Codes :
+//		NONE
+//
+//-------------------------------------------------------------------------------------------------
+void
+CxExpression::LevelCmp(double *result)
+{
+	int			op;
+	double		hold;
+
+	//---------------------------------------------------------------------------------------------
+	// Move down the tree to get the first operand
+	//---------------------------------------------------------------------------------------------
+
+	Level2(result);
+
+	//---------------------------------------------------------------------------------------------
+	// Now handle comparison operators
+	//---------------------------------------------------------------------------------------------
+
+	CxExpressionToken token = CurrentToken( );
+	op = token.ttype;
+
+	while (( op == CxExpressionToken::LT_SIGN) ||
+		   ( op == CxExpressionToken::GT_SIGN) ||
+		   ( op == CxExpressionToken::LE_SIGN) ||
+		   ( op == CxExpressionToken::GE_SIGN) ||
+		   ( op == CxExpressionToken::EQ_SIGN) ||
+		   ( op == CxExpressionToken::NE_SIGN)) {
+
+		//-----------------------------------------------------------------------------------------
+		// Grab the next token
+		//-----------------------------------------------------------------------------------------
+
+		token = NextToken( );
+
+		//-----------------------------------------------------------------------------------------
+		// Move down the tree to get second operand
+		//-----------------------------------------------------------------------------------------
+
+		Level2( &hold);
+
+		//-----------------------------------------------------------------------------------------
+		// Perform the comparison (returns 1.0 for true, 0.0 for false)
+		//-----------------------------------------------------------------------------------------
+
+		Arith(op, result, &hold);
+
+		//-----------------------------------------------------------------------------------------
+		// Get the current token, and look at operator
+		//-----------------------------------------------------------------------------------------
+
+		token = CurrentToken( );
+		op = token.ttype;
+	}
 }
 
 
@@ -1908,10 +2106,10 @@ CxExpression::Level6(double *result)
 		token = NextToken( );
 
 		//-----------------------------------------------------------------------------------------
-		// Start at the top of the hierachy.		
+		// Start at the top of the hierachy.
 		//-----------------------------------------------------------------------------------------
 
-		Level2(result);
+		LevelCmp(result);
 
 		//-----------------------------------------------------------------------------------------
 		// Get the current token.			
@@ -2204,10 +2402,52 @@ CxExpression::Arith(int op, double *number1, double *number2)
             return(OK);
 
 		//-----------------------------------------------------------------------------------------
-		// Exponentiation				
+		// Exponentiation
 		//-----------------------------------------------------------------------------------------
         case CxExpressionToken::EXP_SIGN	:
 			*number1 = pow((double) *number1, (double) *number2);
+            return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Less than
+		//-----------------------------------------------------------------------------------------
+        case CxExpressionToken::LT_SIGN	:
+			*number1 = (*number1 < *number2) ? 1.0 : 0.0;
+            return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Greater than
+		//-----------------------------------------------------------------------------------------
+        case CxExpressionToken::GT_SIGN	:
+			*number1 = (*number1 > *number2) ? 1.0 : 0.0;
+            return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Less than or equal
+		//-----------------------------------------------------------------------------------------
+        case CxExpressionToken::LE_SIGN	:
+			*number1 = (*number1 <= *number2) ? 1.0 : 0.0;
+            return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Greater than or equal
+		//-----------------------------------------------------------------------------------------
+        case CxExpressionToken::GE_SIGN	:
+			*number1 = (*number1 >= *number2) ? 1.0 : 0.0;
+            return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Equal
+		//-----------------------------------------------------------------------------------------
+        case CxExpressionToken::EQ_SIGN	:
+			*number1 = (*number1 == *number2) ? 1.0 : 0.0;
+            return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Not equal
+		//-----------------------------------------------------------------------------------------
+        case CxExpressionToken::NE_SIGN	:
+			*number1 = (*number1 != *number2) ? 1.0 : 0.0;
             return(OK);
 
 	}

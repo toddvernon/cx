@@ -97,14 +97,12 @@ class CxExpressionToken
         DIV_SIGN,
         EXP_SIGN,
         MOD_SIGN,
-//        LT_SIGN,
-//        GT_SIGN,
-//        LE_SIGN,
-//        GE_SIGN,
-//       EE_SIGN,
-//        NE_SIGN,
-//        LA_SIGN,
-//        LO_SIGN,
+        LT_SIGN,            // <
+        GT_SIGN,            // >
+        LE_SIGN,            // <=
+        GE_SIGN,            // >=
+        EQ_SIGN,            // =  (equality in formulas)
+        NE_SIGN,            // <>
         COMMA,
         LEFT_PAREN,
         RIGHT_PAREN,

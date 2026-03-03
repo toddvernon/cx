@@ -216,6 +216,7 @@ class CxExpression
     parseStatus CheckSyntax2(int mode, int *args);
 
     void  Level1(double *result_array, int *args);
+    void  LevelCmp(double *result);
     void  Level2(double *result);
     void  Level3(double *result);
     void  Level4(double *result);

@@ -299,7 +299,31 @@ int CxExpressionToken::Dump(void)
 		case MOD_SIGN	  :
 			printf("TOKEN(MOD_SIGN) ");
 			break;
-			
+
+		case LT_SIGN	  :
+			printf("TOKEN(LT_SIGN) ");
+			break;
+
+		case GT_SIGN	  :
+			printf("TOKEN(GT_SIGN) ");
+			break;
+
+		case LE_SIGN	  :
+			printf("TOKEN(LE_SIGN) ");
+			break;
+
+		case GE_SIGN	  :
+			printf("TOKEN(GE_SIGN) ");
+			break;
+
+		case EQ_SIGN	  :
+			printf("TOKEN(EQ_SIGN) ");
+			break;
+
+		case NE_SIGN	  :
+			printf("TOKEN(NE_SIGN) ");
+			break;
+
 		case LEFT_PAREN	   :
 			printf("TOKEN(LEFT_PAREN) ");
 			break;
@@ -394,7 +418,31 @@ CxString CxExpressionToken::asString( void )
 		case MOD_SIGN	   :
 			return( CxString("%") );
 			break;
-			
+
+		case LT_SIGN	   :
+			return( CxString("<") );
+			break;
+
+		case GT_SIGN	   :
+			return( CxString(">") );
+			break;
+
+		case LE_SIGN	   :
+			return( CxString("<=") );
+			break;
+
+		case GE_SIGN	   :
+			return( CxString(">=") );
+			break;
+
+		case EQ_SIGN	   :
+			return( CxString("=") );
+			break;
+
+		case NE_SIGN	   :
+			return( CxString("<>") );
+			break;
+
 		case LEFT_PAREN	   :
 			return( CxString("(") );
 			break;

@@ -8,25 +8,30 @@
 - [x] MAX(range)
 - [x] Case-insensitive function names
 
-## Logical Functions
-Requires comparison operators first.
+## Comparison Operators (Completed)
+- [x] `<` (less than)
+- [x] `>` (greater than)
+- [x] `<=` (less than or equal)
+- [x] `>=` (greater than or equal)
+- [x] `=` (equal)
+- [x] `<>` (not equal)
 
-- [ ] Comparison operators: `>`, `<`, `>=`, `<=`, `=`, `<>`
-- [ ] IF(condition, true_val, false_val)
-- [ ] AND(args...)
-- [ ] OR(args...)
+## Logical Functions (Completed)
+- [x] IF(condition, true_val, false_val)
+- [x] AND(args...)
+- [x] OR(args...)
 
-## Date/Time Functions
-- [ ] NOW() - current date and time
-- [ ] TODAY() - current date
-- [ ] DATE(year, month, day)
-- [ ] YEAR(date)
-- [ ] MONTH(date)
-- [ ] DAY(date)
+## Date/Time Functions (Completed)
+- [x] NOW() - current date and time
+- [x] TODAY() - current date
+- [x] DATE(year, month, day)
+- [x] YEAR(date)
+- [x] MONTH(date)
+- [x] DAY(date)
 
-## Financial Functions
-- [ ] PMT(rate, nper, pv)
-- [ ] NPV(rate, range)
-- [ ] IRR(range)
-- [ ] FV(rate, nper, pmt)
-- [ ] PV(rate, nper, pmt)
+## Financial Functions (Completed)
+- [x] PMT(rate, nper, pv)
+- [x] NPV(rate, range)
+- [x] IRR(range)
+- [x] FV(rate, nper, pmt)
+- [x] PV(rate, nper, pmt)

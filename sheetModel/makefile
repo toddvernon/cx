@@ -90,8 +90,10 @@ LIB_CX_PLATFORM_OBJECT_DIR=$(UNAME_S)_$(ARCH)
 LIB_CX_SHEETMODEL_NAME=libcx_sheetmodel.a
 LIB_CX_SHEETMODEL_OBJECTS=\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCellCoordinate.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCellRange.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCell.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetVariableDatabase.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetFunctionDatabase.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetDependencyGraph.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetModel.o
 
@@ -141,8 +143,10 @@ clean:
 .SUFFIXES: .cpp .C .cc .cxx .o
 
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCellCoordinate.o	: sheetCellCoordinate.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCellRange.o		: sheetCellRange.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCell.o		: sheetCell.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetVariableDatabase.o	: sheetVariableDatabase.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetFunctionDatabase.o	: sheetFunctionDatabase.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetDependencyGraph.o	: sheetDependencyGraph.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetModel.o 		: sheetModel.cpp
 

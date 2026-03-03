@@ -41,6 +41,111 @@
 
 
 //-------------------------------------------------------------------------------------------------
+// isValidCellRange:
+//
+// Check if a string is a valid cell range (e.g., "A1:B4", "$A$1:$B$2")
+// Returns 1 if valid range, 0 otherwise
+//
+// A valid range has:
+// - Exactly one colon
+// - Valid cell addresses on both sides of the colon
+//
+//-------------------------------------------------------------------------------------------------
+static int isValidCellRange(const char* text)
+{
+    if (text == NULL || *text == '\0') {
+        return 0;
+    }
+
+    // Find the colon
+    const char* colon = strchr(text, ':');
+    if (colon == NULL) {
+        return 0;  // No colon - not a range
+    }
+
+    // Check for multiple colons (invalid)
+    if (strchr(colon + 1, ':') != NULL) {
+        return 0;
+    }
+
+    // Colon must not be at start or end
+    if (colon == text || *(colon + 1) == '\0') {
+        return 0;
+    }
+
+    // Validate first cell address (before colon)
+    const char* p = text;
+
+    // Skip optional $ for column
+    if (*p == '$') p++;
+
+    // Must have at least one letter (column)
+    if (!isalpha((int)*p)) {
+        return 0;
+    }
+
+    // Skip column letters
+    while (isalpha((int)*p)) {
+        p++;
+    }
+
+    // Skip optional $ for row
+    if (*p == '$') p++;
+
+    // Must have at least one digit (row)
+    if (!isdigit((int)*p)) {
+        return 0;
+    }
+
+    // Skip row digits
+    while (isdigit((int)*p)) {
+        p++;
+    }
+
+    // Should be at the colon now
+    if (p != colon) {
+        return 0;
+    }
+
+    // Validate second cell address (after colon)
+    p = colon + 1;
+
+    // Skip optional $ for column
+    if (*p == '$') p++;
+
+    // Must have at least one letter (column)
+    if (!isalpha((int)*p)) {
+        return 0;
+    }
+
+    // Skip column letters
+    while (isalpha((int)*p)) {
+        p++;
+    }
+
+    // Skip optional $ for row
+    if (*p == '$') p++;
+
+    // Must have at least one digit (row)
+    if (!isdigit((int)*p)) {
+        return 0;
+    }
+
+    // Skip row digits
+    while (isdigit((int)*p)) {
+        p++;
+    }
+
+    // Should be at end of string now
+    if (*p != '\0') {
+        return 0;
+    }
+
+    return 1;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // Expression::Expression (constructor)	
 //								
 //	
@@ -345,34 +450,36 @@ CxExpression::ParseToTokens( void )
 			} else {
 
 				//---------------------------------------------------------------------------------
-				// Variable name			
+				// Check if this is a cell range (e.g., "A1:B4")
 				//---------------------------------------------------------------------------------
 
-                debugPrintf("- ParseToTokens: its a variable (%s)\n", temp);
+				if (isValidCellRange(temp)) {
 
+					debugPrintf("- ParseToTokens: its a range (%s)\n", temp);
 
-				if (var_intrinsic_db->VariableDefined( temp ) == CxExpressionVariableDatabase::VARIABLE_DEFINED) {
+					token_list.append( CxExpressionToken(CxExpressionToken::RANGE, temp, 0.0 ));
 
-	                debugPrintf("- ParseToTokens: its a variable (%s) found in intrinsic database\n", temp);
-                    token_list.append( CxExpressionToken(CxExpressionToken::VARIABLE, temp, 0.0 ));
-				
+				//---------------------------------------------------------------------------------
+				// Variable name
+				//---------------------------------------------------------------------------------
+
+				} else if (var_intrinsic_db->VariableDefined( temp ) == CxExpressionVariableDatabase::VARIABLE_DEFINED) {
+
+					debugPrintf("- ParseToTokens: its a variable (%s) found in intrinsic database\n", temp);
+					token_list.append( CxExpressionToken(CxExpressionToken::VARIABLE, temp, 0.0 ));
+
+				} else if (var_db->VariableDefined( temp ) == CxExpressionVariableDatabase::VARIABLE_DEFINED) {
+
+					debugPrintf("- ParseToTokens: variable (%s) found in user database\n", temp);
+					token_list.append( CxExpressionToken(CxExpressionToken::VARIABLE, temp, 0.0 ));
+
 				} else {
 
-					debugPrintf("- ParseToTokens: variable (%s) not found in intrinsic database\n", temp);
+					debugPrintf("- ParseToTokens: variable (%s) not found in either database\n", temp);
 
-	                if (var_db->VariableDefined( temp ) == CxExpressionVariableDatabase::VARIABLE_DEFINED) {
-
-		                debugPrintf("- ParseToTokens: variable (%s) found in user database\n", temp);
-    	                token_list.append( CxExpressionToken(CxExpressionToken::VARIABLE, temp, 0.0 ));
-
-        	        } else {
-
-		                debugPrintf("- ParseToTokens: variable (%s) not found in either database\n", temp);
-
-	                    token_list.append( CxExpressionToken(CxExpressionToken::UNKNOWN_VARIABLE, temp, 0.0));
-    	                token_list.append( CxExpressionToken(CxExpressionToken::END, "", 0.0));
-					}
-                }
+					token_list.append( CxExpressionToken(CxExpressionToken::UNKNOWN_VARIABLE, temp, 0.0));
+					token_list.append( CxExpressionToken(CxExpressionToken::END, "", 0.0));
+				}
 			}
             
 		} else	
@@ -720,8 +827,9 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						break;
 					
                     case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						break;
-					
+
                     case CxExpressionToken::FUNCTION:
 						break;
 			
@@ -771,8 +879,9 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						break;
 					
                     case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						break;
-					
+
                     case CxExpressionToken::FUNCTION:
 						break;
 			
@@ -827,8 +936,9 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						break;
 					
                     case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						break;
-					
+
                     case CxExpressionToken::FUNCTION:
 						break;
 			
@@ -883,9 +993,10 @@ CxExpression::CheckSyntax2(int mode, int *args)
 					case CxExpressionToken::DOUBLE_NUMBER: 
 						break;
 					
-					case CxExpressionToken::VARIABLE: 
+					case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						break;
-					
+
 					case CxExpressionToken::FUNCTION: 
 						break;
 			
@@ -954,8 +1065,9 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						break;
 					
                 	case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						break;
-					
+
 	                case CxExpressionToken::FUNCTION:
 						break;
 			
@@ -1005,8 +1117,9 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						break;
 					
             	    case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						break;
-					
+
 	                case CxExpressionToken::FUNCTION:
 						break;
 			
@@ -1091,9 +1204,10 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						return( PARSE_ERROR );
 						
                 	case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						error_code = VARIABLE_AFTER_RIGHT_PAREN;
 						return( PARSE_ERROR );
-					
+
 	                case CxExpressionToken::FUNCTION:
 						error_code = FUNCTION_AFTER_RIGHT_PAREN;
 						return( PARSE_ERROR );
@@ -1153,9 +1267,10 @@ CxExpression::CheckSyntax2(int mode, int *args)
 						return( PARSE_ERROR );
 					
 	                case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						error_code = VARIABLE_AFTER_NUMBER;
         	            return( PARSE_ERROR );
-					
+
 	                case CxExpressionToken::FUNCTION:
 						error_code = FUNCTION_AFTER_NUMBER;
         	           	return( PARSE_ERROR );
@@ -1174,9 +1289,10 @@ CxExpression::CheckSyntax2(int mode, int *args)
 				break;
 
 
-			//-------------------------------------------------------------------------------------	
+			//-------------------------------------------------------------------------------------
 
-			case CxExpressionToken::VARIABLE	   :
+			case CxExpressionToken::VARIABLE:
+			case CxExpressionToken::RANGE:
 
 				switch( next_token.ttype ) {
                 	case CxExpressionToken::PLUS_SIGN:
@@ -1203,9 +1319,10 @@ CxExpression::CheckSyntax2(int mode, int *args)
                     	return( PARSE_ERROR );
 					
 	                case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						error_code = VARIABLE_AFTER_VARIABLE;
         	            return( PARSE_ERROR );
-					
+
                 	case CxExpressionToken::FUNCTION:
 						error_code = FUNCTION_AFTER_VARIABLE;
                 	    return( PARSE_ERROR );
@@ -1256,9 +1373,10 @@ CxExpression::CheckSyntax2(int mode, int *args)
                     	return( PARSE_ERROR );
 					
 	                case CxExpressionToken::VARIABLE:
+					case CxExpressionToken::RANGE:
 						error_code = VARIABLE_AFTER_FUNCTION;
         	            return( PARSE_ERROR );
-					
+
                 	case CxExpressionToken::FUNCTION:
 						error_code = FUNCTION_AFTER_FUNCTION;
                 	    return( PARSE_ERROR );
@@ -1901,7 +2019,24 @@ CxExpression::Primitive(double *result)
 			return(OK);
 
 		//-----------------------------------------------------------------------------------------
-		// Handle function				
+		// Handle range (e.g., "A1:B4")
+		// Ranges evaluate to 0.0 as placeholders - the actual range expansion
+		// is handled by the function database (CxSheetFunctionDatabase)
+		//-----------------------------------------------------------------------------------------
+		case CxExpressionToken::RANGE:
+
+			// Range tokens are placeholders that evaluate to 0
+			// The function database will expand the range when evaluating
+			// functions like SUM, AVERAGE, etc.
+			*result = 0.0;
+
+			// Get the next token
+			token = NextToken();
+
+			return(OK);
+
+		//-----------------------------------------------------------------------------------------
+		// Handle function
 		//-----------------------------------------------------------------------------------------
         case CxExpressionToken::FUNCTION :
             
@@ -2235,6 +2370,30 @@ CxExpression::GetKnownVariableList(void)
     }
 
 	return(vlist);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// EXPRESSION_GetRangeList:
+//
+// Build a list of cell ranges used in the expression (e.g., "A1:B4")
+//
+//-------------------------------------------------------------------------------------------------
+CxSList<CxString>
+CxExpression::GetRangeList(void)
+{
+    CxSList<CxString> rlist;
+
+    for (int c = 0; c < token_list.entries(); c++) {
+
+        CxExpressionToken token = token_list.at(c);
+
+        if (token.ttype == CxExpressionToken::RANGE) {
+            rlist.append(token.text);
+        }
+    }
+
+    return(rlist);
 }
 
 

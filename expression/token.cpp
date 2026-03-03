@@ -319,7 +319,11 @@ int CxExpressionToken::Dump(void)
 		case FUNCTION  :
 			printf("TOKEN(FUNC=%s) ",text.data() );
 			break;
-			
+
+		case RANGE :
+			printf("TOKEN(RANGE=%s) ", text.data() );
+			break;
+
 		case END :
 			printf("TOKEN(END) ");
 			break;
@@ -411,7 +415,11 @@ CxString CxExpressionToken::asString( void )
 		case FUNCTION  :
 			return( text );
 			break;
-			
+
+		case RANGE :
+			return( text );
+			break;
+
 		case UNKNOWN_FUNCTION :
 			sprintf(buffer, "%s", text.data() );
 			return( CxString( buffer ));

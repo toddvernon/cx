@@ -48,6 +48,17 @@ class CxExpressionFunctionDatabase
     // the evaluated function
     virtual returnCode FunctionEvaluate( CxString name, int numberOfArgs, double *args, double *result);
 
+    // Extended interface for functions that accept range arguments (e.g., SUM(A1:A10))
+    // scalarArgs contains scalar values (range positions have 0.0 placeholders)
+    // rangeArgs contains range strings (scalar positions have empty strings)
+    // Default implementation just calls FunctionEvaluate with scalarArgs
+    virtual returnCode FunctionEvaluateWithRanges(
+        CxString name,
+        int numberOfArgs,
+        double *scalarArgs,
+        CxString *rangeArgs,
+        double *result);
+
 };
 
 

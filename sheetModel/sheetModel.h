@@ -31,8 +31,9 @@
 #ifndef _CxSheetModel_
 #define _CxSheetModel_
 
-// Forward declaration
+// Forward declarations
 class CxSheetVariableDatabase;
+class CxSheetFunctionDatabase;
 
 
 //-------------------------------------------------------------------------------------------------
@@ -228,6 +229,9 @@ class CxSheetModel
 
     CxSheetVariableDatabase* variableDatabase;
     // variable database for formula evaluation (owned pointer)
+
+    CxSheetFunctionDatabase* functionDatabase;
+    // function database for formula evaluation with range support (owned pointer)
 
     CxSList<CxSheetCellCoordinate> _lastAffectedCells;
     // Cells affected by the last setCell() or load operation.

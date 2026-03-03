@@ -111,6 +111,7 @@ class CxExpressionToken
         DOUBLE_NUMBER,
         VARIABLE,
         FUNCTION,
+        RANGE,              // For cell ranges like "A1:B4"
         UNKNOWN_VARIABLE,
         UNKNOWN_FUNCTION,
         UNKNOWN_SYMBOL,

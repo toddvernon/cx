@@ -35,10 +35,25 @@ CxExpressionFunctionDatabase::FunctionDefined( CxString name )
 }
     
 
-CxExpressionFunctionDatabase::returnCode 
+CxExpressionFunctionDatabase::returnCode
 CxExpressionFunctionDatabase::FunctionEvaluate( CxString name, int numberOfArgs, double *args, double *result)
 {
 	return( FUNCTION_UNDEFINED );
+}
+
+
+CxExpressionFunctionDatabase::returnCode
+CxExpressionFunctionDatabase::FunctionEvaluateWithRanges(
+    CxString name,
+    int numberOfArgs,
+    double *scalarArgs,
+    CxString *rangeArgs,
+    double *result)
+{
+    // Default implementation just delegates to FunctionEvaluate
+    // Subclasses (like CxSheetFunctionDatabase) can override to handle ranges
+    (void)rangeArgs;  // Unused in base class
+    return FunctionEvaluate(name, numberOfArgs, scalarArgs, result);
 }
 
 

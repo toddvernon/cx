@@ -193,12 +193,15 @@ class CxExpression
     
     CxSList<CxString> GetVariableList(void);
     // the the list of variables used in the expression
-    
+
     CxSList<CxString> GetUnknownVariableList(void);
     // get the list of variables that were not found in the database
-    
+
     CxSList<CxString> GetKnownVariableList(void);
     // get the list of variables that were found in the database
+
+    CxSList<CxString> GetRangeList(void);
+    // get the list of cell ranges used in the expression (e.g., "A1:B4")
 
     void setVariableDatabase(CxExpressionVariableDatabase *var_db);
     // set the variable database to use for evaluation

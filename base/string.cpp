@@ -290,6 +290,50 @@ CxString::operator<=( const CxString& rhs_ ) const
 
 
 //-------------------------------------------------------------------------
+// CxString::equalsIgnoreCase
+//
+// Case-insensitive comparison with CxString
+//-------------------------------------------------------------------------
+int
+CxString::equalsIgnoreCase( const CxString& sr_ ) const
+{
+    return equalsIgnoreCase(sr_.data());
+}
+
+
+//-------------------------------------------------------------------------
+// CxString::equalsIgnoreCase
+//
+// Case-insensitive comparison with C string
+//-------------------------------------------------------------------------
+int
+CxString::equalsIgnoreCase( const char* s_ ) const
+{
+    if (s_ == NULL) return FALSE;
+
+    const char* p1 = _data;
+    const char* p2 = s_;
+
+    while (*p1 && *p2) {
+        char c1 = *p1;
+        char c2 = *p2;
+
+        // Convert to lowercase for comparison
+        if (c1 >= 'A' && c1 <= 'Z') c1 = c1 + ('a' - 'A');
+        if (c2 >= 'A' && c2 <= 'Z') c2 = c2 + ('a' - 'A');
+
+        if (c1 != c2) return FALSE;
+
+        p1++;
+        p2++;
+    }
+
+    // Both strings must end at the same point
+    return (*p1 == '\0' && *p2 == '\0') ? TRUE : FALSE;
+}
+
+
+//-------------------------------------------------------------------------
 // CxString::append
 //
 //-------------------------------------------------------------------------

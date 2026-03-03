@@ -108,6 +108,12 @@ class CxString
     int operator<=(const CxString& sr_) const;
     // compare CxString to self
 
+    int equalsIgnoreCase(const CxString& sr_) const;
+    // case-insensitive comparison, returns 1 if equal ignoring case
+
+    int equalsIgnoreCase(const char* s_) const;
+    // case-insensitive comparison with C string, returns 1 if equal ignoring case
+
 	void append( const CxString& sr_ );
 	// append CxString to self
 

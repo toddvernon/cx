@@ -17,6 +17,8 @@
 
 #include "sheetModel.h"
 #include "sheetVariableDatabase.h"
+#include "sheetFunctionDatabase.h"
+#include "sheetCellRange.h"
 #include <cx/expression/expression.h>
 #include <cx/base/file.h>
 #include <cx/json/json_factory.h>
@@ -40,9 +42,11 @@ CxSheetModel::CxSheetModel(void)
 , maxRowUsed(0)
 , maxColUsed(0)
 , variableDatabase(NULL)
+, functionDatabase(NULL)
 , loadingInProgress(0)
 {
     variableDatabase = new CxSheetVariableDatabase(this);
+    functionDatabase = new CxSheetFunctionDatabase(this);
 }
 
 
@@ -59,10 +63,12 @@ CxSheetModel::CxSheetModel(const CxSheetModel& other)
 , maxRowUsed(other.maxRowUsed)
 , maxColUsed(other.maxColUsed)
 , variableDatabase(NULL)
+, functionDatabase(NULL)
 , loadingInProgress(0)
 {
-    // Create our own variable database pointing to this model
+    // Create our own variable and function databases pointing to this model
     variableDatabase = new CxSheetVariableDatabase(this);
+    functionDatabase = new CxSheetFunctionDatabase(this);
 
     // Copy cells using iterator (we'll rebuild dependencies after)
     loadingInProgress = 1;  // Prevent recalculation during cell insert
@@ -97,6 +103,12 @@ CxSheetModel::~CxSheetModel(void)
     if (variableDatabase != NULL) {
         delete variableDatabase;
         variableDatabase = NULL;
+    }
+
+    // Clean up the function database
+    if (functionDatabase != NULL) {
+        delete functionDatabase;
+        functionDatabase = NULL;
     }
 
     // CxHashmap destructor will clean up the cells
@@ -351,10 +363,10 @@ CxSheetModel::setCell(CxSheetCellCoordinate coord, CxSheetCell cell)
         cellHashMap.insert(coord, cell);
 
         // Now get a pointer to the inserted cell and re-create/parse the formula
-        // with the variableDatabase
+        // with the variableDatabase and functionDatabase
         CxSheetCell* insertedCell = (CxSheetCell*)cellHashMap.find(coord);
         if (insertedCell != NULL) {
-            insertedCell->formula = new CxExpression(formulaText, variableDatabase, NULL);
+            insertedCell->formula = new CxExpression(formulaText, variableDatabase, functionDatabase);
             insertedCell->formula->Parse();
 
             // STEP 3: Register new dependencies for this formula
@@ -921,6 +933,12 @@ CxSheetModel::recalculateCell(CxSheetCellCoordinate coord)
     // Set our variable database for cell reference resolution
     cell->formula->setVariableDatabase(variableDatabase);
 
+    // Set the range list for the function database so it knows about
+    // any cell ranges (like A1:A10) used in this formula
+    if (functionDatabase != NULL) {
+        functionDatabase->setRangeList(cell->formula->GetRangeList());
+    }
+
     // Push this cell onto the evaluation stack.
     // If the formula tries to reference this cell (directly or through
     // a chain of references), the stack check will detect the cycle.
@@ -1065,6 +1083,30 @@ CxSheetModel::updateDependencies(CxSheetCellCoordinate coord, CxSheetCell* cell)
         }
         // If parsing fails, it might be a named variable (not a cell reference).
         // We ignore those for dependency tracking.
+    }
+
+    //-------------------------------------------------------------------------
+    // Handle cell ranges (e.g., A1:A10 in "=SUM(A1:A10)")
+    //
+    // For each range in the formula, we need to add dependencies on ALL
+    // cells in that range. This ensures that when any cell in the range
+    // changes, formulas referencing the range get recalculated.
+    //-------------------------------------------------------------------------
+    CxSList<CxString> rangeList = cell->formula->GetRangeList();
+
+    for (int i = 0; i < (int)rangeList.entries(); i++) {
+        CxString rangeStr = rangeList.at(i);
+
+        // Parse and expand the range
+        CxSheetCellRange range(rangeStr);
+        if (range.isValid()) {
+            // Add a dependency for each cell in the range
+            unsigned long cellCount = range.cellCount();
+            for (unsigned long j = 0; j < cellCount; j++) {
+                CxSheetCellCoordinate refCoord = range.cellAt(j);
+                dependencyGraph.addDependency(coord, refCoord);
+            }
+        }
     }
 }
 

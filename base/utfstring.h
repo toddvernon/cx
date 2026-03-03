@@ -116,6 +116,12 @@ class CxUTFString
     int operator!=(const CxUTFString &s) const;
     // Inequality comparison.
 
+    int equalsIgnoreCase(const CxUTFString &s) const;
+    // Case-insensitive comparison, returns 1 if equal ignoring case.
+
+    int equalsIgnoreCase(const char *s) const;
+    // Case-insensitive comparison with C string, returns 1 if equal ignoring case.
+
   private:
 
     CxUTFCharacter *_chars;

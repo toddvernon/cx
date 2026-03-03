@@ -736,3 +736,65 @@ CxUTFString::operator!=(const CxUTFString &s) const
 {
     return !(*this == s);
 }
+
+
+//-------------------------------------------------------------------------------------------------
+// CxUTFString::equalsIgnoreCase
+//
+// Case-insensitive comparison with CxUTFString.
+// Only handles ASCII case folding (A-Z <-> a-z).
+//-------------------------------------------------------------------------------------------------
+int
+CxUTFString::equalsIgnoreCase(const CxUTFString &s) const
+{
+    if (_length != s._length) return 0;
+
+    for (int i = 0; i < _length; i++) {
+        unsigned int cp1 = _chars[i].codepoint();
+        unsigned int cp2 = s._chars[i].codepoint();
+
+        // Convert ASCII uppercase to lowercase
+        if (cp1 >= 'A' && cp1 <= 'Z') cp1 = cp1 + ('a' - 'A');
+        if (cp2 >= 'A' && cp2 <= 'Z') cp2 = cp2 + ('a' - 'A');
+
+        if (cp1 != cp2) return 0;
+    }
+
+    return 1;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxUTFString::equalsIgnoreCase
+//
+// Case-insensitive comparison with C string.
+// Only handles ASCII case folding (A-Z <-> a-z).
+//-------------------------------------------------------------------------------------------------
+int
+CxUTFString::equalsIgnoreCase(const char *s) const
+{
+    if (s == NULL) return 0;
+
+    // Compare character by character
+    int sIndex = 0;
+    for (int i = 0; i < _length; i++) {
+        if (s[sIndex] == '\0') return 0;  // s is shorter
+
+        unsigned int cp1 = _chars[i].codepoint();
+
+        // Get codepoint from UTF-8 string
+        unsigned char leadByte = (unsigned char)s[sIndex];
+        int byteLen = cxUTF8LeadByteLength(leadByte);
+        unsigned int cp2 = cxUTF8Decode((const unsigned char*)&s[sIndex], byteLen);
+        sIndex += byteLen;
+
+        // Convert ASCII uppercase to lowercase
+        if (cp1 >= 'A' && cp1 <= 'Z') cp1 = cp1 + ('a' - 'A');
+        if (cp2 >= 'A' && cp2 <= 'Z') cp2 = cp2 + ('a' - 'A');
+
+        if (cp1 != cp2) return 0;
+    }
+
+    // s should also be at the end
+    return (s[sIndex] == '\0') ? 1 : 0;
+}

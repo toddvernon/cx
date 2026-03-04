@@ -34,6 +34,7 @@
 // Forward declarations
 class CxSheetVariableDatabase;
 class CxSheetFunctionDatabase;
+class CxJSONUTFObject;
 
 
 //-------------------------------------------------------------------------------------------------
@@ -161,6 +162,15 @@ class CxSheetModel
     // due to formula dependencies. The list is in evaluation order (dependencies first).
     // Use this after setCell() to know which cells need to be redrawn.
 
+    CxJSONUTFObject* getAppData(void);
+    // Returns pointer to app data object (preserved but not interpreted by sheetModel).
+    // Apps can store visual attributes like column widths here.
+    // Returns NULL if no app data exists.
+
+    void setAppData(CxJSONUTFObject* data);
+    // Set the app data object. sheetModel takes ownership of the pointer.
+    // Pass NULL to clear app data.
+
 
   private:
 
@@ -237,6 +247,11 @@ class CxSheetModel
     // Cells affected by the last setCell() or load operation.
     // Populated by recalculate() and recalculateAll().
     // Includes the directly changed cell and all dependent formula cells.
+
+    CxJSONUTFObject* _appData;
+    // App-specific data preserved during load/save but not interpreted by sheetModel.
+    // Apps can store visual attributes (column widths, colors, etc.) here.
+    // sheetModel owns this pointer.
 };
 
 

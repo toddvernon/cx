@@ -54,6 +54,7 @@ CxSheetModel::CxSheetModel(void)
 , variableDatabase(NULL)
 , functionDatabase(NULL)
 , loadingInProgress(0)
+, _appData(NULL)
 {
     variableDatabase = new CxSheetVariableDatabase(this);
     functionDatabase = new CxSheetFunctionDatabase(this);
@@ -75,6 +76,7 @@ CxSheetModel::CxSheetModel(const CxSheetModel& other)
 , variableDatabase(NULL)
 , functionDatabase(NULL)
 , loadingInProgress(0)
+, _appData(NULL)
 {
     // Create our own variable and function databases pointing to this model
     variableDatabase = new CxSheetVariableDatabase(this);
@@ -119,6 +121,12 @@ CxSheetModel::~CxSheetModel(void)
     if (functionDatabase != NULL) {
         delete functionDatabase;
         functionDatabase = NULL;
+    }
+
+    // Clean up app data
+    if (_appData != NULL) {
+        delete _appData;
+        _appData = NULL;
     }
 
     // CxHashmap destructor will clean up the cells
@@ -184,6 +192,12 @@ CxSheetModel::reset(void)
 
     // Clear the dependency graph since all cells are being removed
     dependencyGraph.clear();
+
+    // Clear app data
+    if (_appData != NULL) {
+        delete _appData;
+        _appData = NULL;
+    }
 
     // Note: To truly clear the hashmap, we would need to iterate and remove
     // or reconstruct it. For now, setting extents to 0 effectively marks it empty.
@@ -296,6 +310,35 @@ CxSList<CxSheetCellCoordinate>
 CxSheetModel::getLastAffectedCells(void)
 {
     return _lastAffectedCells;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::getAppData
+//
+// Returns pointer to app data object. Apps can use this to read visual
+// attributes like column widths. Returns NULL if no app data exists.
+//-------------------------------------------------------------------------
+CxJSONUTFObject*
+CxSheetModel::getAppData(void)
+{
+    return _appData;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::setAppData
+//
+// Set the app data object. sheetModel takes ownership of the pointer.
+// Pass NULL to clear app data.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::setAppData(CxJSONUTFObject* data)
+{
+    if (_appData != NULL) {
+        delete _appData;
+    }
+    _appData = data;
 }
 
 
@@ -579,6 +622,93 @@ CxSheetModel::loadSheet(CxString filepath)
         }
     }
 
+    //-------------------------------------------------------------------------
+    // Preserve unknown top-level keys in _appData.
+    // Known keys: "version", "currentPosition", "cells"
+    // Everything else is app data (like "columns" for column widths)
+    //-------------------------------------------------------------------------
+    for (int i = 0; i < root->entries(); i++) {
+        CxJSONMember* member = root->at(i);
+        if (member == NULL) continue;
+
+        CxString key = member->var();
+
+        // Skip known keys
+        if (key == "version" || key == "currentPosition" || key == "cells") {
+            continue;
+        }
+
+        // This is app data - preserve it
+        // Convert from parsed CxJSON* to CxJSONUTF* for storage
+        if (_appData == NULL) {
+            _appData = new CxJSONUTFObject();
+        }
+
+        CxJSONBase* origValue = member->object();
+        if (origValue != NULL && origValue->type() == CxJSONBase::OBJECT) {
+            // Deep copy the object
+            CxJSONUTFObject* objCopy = new CxJSONUTFObject();
+            CxJSONObject* origObj = (CxJSONObject*)origValue;
+            for (int j = 0; j < origObj->entries(); j++) {
+                CxJSONMember* subMember = origObj->at(j);
+                if (subMember == NULL) continue;
+
+                CxJSONBase* subValue = subMember->object();
+                CxJSONUTFBase* subCopy = NULL;
+
+                if (subValue != NULL && subValue->type() == CxJSONBase::OBJECT) {
+                    // Nested object (e.g., {"width": 12})
+                    CxJSONUTFObject* nestedCopy = new CxJSONUTFObject();
+                    CxJSONObject* nestedObj = (CxJSONObject*)subValue;
+                    for (int k = 0; k < nestedObj->entries(); k++) {
+                        CxJSONMember* nestedMember = nestedObj->at(k);
+                        if (nestedMember == NULL) continue;
+                        CxJSONBase* nestedValue = nestedMember->object();
+                        CxJSONUTFBase* nestedValueCopy = NULL;
+                        if (nestedValue != NULL) {
+                            switch (nestedValue->type()) {
+                                case CxJSONBase::STRING:
+                                    nestedValueCopy = new CxJSONUTFString(((CxJSONString*)nestedValue)->get().data());
+                                    break;
+                                case CxJSONBase::NUMBER:
+                                    nestedValueCopy = new CxJSONUTFNumber(((CxJSONNumber*)nestedValue)->get());
+                                    break;
+                                case CxJSONBase::BOOLEAN:
+                                    nestedValueCopy = new CxJSONUTFBoolean(((CxJSONBoolean*)nestedValue)->get());
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        if (nestedValueCopy != NULL) {
+                            nestedCopy->append(new CxJSONUTFMember(nestedMember->var().data(), nestedValueCopy));
+                        }
+                    }
+                    subCopy = nestedCopy;
+                } else if (subValue != NULL) {
+                    switch (subValue->type()) {
+                        case CxJSONBase::STRING:
+                            subCopy = new CxJSONUTFString(((CxJSONString*)subValue)->get().data());
+                            break;
+                        case CxJSONBase::NUMBER:
+                            subCopy = new CxJSONUTFNumber(((CxJSONNumber*)subValue)->get());
+                            break;
+                        case CxJSONBase::BOOLEAN:
+                            subCopy = new CxJSONUTFBoolean(((CxJSONBoolean*)subValue)->get());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                if (subCopy != NULL) {
+                    objCopy->append(new CxJSONUTFMember(subMember->var().data(), subCopy));
+                }
+            }
+            _appData->append(new CxJSONUTFMember(key.data(), objCopy));
+        }
+    }
+
     // Clean up
     delete root;
 
@@ -723,6 +853,88 @@ CxSheetModel::saveSheet(CxString filepath)
     }
 
     root->append(new CxJSONUTFMember("cells", cellsArray));
+
+    //-------------------------------------------------------------------------
+    // Merge app data into root (if present)
+    // This preserves top-level keys like "columns" that apps set
+    //-------------------------------------------------------------------------
+    if (_appData != NULL) {
+        for (int i = 0; i < _appData->entries(); i++) {
+            CxJSONUTFMember* member = _appData->at(i);
+            if (member == NULL) continue;
+
+            // Deep copy the member value
+            CxJSONUTFBase* origValue = member->object();
+            CxJSONUTFBase* valueCopy = NULL;
+
+            if (origValue != NULL && origValue->type() == CxJSONUTFBase::OBJECT) {
+                // Deep copy the object
+                CxJSONUTFObject* objCopy = new CxJSONUTFObject();
+                CxJSONUTFObject* origObj = (CxJSONUTFObject*)origValue;
+                for (int j = 0; j < origObj->entries(); j++) {
+                    CxJSONUTFMember* subMember = origObj->at(j);
+                    if (subMember == NULL) continue;
+
+                    CxJSONUTFBase* subValue = subMember->object();
+                    CxJSONUTFBase* subCopy = NULL;
+
+                    if (subValue != NULL && subValue->type() == CxJSONUTFBase::OBJECT) {
+                        // Nested object
+                        CxJSONUTFObject* nestedCopy = new CxJSONUTFObject();
+                        CxJSONUTFObject* nestedObj = (CxJSONUTFObject*)subValue;
+                        for (int k = 0; k < nestedObj->entries(); k++) {
+                            CxJSONUTFMember* nestedMember = nestedObj->at(k);
+                            if (nestedMember == NULL) continue;
+                            CxJSONUTFBase* nestedValue = nestedMember->object();
+                            CxJSONUTFBase* nestedValueCopy = NULL;
+                            if (nestedValue != NULL) {
+                                switch (nestedValue->type()) {
+                                    case CxJSONUTFBase::STRING:
+                                        nestedValueCopy = new CxJSONUTFString(((CxJSONUTFString*)nestedValue)->get());
+                                        break;
+                                    case CxJSONUTFBase::NUMBER:
+                                        nestedValueCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)nestedValue)->get());
+                                        break;
+                                    case CxJSONUTFBase::BOOLEAN:
+                                        nestedValueCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)nestedValue)->get());
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                            if (nestedValueCopy != NULL) {
+                                nestedCopy->append(new CxJSONUTFMember(nestedMember->var().toBytes().data(), nestedValueCopy));
+                            }
+                        }
+                        subCopy = nestedCopy;
+                    } else if (subValue != NULL) {
+                        switch (subValue->type()) {
+                            case CxJSONUTFBase::STRING:
+                                subCopy = new CxJSONUTFString(((CxJSONUTFString*)subValue)->get());
+                                break;
+                            case CxJSONUTFBase::NUMBER:
+                                subCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)subValue)->get());
+                                break;
+                            case CxJSONUTFBase::BOOLEAN:
+                                subCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)subValue)->get());
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    if (subCopy != NULL) {
+                        objCopy->append(new CxJSONUTFMember(subMember->var().toBytes().data(), subCopy));
+                    }
+                }
+                valueCopy = objCopy;
+            }
+
+            if (valueCopy != NULL) {
+                root->append(new CxJSONUTFMember(member->var().toBytes().data(), valueCopy));
+            }
+        }
+    }
 
     // Write to file
     CxFile outFile;

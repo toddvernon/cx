@@ -78,7 +78,7 @@ template<class key, class entry> class CxHashmap
 		for ( int i=0; i<hash_size; i++ ) {
 	    	if ( keys[i] ) {
 				unsigned int h = keys[i]->hashValue() & (new_size-1);
-				for ( ; newkeys[h]; h = (h == 0) ? hash_size-1 : h-1 ) {
+				for ( ; newkeys[h]; h = (h == 0) ? new_size-1 : h-1 ) {
 		    		if ( *keys[i] == *newkeys[h] )
 					break;
 				}

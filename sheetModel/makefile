@@ -95,6 +95,7 @@ LIB_CX_SHEETMODEL_OBJECTS=\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetVariableDatabase.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetFunctionDatabase.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetDependencyGraph.o\
+	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetInputParser.o\
 	$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetModel.o
 
 
@@ -148,6 +149,7 @@ $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetCell.o		: sheetCell.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetVariableDatabase.o	: sheetVariableDatabase.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetFunctionDatabase.o	: sheetFunctionDatabase.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetDependencyGraph.o	: sheetDependencyGraph.cpp
+$(LIB_CX_PLATFORM_OBJECT_DIR)/sheetInputParser.o	: sheetInputParser.cpp
 $(LIB_CX_PLATFORM_OBJECT_DIR)/sheetModel.o 		: sheetModel.cpp
 
 $(LIB_CX_SHEETMODEL_OBJECTS):

@@ -269,8 +269,6 @@ CxKeyboard::CxKeyboard( void )
     keyHash.insert("226:137:164",           "OPTION:<option-comma>");
     keyHash.insert("226:137:165",           "OPTION:<option-period>");
     keyHash.insert("226:128:147",           "OPTION:<option-minus>");
-    keyHash.insert("226:128:152",           "OPTION:<option-right-bracket>");
-    keyHash.insert("226:128:156",           "OPTION:<option-left-bracket>");
         
     keyHash.insert("27:27:91:53:126",       "OPTION:<option-page-up>");
     keyHash.insert("27:27:91:54:126",       "OPTION:<option-page-down>");
@@ -331,7 +329,6 @@ CxKeyboard::CxKeyboard( void )
     keyHash.insert("239:172:129",           "SHIFT-OPTION:<shift-option-percent>");
     keyHash.insert("239:172:130",           "SHIFT-OPTION:<shift-option-carot>");
     keyHash.insert("226:128:148",           "SHIFT-OPTION:<shift-option-underscore>");
-    keyHash.insert("226:128:153",           "SHIFT-OPTION:<shift-option-right-brace>");
     keyHash.insert("226:128:154",           "SHIFT-OPTION:<shift-option-right-paren>");
     keyHash.insert("226:128:157",           "SHIFT-OPTION:<shift-option-left-brace>");
     

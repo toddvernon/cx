@@ -60,9 +60,11 @@ static int parseIntAdvance(const char **p, int *value)
 //-------------------------------------------------------------------------------------------------
 int
 CxSheetInputParser::tryParseNumber(CxString input, double *value,
-                                   int *hasCurrency, int *hasPercent, int *hasThousands)
+                                   int *hasCurrency, int *hasPercent, int *hasThousands,
+                                   CxString *errorMsg)
 {
     if (input.length() == 0) {
+        if (errorMsg) *errorMsg = "Empty input";
         return 0;
     }
 
@@ -95,6 +97,15 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
 
     // Must have at least one digit
     if (p >= end || (!isDigit(*p) && *p != '.')) {
+        if (errorMsg) {
+            if (*hasCurrency) {
+                *errorMsg = "Expected number after $";
+            } else if (negative) {
+                *errorMsg = "Expected number after -";
+            } else {
+                *errorMsg = "Expected number";
+            }
+        }
         return 0;
     }
 
@@ -117,13 +128,15 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
         } else if (*p == ',') {
             // Comma is thousands separator (only valid before decimal)
             if (hasDecimal) {
-                return 0;  // Comma after decimal is invalid
+                if (errorMsg) *errorMsg = "Comma not allowed after decimal point";
+                return 0;
             }
             *hasThousands = 1;
             p++;
         } else if (*p == '.') {
             if (hasDecimal) {
-                return 0;  // Multiple decimals invalid
+                if (errorMsg) *errorMsg = "Multiple decimal points not allowed";
+                return 0;
             }
             hasDecimal = 1;
             p++;
@@ -133,6 +146,7 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
     }
 
     if (digitCount == 0) {
+        if (errorMsg) *errorMsg = "No digits found";
         return 0;
     }
 
@@ -149,6 +163,11 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
 
     // Must have consumed entire input
     if (p != end) {
+        if (errorMsg) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Unexpected character '%c'", *p);
+            *errorMsg = buf;
+        }
         return 0;
     }
 
@@ -230,9 +249,11 @@ CxSheetInputParser::serialToComponents(double serial, int *year, int *month, int
 // CxSheetInputParser::tryParseDate
 //-------------------------------------------------------------------------------------------------
 int
-CxSheetInputParser::tryParseDate(CxString input, double *serialDate, CxString *dateFormat)
+CxSheetInputParser::tryParseDate(CxString input, double *serialDate, CxString *dateFormat,
+                                 CxString *errorMsg)
 {
     if (input.length() == 0) {
+        if (errorMsg) *errorMsg = "Empty input";
         return 0;
     }
 
@@ -247,36 +268,47 @@ CxSheetInputParser::tryParseDate(CxString input, double *serialDate, CxString *d
 
     // Parse first number
     if (!parseIntAdvance(&p, &n1)) {
+        if (errorMsg) *errorMsg = "Expected month or year";
         return 0;
     }
 
     // Parse first separator
     if (p >= end) {
+        if (errorMsg) *errorMsg = "Expected date separator (/ or -)";
         return 0;
     }
     sep1 = *p;
     if (sep1 != '/' && sep1 != '-') {
+        if (errorMsg) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Invalid separator '%c', expected / or -", sep1);
+            *errorMsg = buf;
+        }
         return 0;
     }
     p++;
 
     // Parse second number
     if (!parseIntAdvance(&p, &n2)) {
+        if (errorMsg) *errorMsg = "Expected day or month";
         return 0;
     }
 
     // Parse second separator (must match first)
     if (p >= end) {
+        if (errorMsg) *errorMsg = "Expected second date separator";
         return 0;
     }
     sep2 = *p;
     if (sep2 != sep1) {
+        if (errorMsg) *errorMsg = "Date separators must match";
         return 0;
     }
     p++;
 
     // Parse third number
     if (!parseIntAdvance(&p, &n3)) {
+        if (errorMsg) *errorMsg = "Expected year or day";
         return 0;
     }
 
@@ -285,6 +317,11 @@ CxSheetInputParser::tryParseDate(CxString input, double *serialDate, CxString *d
 
     // Must have consumed entire input
     if (p != end) {
+        if (errorMsg) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Unexpected character '%c' after date", *p);
+            *errorMsg = buf;
+        }
         return 0;
     }
 
@@ -328,7 +365,28 @@ CxSheetInputParser::tryParseDate(CxString input, double *serialDate, CxString *d
     }
 
     // Validate date components
-    if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 9999) {
+    if (month < 1 || month > 12) {
+        if (errorMsg) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Invalid month %d (must be 1-12)", month);
+            *errorMsg = buf;
+        }
+        return 0;
+    }
+    if (day < 1 || day > 31) {
+        if (errorMsg) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Invalid day %d (must be 1-31)", day);
+            *errorMsg = buf;
+        }
+        return 0;
+    }
+    if (year < 1900 || year > 9999) {
+        if (errorMsg) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Invalid year %d (must be 1900-9999)", year);
+            *errorMsg = buf;
+        }
         return 0;
     }
 
@@ -336,6 +394,7 @@ CxSheetInputParser::tryParseDate(CxString input, double *serialDate, CxString *d
     *serialDate = dateToSerial(year, month, day);
 
     if (*serialDate == 0.0) {
+        if (errorMsg) *errorMsg = "Invalid date";
         return 0;
     }
 

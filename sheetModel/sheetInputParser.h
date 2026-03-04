@@ -45,9 +45,13 @@ class CxSheetInputParser {
     //   - hasCurrency: 1 if input had $ prefix
     //   - hasPercent: 1 if input had % suffix
     //   - hasThousands: 1 if input had comma separators
+    //
+    // On failure (if errorMsg is non-NULL):
+    //   - errorMsg: descriptive error message
     //---------------------------------------------------------------------------------------------
     static int tryParseNumber(CxString input, double *value,
-                              int *hasCurrency, int *hasPercent, int *hasThousands);
+                              int *hasCurrency, int *hasPercent, int *hasThousands,
+                              CxString *errorMsg = NULL);
 
 
     //---------------------------------------------------------------------------------------------
@@ -64,8 +68,12 @@ class CxSheetInputParser {
     // On success:
     //   - serialDate: Excel-compatible serial date number
     //   - dateFormat: the format string to use for display (e.g., "mm/dd/yyyy")
+    //
+    // On failure (if errorMsg is non-NULL):
+    //   - errorMsg: descriptive error message
     //---------------------------------------------------------------------------------------------
-    static int tryParseDate(CxString input, double *serialDate, CxString *dateFormat);
+    static int tryParseDate(CxString input, double *serialDate, CxString *dateFormat,
+                            CxString *errorMsg = NULL);
 
 
     //---------------------------------------------------------------------------------------------

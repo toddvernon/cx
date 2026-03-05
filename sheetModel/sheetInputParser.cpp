@@ -17,6 +17,7 @@
 #include <time.h>
 
 #include "sheetInputParser.h"
+#include "sheetCell.h"
 
 
 //-------------------------------------------------------------------------------------------------
@@ -425,4 +426,169 @@ CxSheetInputParser::formatDate(double serial, CxString format)
     }
 
     return CxString(buf);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxSheetInputParser::detectInputIntent
+//
+// Analyze input to determine what the user likely intended.
+//-------------------------------------------------------------------------------------------------
+int
+CxSheetInputParser::detectInputIntent(CxString input)
+{
+    if (input.length() == 0) {
+        return INTENT_NONE;
+    }
+
+    const char *p = input.data();
+    int len = input.length();
+
+    int intent = 0;
+
+    // Check for currency prefix
+    if (p[0] == '$') {
+        intent |= INTENT_CURRENCY;
+    }
+
+    // Check for percent suffix (skip trailing spaces)
+    int lastNonSpace = len - 1;
+    while (lastNonSpace > 0 && p[lastNonSpace] == ' ') {
+        lastNonSpace--;
+    }
+    if (lastNonSpace >= 0 && p[lastNonSpace] == '%') {
+        intent |= INTENT_PERCENT;
+    }
+
+    // Check for date separators (/ or - between digits)
+    for (int i = 1; i < len - 1; i++) {
+        if ((p[i] == '/' || p[i] == '-') && isDigit(p[i - 1]) && isDigit(p[i + 1])) {
+            intent |= INTENT_DATE;
+            break;
+        }
+    }
+
+    // Check if it looks like a number (all chars are numeric-like)
+    // Only set this flag if no date intent was detected
+    if (!(intent & INTENT_DATE)) {
+        int hasDigit = 0;
+        int looksNumeric = 1;
+        for (int i = 0; i < len; i++) {
+            char c = p[i];
+            if (c >= '0' && c <= '9') {
+                hasDigit = 1;
+            } else if (c != '.' && c != ',' && c != '+' && c != '-' &&
+                       c != '$' && c != '%' && c != ' ') {
+                // Has a non-numeric character
+                looksNumeric = 0;
+                break;
+            }
+        }
+        if (hasDigit && looksNumeric) {
+            intent |= INTENT_NUMBER;
+        }
+    }
+
+    return intent;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxSheetInputParser::parseAndClassify
+//
+// Single entry point for input parsing. Orchestrates date/number/text detection.
+//-------------------------------------------------------------------------------------------------
+CxSheetInputParseResult
+CxSheetInputParser::parseAndClassify(CxString input)
+{
+    CxSheetInputParseResult result;
+    // Initialize POD fields explicitly (CxString members are default-constructed)
+    result.success = 0;
+    result.cellType = 0;
+    result.doubleValue = 0.0;
+    result.hasCurrency = 0;
+    result.hasPercent = 0;
+    result.hasThousands = 0;
+
+    // Empty input -> empty cell
+    if (input.length() == 0) {
+        result.success = 1;
+        result.cellType = 0;  // EMPTY
+        return result;
+    }
+
+    int intent = detectInputIntent(input);
+    double serialDate;
+    CxString dateFormat;
+    double numValue;
+    int hasCurrency, hasPercent, hasThousands;
+    CxString errorMsg;
+
+    // Try date first
+    if (tryParseDate(input, &serialDate, &dateFormat, &errorMsg)) {
+        result.success = 1;
+        result.cellType = 2;  // DOUBLE
+        result.doubleValue = serialDate;
+        result.dateFormat = dateFormat;
+        return result;
+    }
+
+    // Date failed - error if user intended a date
+    if (intent & INTENT_DATE) {
+        result.success = 0;
+        result.errorMsg = errorMsg;
+        return result;
+    }
+
+    // Try number
+    if (tryParseNumber(input, &numValue, &hasCurrency, &hasPercent, &hasThousands, &errorMsg)) {
+        result.success = 1;
+        result.cellType = 2;  // DOUBLE
+        result.doubleValue = numValue;
+        result.hasCurrency = hasCurrency;
+        result.hasPercent = hasPercent;
+        result.hasThousands = hasThousands;
+        return result;
+    }
+
+    // Number failed - error if user intended a number
+    if (intent & (INTENT_CURRENCY | INTENT_PERCENT | INTENT_NUMBER)) {
+        result.success = 0;
+        result.errorMsg = errorMsg;
+        return result;
+    }
+
+    // Fall back to text (always succeeds)
+    result.success = 1;
+    result.cellType = 1;  // TEXT
+    result.textValue = input;
+    return result;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxSheetInputParser::applyParsingAttributes
+//
+// Apply format attributes from parse result to a cell's appAttributes.
+//-------------------------------------------------------------------------------------------------
+void
+CxSheetInputParser::applyParsingAttributes(CxSheetCell *cell,
+                                           const CxSheetInputParseResult &result)
+{
+    if (cell == NULL) {
+        return;
+    }
+
+    if (result.dateFormat.length() > 0) {
+        cell->setAppAttribute("dateFormat", result.dateFormat.data());
+    }
+    if (result.hasCurrency) {
+        cell->setAppAttribute("currency", "true");
+    }
+    if (result.hasPercent) {
+        cell->setAppAttribute("percent", "true");
+    }
+    if (result.hasThousands) {
+        cell->setAppAttribute("thousands", "true");
+    }
 }

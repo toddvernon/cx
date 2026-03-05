@@ -241,11 +241,71 @@ template<class key, class entry> class CxHashmap
 		return ret;
     };
 
-	//---------------------------------------------------------------------    
+	//---------------------------------------------------------------------
+	// remove an entry by key; returns true if found and removed
+	//
+	//---------------------------------------------------------------------
+	bool remove(const key &thekey)
+	{
+		if ( !hash_used ) return false;
+
+		unsigned int h = thekey.hashValue() & (hash_size-1);
+
+		// Find the entry
+		for ( ; keys[h]; h = (h == 0) ? hash_size-1 : h-1 ) {
+			if ( thekey == *keys[h] ) break;
+		}
+
+		if ( !keys[h] ) return false;  // not found
+
+		// Delete the entry
+		delete keys[h];
+		delete entries[h];
+		keys[h] = (key *)0;
+		entries[h] = (entry *)0;
+		hash_used--;
+
+		// Backward-shift subsequent entries to fill the gap.
+		// Any entry that was displaced past this slot during insertion
+		// needs to be moved back to maintain probe chain integrity.
+		unsigned int vacant = h;
+		unsigned int check = (vacant == 0) ? hash_size-1 : vacant-1;
+
+		while ( keys[check] ) {
+			unsigned int natural = keys[check]->hashValue() & (hash_size-1);
+
+			// Determine if 'check' was displaced past 'vacant'.
+			// With backward probing (h-1), an entry at 'check' that
+			// naturally belongs at 'natural' was displaced if 'vacant'
+			// lies on the backward probe path from natural to check.
+			int displaced = 0;
+			if ( natural > check ) {
+				// No wrapping in probe path: natural, natural-1, ..., check
+				displaced = (vacant <= natural && vacant > check);
+			} else if ( natural < check ) {
+				// Probe path wrapped: natural, ..., 0, hash_size-1, ..., check
+				displaced = (vacant <= natural || vacant > check);
+			}
+
+			if ( displaced ) {
+				keys[vacant] = keys[check];
+				entries[vacant] = entries[check];
+				keys[check] = (key *)0;
+				entries[check] = (entry *)0;
+				vacant = check;
+			}
+
+			check = (check == 0) ? hash_size-1 : check-1;
+		}
+
+		return true;
+	};
+
+	//---------------------------------------------------------------------
 	// return number of items
 	//
-	//---------------------------------------------------------------------    
-    int getSize(void) const 
+	//---------------------------------------------------------------------
+    int getSize(void) const
 	{
 		return hash_used;
     }

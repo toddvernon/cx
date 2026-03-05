@@ -171,6 +171,22 @@ class CxSheetModel
     // Set the app data object. sheetModel takes ownership of the pointer.
     // Pass NULL to clear app data.
 
+    void insertRow(int row);
+    // Insert an empty row at the given position. Existing rows at or below
+    // shift down by 1. Formula references are adjusted accordingly.
+
+    void deleteRow(int row);
+    // Delete the row at the given position. Rows below shift up by 1.
+    // Formulas referencing deleted row cells evaluate to 0.
+
+    void insertColumn(int col);
+    // Insert an empty column at the given position. Existing columns at or right
+    // shift right by 1. Formula references are adjusted accordingly.
+
+    void deleteColumn(int col);
+    // Delete the column at the given position. Columns right shift left by 1.
+    // Formulas referencing deleted column cells evaluate to 0.
+
 
   private:
 
@@ -242,6 +258,12 @@ class CxSheetModel
 
     CxSheetFunctionDatabase* functionDatabase;
     // function database for formula evaluation with range support (owned pointer)
+
+    CxString adjustFormulaForInsertDelete(CxString formula, int isRow, int position, int delta);
+    // Adjust cell references in a formula for row/column insert or delete.
+    // isRow: 1 for row operations, 0 for column operations
+    // position: the row/column being inserted/deleted
+    // delta: +1 for insert, -1 for delete
 
     CxSList<CxSheetCellCoordinate> _lastAffectedCells;
     // Cells affected by the last setCell() or load operation.

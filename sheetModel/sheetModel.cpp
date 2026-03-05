@@ -1360,3 +1360,558 @@ CxSheetModel::clearDependencies(CxSheetCellCoordinate coord)
 {
     dependencyGraph.clearDependenciesFor(coord);
 }
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::adjustFormulaForInsertDelete
+//
+// Adjust cell references in a formula string for row/column insert or delete.
+// Walks the formula text, finds cell references, and adjusts row/col numbers.
+//
+// isRow: 1 for row operations, 0 for column operations
+// position: the row/column index (0-based) being inserted/deleted at
+// delta: +1 for insert, -1 for delete
+//
+// For delete (delta=-1), references pointing to the deleted row/col are
+// left unchanged (they will reference an empty cell or be overwritten).
+//-------------------------------------------------------------------------
+CxString
+CxSheetModel::adjustFormulaForInsertDelete(CxString formula, int isRow, int position, int delta)
+{
+    CxExpression expr(formula);
+    expr.Parse();
+
+    CxSList<CxString> ranges = expr.GetRangeList();
+    CxSList<CxString> vars = expr.GetVariableList();
+
+    CxString result = formula;
+
+    // Process ranges first
+    for (int i = 0; i < (int)ranges.entries(); i++) {
+        CxString rangeStr = ranges.at(i);
+
+        int colonPos = -1;
+        for (int j = 0; j < (int)rangeStr.length(); j++) {
+            if (rangeStr.data()[j] == ':') {
+                colonPos = j;
+                break;
+            }
+        }
+
+        if (colonPos > 0) {
+            CxString startStr = rangeStr.subString(0, colonPos);
+            CxString endStr = rangeStr.subString(colonPos + 1, rangeStr.length() - colonPos - 1);
+
+            CxSheetCellCoordinate startCoord(startStr);
+            CxSheetCellCoordinate endCoord(endStr);
+
+            if (isRow) {
+                if ((int)startCoord.getRow() >= position) {
+                    int newRow = (int)startCoord.getRow() + delta;
+                    if (newRow < 0) newRow = 0;
+                    startCoord.setRow(newRow);
+                }
+                if ((int)endCoord.getRow() >= position) {
+                    int newRow = (int)endCoord.getRow() + delta;
+                    if (newRow < 0) newRow = 0;
+                    endCoord.setRow(newRow);
+                }
+            } else {
+                if ((int)startCoord.getCol() >= position) {
+                    int newCol = (int)startCoord.getCol() + delta;
+                    if (newCol < 0) newCol = 0;
+                    startCoord.setCol(newCol);
+                }
+                if ((int)endCoord.getCol() >= position) {
+                    int newCol = (int)endCoord.getCol() + delta;
+                    if (newCol < 0) newCol = 0;
+                    endCoord.setCol(newCol);
+                }
+            }
+
+            CxString newRange = startCoord.toAbsoluteAddress() + ":" + endCoord.toAbsoluteAddress();
+
+            int pos = result.index(rangeStr);
+            if (pos >= 0) {
+                CxString before = result.subString(0, pos);
+                CxString after = result.subString(pos + rangeStr.length(),
+                                                   result.length() - pos - rangeStr.length());
+                result = before + newRange + after;
+            }
+        }
+    }
+
+    // Process single cell references (skip those that are part of ranges)
+    for (int i = 0; i < (int)vars.entries(); i++) {
+        CxString varStr = vars.at(i);
+
+        int isPartOfRange = 0;
+        for (int j = 0; j < (int)ranges.entries(); j++) {
+            CxString rangeStr = ranges.at(j);
+            if (rangeStr.index(varStr) >= 0) {
+                isPartOfRange = 1;
+                break;
+            }
+        }
+        if (isPartOfRange) {
+            continue;
+        }
+
+        CxSheetCellCoordinate coord(varStr);
+
+        if (isRow) {
+            if ((int)coord.getRow() >= position) {
+                int newRow = (int)coord.getRow() + delta;
+                if (newRow < 0) newRow = 0;
+                coord.setRow(newRow);
+            }
+        } else {
+            if ((int)coord.getCol() >= position) {
+                int newCol = (int)coord.getCol() + delta;
+                if (newCol < 0) newCol = 0;
+                coord.setCol(newCol);
+            }
+        }
+
+        CxString newRef = coord.toAbsoluteAddress();
+
+        // Replace with boundary checking (same as adjustFormulaReferences in SheetEditor)
+        int searchPos = 0;
+        while (searchPos < (int)result.length()) {
+            int pos = result.index(varStr, searchPos);
+            if (pos < 0) break;
+
+            int isBoundedStart = (pos == 0) ||
+                                  (!((result.data()[pos-1] >= 'A' && result.data()[pos-1] <= 'Z') ||
+                                     (result.data()[pos-1] >= 'a' && result.data()[pos-1] <= 'z') ||
+                                     (result.data()[pos-1] >= '0' && result.data()[pos-1] <= '9') ||
+                                     result.data()[pos-1] == '$'));
+
+            int endPos = pos + varStr.length();
+            int isBoundedEnd = (endPos >= (int)result.length()) ||
+                               (!((result.data()[endPos] >= 'A' && result.data()[endPos] <= 'Z') ||
+                                  (result.data()[endPos] >= 'a' && result.data()[endPos] <= 'z') ||
+                                  (result.data()[endPos] >= '0' && result.data()[endPos] <= '9')));
+
+            if (isBoundedStart && isBoundedEnd) {
+                CxString before = result.subString(0, pos);
+                CxString after = result.subString(endPos, result.length() - endPos);
+                result = before + newRef + after;
+                searchPos = pos + newRef.length();
+            } else {
+                searchPos = endPos;
+            }
+        }
+    }
+
+    return result;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::insertRow
+//
+// Insert an empty row at the given position. Cells at row >= position
+// shift down by 1. Formulas are adjusted to reflect the shifted references.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::insertRow(int row)
+{
+    // Build a new hashmap with shifted coordinates
+    CxHashmap<CxSheetCellCoordinate, CxSheetCell> newMap;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> iter(&cellHashMap);
+
+    while (iter.next()) {
+        const CxSheetCellCoordinate* key = iter.getKey();
+        CxSheetCell* cell = iter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+
+        CxSheetCellCoordinate newCoord = *key;
+
+        if ((int)key->getRow() >= row) {
+            newCoord.setRow(key->getRow() + 1);
+        }
+
+        // Adjust formula references
+        if (cell->cellType == CxSheetCell::FORMULA && cell->text.length() > 0) {
+            CxString adjusted = adjustFormulaForInsertDelete(cell->text, 1, row, 1);
+            CxSheetCell newCell;
+            newCell.setFormula(adjusted);
+            // Copy appAttributes
+            if (cell->appAttributes != NULL) {
+                newCell.appAttributes = new CxJSONUTFObject();
+                for (int i = 0; i < cell->appAttributes->entries(); i++) {
+                    CxJSONUTFMember* m = cell->appAttributes->at(i);
+                    if (m != NULL && m->object() != NULL) {
+                        CxJSONUTFBase* origVal = m->object();
+                        CxJSONUTFBase* valCopy = NULL;
+                        switch (origVal->type()) {
+                            case CxJSONUTFBase::STRING:
+                                valCopy = new CxJSONUTFString(((CxJSONUTFString*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::NUMBER:
+                                valCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::BOOLEAN:
+                                valCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)origVal)->get());
+                                break;
+                            default:
+                                break;
+                        }
+                        if (valCopy != NULL) {
+                            newCell.appAttributes->append(new CxJSONUTFMember(m->var().toBytes().data(), valCopy));
+                        }
+                    }
+                }
+            }
+            newMap.insert(newCoord, newCell);
+        } else {
+            newMap.insert(newCoord, *cell);
+        }
+    }
+
+    // Remove all existing cells from cellHashMap before re-inserting shifted cells
+    {
+        CxSList<CxSheetCellCoordinate> oldKeys;
+        CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> removeIter(&cellHashMap);
+        while (removeIter.next()) {
+            const CxSheetCellCoordinate* k = removeIter.getKey();
+            if (k != NULL) oldKeys.append(*k);
+        }
+        for (int i = 0; i < (int)oldKeys.entries(); i++) {
+            cellHashMap.remove(oldKeys.at(i));
+        }
+    }
+
+    loadingInProgress = 1;
+    dependencyGraph.clear();
+    maxRowUsed = 0;
+    maxColUsed = 0;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> newIter(&newMap);
+    while (newIter.next()) {
+        const CxSheetCellCoordinate* key = newIter.getKey();
+        CxSheetCell* cell = newIter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+        setCell(*key, *cell);
+    }
+
+    loadingInProgress = 0;
+
+    // Adjust cursor if at or below the inserted row
+    if ((int)currentCellPosition.getRow() >= row) {
+        currentCellPosition.setRow(currentCellPosition.getRow() + 1);
+    }
+
+    // Full recalculation to rebuild dependencies and evaluate formulas
+    recalculateAll();
+    touched = 1;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::deleteRow
+//
+// Delete the row at the given position. Cells at row > position shift up
+// by 1. Cells at the deleted row are removed.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::deleteRow(int row)
+{
+    // Build a new hashmap skipping deleted row and shifting rows above down
+    CxHashmap<CxSheetCellCoordinate, CxSheetCell> newMap;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> iter(&cellHashMap);
+
+    while (iter.next()) {
+        const CxSheetCellCoordinate* key = iter.getKey();
+        CxSheetCell* cell = iter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+
+        // Skip cells at the deleted row
+        if ((int)key->getRow() == row) {
+            continue;
+        }
+
+        CxSheetCellCoordinate newCoord = *key;
+
+        if ((int)key->getRow() > row) {
+            newCoord.setRow(key->getRow() - 1);
+        }
+
+        // Adjust formula references
+        if (cell->cellType == CxSheetCell::FORMULA && cell->text.length() > 0) {
+            CxString adjusted = adjustFormulaForInsertDelete(cell->text, 1, row, -1);
+            CxSheetCell newCell;
+            newCell.setFormula(adjusted);
+            if (cell->appAttributes != NULL) {
+                newCell.appAttributes = new CxJSONUTFObject();
+                for (int i = 0; i < cell->appAttributes->entries(); i++) {
+                    CxJSONUTFMember* m = cell->appAttributes->at(i);
+                    if (m != NULL && m->object() != NULL) {
+                        CxJSONUTFBase* origVal = m->object();
+                        CxJSONUTFBase* valCopy = NULL;
+                        switch (origVal->type()) {
+                            case CxJSONUTFBase::STRING:
+                                valCopy = new CxJSONUTFString(((CxJSONUTFString*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::NUMBER:
+                                valCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::BOOLEAN:
+                                valCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)origVal)->get());
+                                break;
+                            default:
+                                break;
+                        }
+                        if (valCopy != NULL) {
+                            newCell.appAttributes->append(new CxJSONUTFMember(m->var().toBytes().data(), valCopy));
+                        }
+                    }
+                }
+            }
+            newMap.insert(newCoord, newCell);
+        } else {
+            newMap.insert(newCoord, *cell);
+        }
+    }
+
+    // Remove all existing cells from cellHashMap before re-inserting shifted cells
+    {
+        CxSList<CxSheetCellCoordinate> oldKeys;
+        CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> removeIter(&cellHashMap);
+        while (removeIter.next()) {
+            const CxSheetCellCoordinate* k = removeIter.getKey();
+            if (k != NULL) oldKeys.append(*k);
+        }
+        for (int i = 0; i < (int)oldKeys.entries(); i++) {
+            cellHashMap.remove(oldKeys.at(i));
+        }
+    }
+
+    loadingInProgress = 1;
+    dependencyGraph.clear();
+    maxRowUsed = 0;
+    maxColUsed = 0;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> newIter(&newMap);
+    while (newIter.next()) {
+        const CxSheetCellCoordinate* key = newIter.getKey();
+        CxSheetCell* cell = newIter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+        setCell(*key, *cell);
+    }
+
+    loadingInProgress = 0;
+
+    // Adjust cursor
+    if ((int)currentCellPosition.getRow() > row) {
+        currentCellPosition.setRow(currentCellPosition.getRow() - 1);
+    } else if ((int)currentCellPosition.getRow() == row && row > 0) {
+        currentCellPosition.setRow(currentCellPosition.getRow() - 1);
+    }
+
+    recalculateAll();
+    touched = 1;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::insertColumn
+//
+// Insert an empty column at the given position. Cells at col >= position
+// shift right by 1. Formulas are adjusted to reflect the shifted references.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::insertColumn(int col)
+{
+    CxHashmap<CxSheetCellCoordinate, CxSheetCell> newMap;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> iter(&cellHashMap);
+
+    while (iter.next()) {
+        const CxSheetCellCoordinate* key = iter.getKey();
+        CxSheetCell* cell = iter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+
+        CxSheetCellCoordinate newCoord = *key;
+
+        if ((int)key->getCol() >= col) {
+            newCoord.setCol(key->getCol() + 1);
+        }
+
+        if (cell->cellType == CxSheetCell::FORMULA && cell->text.length() > 0) {
+            CxString adjusted = adjustFormulaForInsertDelete(cell->text, 0, col, 1);
+            CxSheetCell newCell;
+            newCell.setFormula(adjusted);
+            if (cell->appAttributes != NULL) {
+                newCell.appAttributes = new CxJSONUTFObject();
+                for (int i = 0; i < cell->appAttributes->entries(); i++) {
+                    CxJSONUTFMember* m = cell->appAttributes->at(i);
+                    if (m != NULL && m->object() != NULL) {
+                        CxJSONUTFBase* origVal = m->object();
+                        CxJSONUTFBase* valCopy = NULL;
+                        switch (origVal->type()) {
+                            case CxJSONUTFBase::STRING:
+                                valCopy = new CxJSONUTFString(((CxJSONUTFString*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::NUMBER:
+                                valCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::BOOLEAN:
+                                valCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)origVal)->get());
+                                break;
+                            default:
+                                break;
+                        }
+                        if (valCopy != NULL) {
+                            newCell.appAttributes->append(new CxJSONUTFMember(m->var().toBytes().data(), valCopy));
+                        }
+                    }
+                }
+            }
+            newMap.insert(newCoord, newCell);
+        } else {
+            newMap.insert(newCoord, *cell);
+        }
+    }
+
+    // Remove all existing cells from cellHashMap before re-inserting shifted cells
+    {
+        CxSList<CxSheetCellCoordinate> oldKeys;
+        CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> removeIter(&cellHashMap);
+        while (removeIter.next()) {
+            const CxSheetCellCoordinate* k = removeIter.getKey();
+            if (k != NULL) oldKeys.append(*k);
+        }
+        for (int i = 0; i < (int)oldKeys.entries(); i++) {
+            cellHashMap.remove(oldKeys.at(i));
+        }
+    }
+
+    loadingInProgress = 1;
+    dependencyGraph.clear();
+    maxRowUsed = 0;
+    maxColUsed = 0;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> newIter(&newMap);
+    while (newIter.next()) {
+        const CxSheetCellCoordinate* key = newIter.getKey();
+        CxSheetCell* cell = newIter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+        setCell(*key, *cell);
+    }
+
+    loadingInProgress = 0;
+
+    if ((int)currentCellPosition.getCol() >= col) {
+        currentCellPosition.setCol(currentCellPosition.getCol() + 1);
+    }
+
+    recalculateAll();
+    touched = 1;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::deleteColumn
+//
+// Delete the column at the given position. Cells at col > position shift
+// left by 1. Cells at the deleted column are removed.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::deleteColumn(int col)
+{
+    CxHashmap<CxSheetCellCoordinate, CxSheetCell> newMap;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> iter(&cellHashMap);
+
+    while (iter.next()) {
+        const CxSheetCellCoordinate* key = iter.getKey();
+        CxSheetCell* cell = iter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+
+        if ((int)key->getCol() == col) {
+            continue;
+        }
+
+        CxSheetCellCoordinate newCoord = *key;
+
+        if ((int)key->getCol() > col) {
+            newCoord.setCol(key->getCol() - 1);
+        }
+
+        if (cell->cellType == CxSheetCell::FORMULA && cell->text.length() > 0) {
+            CxString adjusted = adjustFormulaForInsertDelete(cell->text, 0, col, -1);
+            CxSheetCell newCell;
+            newCell.setFormula(adjusted);
+            if (cell->appAttributes != NULL) {
+                newCell.appAttributes = new CxJSONUTFObject();
+                for (int i = 0; i < cell->appAttributes->entries(); i++) {
+                    CxJSONUTFMember* m = cell->appAttributes->at(i);
+                    if (m != NULL && m->object() != NULL) {
+                        CxJSONUTFBase* origVal = m->object();
+                        CxJSONUTFBase* valCopy = NULL;
+                        switch (origVal->type()) {
+                            case CxJSONUTFBase::STRING:
+                                valCopy = new CxJSONUTFString(((CxJSONUTFString*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::NUMBER:
+                                valCopy = new CxJSONUTFNumber(((CxJSONUTFNumber*)origVal)->get());
+                                break;
+                            case CxJSONUTFBase::BOOLEAN:
+                                valCopy = new CxJSONUTFBoolean(((CxJSONUTFBoolean*)origVal)->get());
+                                break;
+                            default:
+                                break;
+                        }
+                        if (valCopy != NULL) {
+                            newCell.appAttributes->append(new CxJSONUTFMember(m->var().toBytes().data(), valCopy));
+                        }
+                    }
+                }
+            }
+            newMap.insert(newCoord, newCell);
+        } else {
+            newMap.insert(newCoord, *cell);
+        }
+    }
+
+    // Remove all existing cells from cellHashMap before re-inserting shifted cells
+    {
+        CxSList<CxSheetCellCoordinate> oldKeys;
+        CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> removeIter(&cellHashMap);
+        while (removeIter.next()) {
+            const CxSheetCellCoordinate* k = removeIter.getKey();
+            if (k != NULL) oldKeys.append(*k);
+        }
+        for (int i = 0; i < (int)oldKeys.entries(); i++) {
+            cellHashMap.remove(oldKeys.at(i));
+        }
+    }
+
+    loadingInProgress = 1;
+    dependencyGraph.clear();
+    maxRowUsed = 0;
+    maxColUsed = 0;
+
+    CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> newIter(&newMap);
+    while (newIter.next()) {
+        const CxSheetCellCoordinate* key = newIter.getKey();
+        CxSheetCell* cell = newIter.getEntry();
+        if (key == NULL || cell == NULL) continue;
+        setCell(*key, *cell);
+    }
+
+    loadingInProgress = 0;
+
+    if ((int)currentCellPosition.getCol() > col) {
+        currentCellPosition.setCol(currentCellPosition.getCol() - 1);
+    } else if ((int)currentCellPosition.getCol() == col && col > 0) {
+        currentCellPosition.setCol(currentCellPosition.getCol() - 1);
+    }
+
+    recalculateAll();
+    touched = 1;
+}

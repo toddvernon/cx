@@ -583,12 +583,12 @@ CxSheetInputParser::applyParsingAttributes(CxSheetCell *cell,
         cell->setAppAttribute("dateFormat", result.dateFormat.data());
     }
     if (result.hasCurrency) {
-        cell->setAppAttribute("currency", "true");
+        cell->setAppAttribute("currency", true);
     }
     if (result.hasPercent) {
-        cell->setAppAttribute("percent", "true");
+        cell->setAppAttribute("percent", true);
     }
     if (result.hasThousands) {
-        cell->setAppAttribute("thousands", "true");
+        cell->setAppAttribute("thousands", true);
     }
 }

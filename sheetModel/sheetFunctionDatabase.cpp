@@ -208,6 +208,9 @@ CxSheetFunctionDatabase::FunctionDefined(CxString name)
     if (name.equalsIgnoreCase("YEAR"))    return FUNCTION_DEFINED;
     if (name.equalsIgnoreCase("MONTH"))   return FUNCTION_DEFINED;
     if (name.equalsIgnoreCase("DAY"))     return FUNCTION_DEFINED;
+    if (name.equalsIgnoreCase("ROUND"))     return FUNCTION_DEFINED;
+    if (name.equalsIgnoreCase("ROUNDUP"))   return FUNCTION_DEFINED;
+    if (name.equalsIgnoreCase("ROUNDDOWN")) return FUNCTION_DEFINED;
 
     return FUNCTION_UNDEFINED;
 }
@@ -781,6 +784,60 @@ CxSheetFunctionDatabase::FunctionEvaluate(
             return FUNCTION_BAD_NUMBER_OF_ARGS;
         }
         *result = (double)serialToDay(args[0]);
+        return FUNCTION_DEFINED;
+    }
+
+    // ROUND(number, num_digits)
+    // Rounds to the specified number of decimal places (standard rounding)
+    if (name.equalsIgnoreCase("ROUND")) {
+        if (numberOfArgs != 2) {
+            *result = 0.0;
+            return FUNCTION_BAD_NUMBER_OF_ARGS;
+        }
+        double number = args[0];
+        int digits = (int)args[1];
+        double factor = pow(10.0, digits);
+        if (number >= 0.0) {
+            *result = floor(number * factor + 0.5) / factor;
+        } else {
+            *result = ceil(number * factor - 0.5) / factor;
+        }
+        return FUNCTION_DEFINED;
+    }
+
+    // ROUNDUP(number, num_digits)
+    // Rounds away from zero to the specified number of decimal places
+    if (name.equalsIgnoreCase("ROUNDUP")) {
+        if (numberOfArgs != 2) {
+            *result = 0.0;
+            return FUNCTION_BAD_NUMBER_OF_ARGS;
+        }
+        double number = args[0];
+        int digits = (int)args[1];
+        double factor = pow(10.0, digits);
+        if (number >= 0.0) {
+            *result = ceil(number * factor) / factor;
+        } else {
+            *result = floor(number * factor) / factor;
+        }
+        return FUNCTION_DEFINED;
+    }
+
+    // ROUNDDOWN(number, num_digits)
+    // Truncates toward zero to the specified number of decimal places
+    if (name.equalsIgnoreCase("ROUNDDOWN")) {
+        if (numberOfArgs != 2) {
+            *result = 0.0;
+            return FUNCTION_BAD_NUMBER_OF_ARGS;
+        }
+        double number = args[0];
+        int digits = (int)args[1];
+        double factor = pow(10.0, digits);
+        if (number >= 0.0) {
+            *result = floor(number * factor) / factor;
+        } else {
+            *result = ceil(number * factor) / factor;
+        }
         return FUNCTION_DEFINED;
     }
 

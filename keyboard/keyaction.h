@@ -38,6 +38,7 @@ public:
         SYMBOL,                 // key action is a symbol
         CURSOR,                 // key action is an arrow key
         SHIFT_CURSOR,           // key action is an arrow modified with shift
+        CTRL_CURSOR,            // key action is an arrow modified with ctrl
         FUNCTION,               // key action is an unmapped function key
         BACKSPACE,              // key action is backspace
         NEWLINE,                // key action is newline (CR)

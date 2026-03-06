@@ -79,6 +79,10 @@ CxKeyAction::CxKeyAction( CxString definition )
  	if (left=="SHIFT-CURSOR") {
     	_actionType = CxKeyAction::SHIFT_CURSOR;
    	}
+
+ 	if (left=="CTRL-CURSOR") {
+    	_actionType = CxKeyAction::CTRL_CURSOR;
+   	}
     
     if (left=="COMMAND") {
         _actionType = CxKeyAction::COMMAND;

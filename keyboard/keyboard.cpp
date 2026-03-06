@@ -348,6 +348,16 @@ CxKeyboard::CxKeyboard( void )
     keyHash.insert("27:91:49:59:50:67",     "SHIFT-CURSOR:<shift-arrow-right>");
     keyHash.insert("27:91:49:59:50:68",     "SHIFT-CURSOR:<shift-arrow-left>");
 
+    keyHash.insert("27:91:49:59:53:65",     "CTRL-CURSOR:<ctrl-arrow-up>");
+    keyHash.insert("27:91:49:59:53:66",     "CTRL-CURSOR:<ctrl-arrow-down>");
+    keyHash.insert("27:91:49:59:53:67",     "CTRL-CURSOR:<ctrl-arrow-right>");
+    keyHash.insert("27:91:49:59:53:68",     "CTRL-CURSOR:<ctrl-arrow-left>");
+
+    keyHash.insert("27:91:49:59:51:65",     "CTRL-CURSOR:<ctrl-arrow-up>");
+    keyHash.insert("27:91:49:59:51:66",     "CTRL-CURSOR:<ctrl-arrow-down>");
+    keyHash.insert("27:91:49:59:51:67",     "CTRL-CURSOR:<ctrl-arrow-right>");
+    keyHash.insert("27:91:49:59:51:68",     "CTRL-CURSOR:<ctrl-arrow-left>");
+
     keyHash.insert("27:91:49:53:126",       "FUNCTION:<F5>");
     keyHash.insert("27:91:49:55:126",       "FUNCTION:<F6>");
     keyHash.insert("27:91:49:59:50:80",     "FUNCTION:<F13>");
@@ -922,6 +932,38 @@ CxKeyboard::handleEscapeSequence(int c)
         }
         if ((c4==59) && (c5==50) && (c6==68)) {
             return( "27:91:49:59:50:68" );  // shift-arrow-left
+        }
+
+        //-----------------------------------------------------------------------------------------
+        // ctrl-arrow keys (modifier 5)
+        //-----------------------------------------------------------------------------------------
+        if ((c4==59) && (c5==53) && (c6==65)) {
+            return( "27:91:49:59:53:65" );  // ctrl-arrow-up
+        }
+        if ((c4==59) && (c5==53) && (c6==66)) {
+            return( "27:91:49:59:53:66" );  // ctrl-arrow-down
+        }
+        if ((c4==59) && (c5==53) && (c6==67)) {
+            return( "27:91:49:59:53:67" );  // ctrl-arrow-right
+        }
+        if ((c4==59) && (c5==53) && (c6==68)) {
+            return( "27:91:49:59:53:68" );  // ctrl-arrow-left
+        }
+
+        //-----------------------------------------------------------------------------------------
+        // option-arrow keys (modifier 3) - macOS alternate form
+        //-----------------------------------------------------------------------------------------
+        if ((c4==59) && (c5==51) && (c6==65)) {
+            return( "27:91:49:59:51:65" );  // option-arrow-up
+        }
+        if ((c4==59) && (c5==51) && (c6==66)) {
+            return( "27:91:49:59:51:66" );  // option-arrow-down
+        }
+        if ((c4==59) && (c5==51) && (c6==67)) {
+            return( "27:91:49:59:51:67" );  // option-arrow-right
+        }
+        if ((c4==59) && (c5==51) && (c6==68)) {
+            return( "27:91:49:59:51:68" );  // option-arrow-left
         }
 
         //-----------------------------------------------------------------------------------------

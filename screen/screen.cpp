@@ -633,3 +633,41 @@ CxScreen::deleteLines(int lines)
         printf("%c[%dM", ESC, lines);
     }
 }
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::beginSyncUpdate
+//
+// Begin synchronized update mode. The terminal buffers all subsequent output
+// until endSyncUpdate() is called, then renders everything in a single
+// atomic operation. This eliminates flicker and tearing during complex
+// screen updates.
+//
+// Uses DEC private mode 2026 (CSI ? 2026 h).
+// Supported by: iTerm2 3.3+, kitty, foot, contour, wezterm, newer xterm.
+// Terminals that don't support it will ignore the sequence harmlessly.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::beginSyncUpdate(void)
+{
+    printf("%c[?2026h", ESC);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::endSyncUpdate
+//
+// End synchronized update mode. The terminal renders all buffered content
+// from since beginSyncUpdate() was called in a single atomic frame.
+//
+// Uses DEC private mode 2026 (CSI ? 2026 l).
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::endSyncUpdate(void)
+{
+    printf("%c[?2026l", ESC);
+}

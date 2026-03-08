@@ -90,6 +90,13 @@ class CxScreen
     static void deleteLines(int lines);
     // delete N lines at cursor position, pulling lines up
 
+    static void beginSyncUpdate(void);
+    // begin synchronized update - terminal buffers output until endSyncUpdate
+    // supported by iTerm2, kitty, newer xterm, and other modern terminals
+
+    static void endSyncUpdate(void);
+    // end synchronized update - terminal renders buffered content atomically
+
 	static void moveCursorLeft( int num );
 	// move cursor to the left num characters
 

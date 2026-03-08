@@ -522,13 +522,78 @@ CxScreen::setBackgroundColor( CxColor *color )
 
 //-------------------------------------------------------------------------------------------------
 // CxScreen::resetColors
-// 
-// 
-// 
+//
+//
+//
 //-------------------------------------------------------------------------------------------------
 /*static*/
 void
 CxScreen::resetColors( void )
 {
     printf("%c[0m", ESC);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::setScrollRegion
+//
+// Set the scrolling region to specified rows (0-indexed, converted to 1-indexed for terminal).
+// Only content within this region will scroll when scrollUp/scrollDown are called.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::setScrollRegion(int topRow, int bottomRow)
+{
+    printf("%c[%d;%dr", ESC, topRow + 1, bottomRow + 1);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::resetScrollRegion
+//
+// Reset the scroll region to the full screen (default terminal behavior).
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::resetScrollRegion(void)
+{
+    printf("%c[r", ESC);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::scrollUp
+//
+// Scroll the content within the current scroll region up by N lines.
+// New blank lines appear at the bottom of the region.
+// Uses CSI n S (Scroll Up) escape sequence.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::scrollUp(int lines)
+{
+    if (lines > 0) {
+        printf("%c[%dS", ESC, lines);
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::scrollDown
+//
+// Scroll the content within the current scroll region down by N lines.
+// New blank lines appear at the top of the region.
+// Uses CSI n T (Scroll Down) escape sequence.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::scrollDown(int lines)
+{
+    if (lines > 0) {
+        printf("%c[%dT", ESC, lines);
+    }
 }

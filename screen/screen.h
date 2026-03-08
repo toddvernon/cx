@@ -71,6 +71,18 @@ class CxScreen
 
     static void clearScreenFromCursorDown( void );
     // erase the rest of the line from the cursor right
+
+    static void setScrollRegion(int topRow, int bottomRow);
+    // set scrolling region (0-indexed rows, converts to 1-indexed for terminal)
+
+    static void resetScrollRegion(void);
+    // reset scroll region to full screen
+
+    static void scrollUp(int lines);
+    // scroll region content up by N lines (new blank lines appear at bottom)
+
+    static void scrollDown(int lines);
+    // scroll region content down by N lines (new blank lines appear at top)
     
 	static void moveCursorLeft( int num );
 	// move cursor to the left num characters

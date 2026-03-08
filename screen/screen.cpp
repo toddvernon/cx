@@ -597,3 +597,39 @@ CxScreen::scrollDown(int lines)
         printf("%c[%dT", ESC, lines);
     }
 }
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::insertLines
+//
+// Insert N blank lines at the current cursor position.
+// Existing lines from cursor down are pushed down (within scroll region if set).
+// Uses CSI n L (Insert Lines) escape sequence.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::insertLines(int lines)
+{
+    if (lines > 0) {
+        printf("%c[%dL", ESC, lines);
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::deleteLines
+//
+// Delete N lines at the current cursor position.
+// Existing lines below are pulled up, blank lines appear at bottom (within scroll region if set).
+// Uses CSI n M (Delete Lines) escape sequence.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::deleteLines(int lines)
+{
+    if (lines > 0) {
+        printf("%c[%dM", ESC, lines);
+    }
+}

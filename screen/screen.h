@@ -83,7 +83,13 @@ class CxScreen
 
     static void scrollDown(int lines);
     // scroll region content down by N lines (new blank lines appear at top)
-    
+
+    static void insertLines(int lines);
+    // insert N blank lines at cursor position, pushing existing lines down
+
+    static void deleteLines(int lines);
+    // delete N lines at cursor position, pulling lines up
+
 	static void moveCursorLeft( int num );
 	// move cursor to the left num characters
 

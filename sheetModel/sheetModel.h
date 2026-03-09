@@ -187,6 +187,10 @@ class CxSheetModel
     // Delete the column at the given position. Columns right shift left by 1.
     // Formulas referencing deleted column cells evaluate to 0.
 
+    CxSheetFunctionDatabase* getFunctionDatabase(void);
+    // Returns pointer to function database for formula evaluation with range support.
+    // Used by variableDatabase for nested formula evaluation.
+
 
   private:
 

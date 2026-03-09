@@ -343,6 +343,19 @@ CxSheetModel::setAppData(CxJSONUTFObject* data)
 
 
 //-------------------------------------------------------------------------
+// CxSheetModel::getFunctionDatabase
+//
+// Returns pointer to function database for formula evaluation with range
+// support. Used by variableDatabase for nested formula evaluation.
+//-------------------------------------------------------------------------
+CxSheetFunctionDatabase*
+CxSheetModel::getFunctionDatabase(void)
+{
+    return functionDatabase;
+}
+
+
+//-------------------------------------------------------------------------
 // CxSheetModel::getCell
 //
 // Gets a copy of the CxSheetCell at the cell coordinate

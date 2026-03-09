@@ -17,6 +17,7 @@
 
 #include "sheetVariableDatabase.h"
 #include "sheetModel.h"
+#include "sheetFunctionDatabase.h"
 
 
 //-------------------------------------------------------------------------
@@ -177,6 +178,15 @@ CxSheetVariableDatabase::VariableEvaluate(CxString name, double* result)
 
                 // Set our database for nested cell references
                 cell->formula->setVariableDatabase(this);
+
+                // Set the range list for the function database so it knows about
+                // any cell ranges (like A1:A10) used in this nested formula.
+                // Without this, range functions like SUM would not expand ranges
+                // when called from nested formula evaluation.
+                CxSheetFunctionDatabase* funcDb = sheetModel->getFunctionDatabase();
+                if (funcDb != NULL) {
+                    funcDb->setRangeList(cell->formula->GetRangeList());
+                }
 
                 double formulaResult = 0.0;
                 CxExpression::expressionStatus status = cell->formula->Evaluate(&formulaResult);

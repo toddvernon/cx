@@ -461,10 +461,20 @@ CxSheetInputParser::detectInputIntent(CxString input)
     }
 
     // Check for date separators (/ or - between digits)
-    for (int i = 1; i < len - 1; i++) {
-        if ((p[i] == '/' || p[i] == '-') && isDigit(p[i - 1]) && isDigit(p[i + 1])) {
-            intent |= INTENT_DATE;
+    // Only flag date intent if input starts with a digit — text like "Paid 1/26/25" is not a date
+    int startsWithDigit = 0;
+    for (int i = 0; i < len; i++) {
+        if (p[i] != ' ') {
+            startsWithDigit = isDigit(p[i]);
             break;
+        }
+    }
+    if (startsWithDigit) {
+        for (int i = 1; i < len - 1; i++) {
+            if ((p[i] == '/' || p[i] == '-') && isDigit(p[i - 1]) && isDigit(p[i + 1])) {
+                intent |= INTENT_DATE;
+                break;
+            }
         }
     }
 

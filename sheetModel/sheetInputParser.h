@@ -40,6 +40,7 @@ struct CxSheetInputParseResult {
     int hasCurrency;                // input had $
     int hasPercent;                 // input had %
     int hasThousands;               // input had commas
+    int decimalDigits;              // digits after decimal point (-1 = no decimal)
     CxString errorMsg;              // non-empty on failure
 };
 
@@ -85,12 +86,14 @@ class CxSheetInputParser {
     //   - hasCurrency: 1 if input had $ prefix
     //   - hasPercent: 1 if input had % suffix
     //   - hasThousands: 1 if input had comma separators
+    //   - decimalDigits: digits after decimal point (-1 if no decimal)
     //
     // On failure (if errorMsg is non-NULL):
     //   - errorMsg: descriptive error message
     //---------------------------------------------------------------------------------------------
     static int tryParseNumber(CxString input, double *value,
                               int *hasCurrency, int *hasPercent, int *hasThousands,
+                              int *decimalDigits,
                               CxString *errorMsg = NULL);
 
 

@@ -62,6 +62,7 @@ static int parseIntAdvance(const char **p, int *value)
 int
 CxSheetInputParser::tryParseNumber(CxString input, double *value,
                                    int *hasCurrency, int *hasPercent, int *hasThousands,
+                                   int *decimalDigits,
                                    CxString *errorMsg)
 {
     if (input.length() == 0) {
@@ -72,6 +73,7 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
     *hasCurrency = 0;
     *hasPercent = 0;
     *hasThousands = 0;
+    *decimalDigits = -1;
 
     const char *p = input.data();
     const char *end = p + input.length();
@@ -115,12 +117,14 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
     int hasDecimal = 0;
     double decimalPlace = 0.1;
     int digitCount = 0;
+    int decDigitCount = 0;
 
     while (p < end) {
         if (isDigit(*p)) {
             if (hasDecimal) {
                 result = result + (*p - '0') * decimalPlace;
                 decimalPlace *= 0.1;
+                decDigitCount++;
             } else {
                 result = result * 10 + (*p - '0');
             }
@@ -181,6 +185,9 @@ CxSheetInputParser::tryParseNumber(CxString input, double *value,
     if (*hasPercent) {
         result = result / 100.0;
     }
+
+    // Report decimal digits (-1 if no decimal point, otherwise count)
+    *decimalDigits = hasDecimal ? decDigitCount : -1;
 
     *value = result;
     return 1;
@@ -519,6 +526,7 @@ CxSheetInputParser::parseAndClassify(CxString input)
     result.hasCurrency = 0;
     result.hasPercent = 0;
     result.hasThousands = 0;
+    result.decimalDigits = -1;
 
     // Empty input -> empty cell
     if (input.length() == 0) {
@@ -531,7 +539,7 @@ CxSheetInputParser::parseAndClassify(CxString input)
     double serialDate;
     CxString dateFormat;
     double numValue;
-    int hasCurrency, hasPercent, hasThousands;
+    int hasCurrency, hasPercent, hasThousands, decimalDigits;
     CxString errorMsg;
 
     // Try date first
@@ -551,13 +559,15 @@ CxSheetInputParser::parseAndClassify(CxString input)
     }
 
     // Try number
-    if (tryParseNumber(input, &numValue, &hasCurrency, &hasPercent, &hasThousands, &errorMsg)) {
+    if (tryParseNumber(input, &numValue, &hasCurrency, &hasPercent, &hasThousands,
+                       &decimalDigits, &errorMsg)) {
         result.success = 1;
         result.cellType = 2;  // DOUBLE
         result.doubleValue = numValue;
         result.hasCurrency = hasCurrency;
         result.hasPercent = hasPercent;
         result.hasThousands = hasThousands;
+        result.decimalDigits = decimalDigits;
         return result;
     }
 
@@ -594,6 +604,12 @@ CxSheetInputParser::applyParsingAttributes(CxSheetCell *cell,
     }
     if (result.hasCurrency) {
         cell->setAppAttribute("currency", true);
+        // Set decimal places based on input: $500 -> 0, $500.7 -> 2, $500.75 -> 2, $500.123 -> 2
+        if (result.decimalDigits < 0) {
+            cell->setAppAttribute("decimalPlaces", 0);
+        } else {
+            cell->setAppAttribute("decimalPlaces", 2);
+        }
     }
     if (result.hasPercent) {
         cell->setAppAttribute("percent", true);

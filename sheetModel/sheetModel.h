@@ -191,6 +191,30 @@ class CxSheetModel
     // Returns pointer to function database for formula evaluation with range support.
     // Used by variableDatabase for nested formula evaluation.
 
+    CxString adjustFormulaForCopy(CxString formula, int rowDelta, int colDelta);
+    // Adjust all non-absolute cell references in a formula by the given row and column deltas.
+    // Used when copying a formula to a new position (copy/paste, fill-down, fill-right).
+    // Absolute references ($A$1) are not adjusted. Mixed references adjust only the
+    // non-absolute component.
+
+    void moveCells(CxSList<CxSheetCellCoordinate> &oldCoords,
+                   CxSList<CxSheetCellCoordinate> &newCoords);
+    // Move cells from old coordinates to new coordinates (cut/paste operation).
+    // Formulas on moved cells are NOT adjusted (it's a move, not a copy).
+    // All other formulas referencing old coords are updated to point to new coords.
+    // After return, getLastAffectedCells() contains all cells in the sheet.
+    // oldCoords and newCoords must have the same number of entries (parallel lists).
+
+    void fillDown(int minRow, int maxRow, int minCol, int maxCol);
+    // Copy the source row (minRow) down through all rows in the range.
+    // Formula references are adjusted relative to each destination row.
+    // After return, getLastAffectedCells() contains all cells in the sheet.
+
+    void fillRight(int minRow, int maxRow, int minCol, int maxCol);
+    // Copy the source column (minCol) right through all columns in the range.
+    // Formula references are adjusted relative to each destination column.
+    // After return, getLastAffectedCells() contains all cells in the sheet.
+
 
   private:
 
@@ -268,6 +292,11 @@ class CxSheetModel
     // isRow: 1 for row operations, 0 for column operations
     // position: the row/column being inserted/deleted
     // delta: +1 for insert, -1 for delete
+
+    void updateReferencesForMovedCells(CxSList<CxSheetCellCoordinate> &oldCoords,
+                                        CxSList<CxSheetCellCoordinate> &newCoords);
+    // Scan all formula cells and replace references to old coordinates with new coordinates.
+    // Used by moveCells() after cells have been relocated.
 
     CxSList<CxSheetCellCoordinate> _lastAffectedCells;
     // Cells affected by the last setCell() or load operation.

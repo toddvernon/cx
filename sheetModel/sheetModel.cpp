@@ -1928,3 +1928,505 @@ CxSheetModel::deleteColumn(int col)
     recalculateAll();
     touched = 1;
 }
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::adjustFormulaForCopy
+//
+// Adjust all non-absolute cell references in a formula by the given row
+// and column deltas. Used when copying a formula to a new position
+// (copy/paste, fill-down, fill-right). Absolute references ($A$1) are
+// not adjusted. Mixed references adjust only the non-absolute component.
+//-------------------------------------------------------------------------
+CxString
+CxSheetModel::adjustFormulaForCopy(CxString formula, int rowDelta, int colDelta)
+{
+    CxExpression expr(formula);
+    expr.Parse();
+
+    CxSList<CxString> ranges = expr.GetRangeList();
+    CxSList<CxString> vars = expr.GetVariableList();
+
+    CxString result = formula;
+
+    // Process ranges first (they contain cell references we shouldn't double-process)
+    for (int i = 0; i < (int)ranges.entries(); i++) {
+        CxString rangeStr = ranges.at(i);
+
+        int colonPos = -1;
+        for (int j = 0; j < (int)rangeStr.length(); j++) {
+            if (rangeStr.data()[j] == ':') {
+                colonPos = j;
+                break;
+            }
+        }
+
+        if (colonPos > 0) {
+            CxString startStr = rangeStr.subString(0, colonPos);
+            CxString endStr = rangeStr.subString(colonPos + 1, rangeStr.length() - colonPos - 1);
+
+            CxSheetCellCoordinate startCoord(startStr);
+            CxSheetCellCoordinate endCoord(endStr);
+
+            // Adjust non-absolute coordinates
+            if (!startCoord.isRowAbsolute()) {
+                int newRow = (int)startCoord.getRow() + rowDelta;
+                if (newRow < 0) newRow = 0;
+                startCoord.setRow(newRow);
+            }
+            if (!startCoord.isColAbsolute()) {
+                int newCol = (int)startCoord.getCol() + colDelta;
+                if (newCol < 0) newCol = 0;
+                startCoord.setCol(newCol);
+            }
+            if (!endCoord.isRowAbsolute()) {
+                int newRow = (int)endCoord.getRow() + rowDelta;
+                if (newRow < 0) newRow = 0;
+                endCoord.setRow(newRow);
+            }
+            if (!endCoord.isColAbsolute()) {
+                int newCol = (int)endCoord.getCol() + colDelta;
+                if (newCol < 0) newCol = 0;
+                endCoord.setCol(newCol);
+            }
+
+            CxString newRange = startCoord.toAbsoluteAddress() + ":" + endCoord.toAbsoluteAddress();
+
+            int pos = result.index(rangeStr);
+            if (pos >= 0) {
+                CxString before = result.subString(0, pos);
+                CxString after = result.subString(pos + rangeStr.length(),
+                                                   result.length() - pos - rangeStr.length());
+                result = before + newRange + after;
+            }
+        }
+    }
+
+    // Two-pass replacement to avoid cascading matches.
+    // Pass 1: replace each original variable with a unique placeholder (\x01 N \x01).
+    // Pass 2: replace each placeholder with the adjusted reference.
+    // This prevents e.g. A1->B1 then B1->C1 turning "A1+B1" into "C1+C1".
+
+    // Build list of non-range variables and their adjusted references
+    CxSList<CxString> origVars;
+    CxSList<CxString> adjustedVars;
+
+    for (int i = 0; i < (int)vars.entries(); i++) {
+        CxString varStr = vars.at(i);
+
+        int isPartOfRange = 0;
+        for (int j = 0; j < (int)ranges.entries(); j++) {
+            CxString rangeStr = ranges.at(j);
+            if (rangeStr.index(varStr) >= 0) {
+                isPartOfRange = 1;
+                break;
+            }
+        }
+        if (isPartOfRange) {
+            continue;
+        }
+
+        CxSheetCellCoordinate coord(varStr);
+
+        // Adjust non-absolute coordinates
+        if (!coord.isRowAbsolute()) {
+            int newRow = (int)coord.getRow() + rowDelta;
+            if (newRow < 0) newRow = 0;
+            coord.setRow(newRow);
+        }
+        if (!coord.isColAbsolute()) {
+            int newCol = (int)coord.getCol() + colDelta;
+            if (newCol < 0) newCol = 0;
+            coord.setCol(newCol);
+        }
+
+        origVars.append(varStr);
+        adjustedVars.append(coord.toAbsoluteAddress());
+    }
+
+    // Pass 1: replace original references with placeholders
+    for (int i = 0; i < (int)origVars.entries(); i++) {
+        CxString varStr = origVars.at(i);
+
+        // Build placeholder: \x01 + index + \x01
+        char placeholderBuf[32];
+        snprintf(placeholderBuf, sizeof(placeholderBuf), "\x01%d\x01", i);
+        CxString placeholder(placeholderBuf);
+
+        int searchPos = 0;
+        while (searchPos < (int)result.length()) {
+            int pos = result.index(varStr, searchPos);
+            if (pos < 0) break;
+
+            int isBoundedStart = (pos == 0) ||
+                                  (!((result.data()[pos-1] >= 'A' && result.data()[pos-1] <= 'Z') ||
+                                     (result.data()[pos-1] >= 'a' && result.data()[pos-1] <= 'z') ||
+                                     (result.data()[pos-1] >= '0' && result.data()[pos-1] <= '9') ||
+                                     result.data()[pos-1] == '$'));
+
+            int endPos = pos + varStr.length();
+            int isBoundedEnd = (endPos >= (int)result.length()) ||
+                               (!((result.data()[endPos] >= 'A' && result.data()[endPos] <= 'Z') ||
+                                  (result.data()[endPos] >= 'a' && result.data()[endPos] <= 'z') ||
+                                  (result.data()[endPos] >= '0' && result.data()[endPos] <= '9')));
+
+            if (isBoundedStart && isBoundedEnd) {
+                CxString before = result.subString(0, pos);
+                CxString after = result.subString(endPos, result.length() - endPos);
+                result = before + placeholder + after;
+                searchPos = pos + placeholder.length();
+            } else {
+                searchPos = endPos;
+            }
+        }
+    }
+
+    // Pass 2: replace placeholders with adjusted references
+    for (int i = 0; i < (int)origVars.entries(); i++) {
+        char placeholderBuf[32];
+        snprintf(placeholderBuf, sizeof(placeholderBuf), "\x01%d\x01", i);
+        CxString placeholder(placeholderBuf);
+        CxString newRef = adjustedVars.at(i);
+
+        int pos = result.index(placeholder);
+        while (pos >= 0) {
+            CxString before = result.subString(0, pos);
+            CxString after = result.subString(pos + placeholder.length(),
+                                               result.length() - pos - placeholder.length());
+            result = before + newRef + after;
+            pos = result.index(placeholder);
+        }
+    }
+
+    return result;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::updateReferencesForMovedCells
+//
+// Scan all formula cells and replace references to old coordinates with
+// new coordinates. When a referenced cell moves, ALL references to it
+// update (both relative A1 and absolute $A$1) — the absolute/relative
+// markers are preserved in the output.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::updateReferencesForMovedCells(CxSList<CxSheetCellCoordinate> &oldCoords,
+                                              CxSList<CxSheetCellCoordinate> &newCoords)
+{
+    // Collect all cell coordinates first (can't modify hashmap while iterating)
+    CxSList<CxSheetCellCoordinate> allCoords;
+    {
+        CxHashmapIterator<CxSheetCellCoordinate, CxSheetCell> iter(&cellHashMap);
+        while (iter.next()) {
+            const CxSheetCellCoordinate *key = iter.getKey();
+            if (key != NULL) {
+                allCoords.append(*key);
+            }
+        }
+    }
+
+    for (int i = 0; i < (int)allCoords.entries(); i++) {
+        CxSheetCellCoordinate coord = allCoords.at(i);
+        CxSheetCell *cell = getCellPtr(coord);
+
+        if (cell == NULL || cell->getType() != CxSheetCell::FORMULA) {
+            continue;
+        }
+
+        CxString formula = cell->getFormulaText();
+        CxString result = formula;
+        int changed = 0;
+
+        // For each moved cell, replace references in this formula
+        for (int j = 0; j < (int)oldCoords.entries(); j++) {
+            CxSheetCellCoordinate oldCoord = oldCoords.at(j);
+            CxSheetCellCoordinate newCoord = newCoords.at(j);
+
+            // Parse formula to find references
+            CxExpression expr(result);
+            expr.Parse();
+
+            CxSList<CxString> ranges = expr.GetRangeList();
+            CxSList<CxString> vars = expr.GetVariableList();
+
+            // Process ranges first
+            for (int r = 0; r < (int)ranges.entries(); r++) {
+                CxString rangeStr = ranges.at(r);
+
+                int colonPos = -1;
+                for (int k = 0; k < (int)rangeStr.length(); k++) {
+                    if (rangeStr.data()[k] == ':') {
+                        colonPos = k;
+                        break;
+                    }
+                }
+
+                if (colonPos > 0) {
+                    CxString startStr = rangeStr.subString(0, colonPos);
+                    CxString endStr = rangeStr.subString(colonPos + 1, rangeStr.length() - colonPos - 1);
+
+                    CxSheetCellCoordinate startCoord(startStr);
+                    CxSheetCellCoordinate endCoord(endStr);
+                    int rangeChanged = 0;
+
+                    if (startCoord.getRow() == oldCoord.getRow() &&
+                        startCoord.getCol() == oldCoord.getCol()) {
+                        startCoord.setRow(newCoord.getRow());
+                        startCoord.setCol(newCoord.getCol());
+                        rangeChanged = 1;
+                    }
+
+                    if (endCoord.getRow() == oldCoord.getRow() &&
+                        endCoord.getCol() == oldCoord.getCol()) {
+                        endCoord.setRow(newCoord.getRow());
+                        endCoord.setCol(newCoord.getCol());
+                        rangeChanged = 1;
+                    }
+
+                    if (rangeChanged) {
+                        CxString newRange = startCoord.toAbsoluteAddress() + ":" + endCoord.toAbsoluteAddress();
+                        int pos = result.index(rangeStr);
+                        if (pos >= 0) {
+                            CxString before = result.subString(0, pos);
+                            CxString after = result.subString(pos + rangeStr.length(),
+                                                               result.length() - pos - rangeStr.length());
+                            result = before + newRange + after;
+                        }
+                        changed = 1;
+                    }
+                }
+            }
+
+            // Process single cell references (skip those that are part of ranges)
+            for (int v = 0; v < (int)vars.entries(); v++) {
+                CxString varStr = vars.at(v);
+
+                int isPartOfRange = 0;
+                for (int r = 0; r < (int)ranges.entries(); r++) {
+                    if (ranges.at(r).index(varStr) >= 0) {
+                        isPartOfRange = 1;
+                        break;
+                    }
+                }
+                if (isPartOfRange) continue;
+
+                CxSheetCellCoordinate varCoord(varStr);
+
+                if (varCoord.getRow() == oldCoord.getRow() &&
+                    varCoord.getCol() == oldCoord.getCol()) {
+
+                    // Build replacement preserving absolute markers from original reference
+                    CxSheetCellCoordinate replacement;
+                    replacement.setRow(newCoord.getRow());
+                    replacement.setCol(newCoord.getCol());
+                    replacement.setRowAbsolute(varCoord.isRowAbsolute());
+                    replacement.setColAbsolute(varCoord.isColAbsolute());
+
+                    CxString newRef = replacement.toAbsoluteAddress();
+
+                    // Boundary-aware replacement
+                    int searchPos = 0;
+                    while (searchPos < (int)result.length()) {
+                        int pos = result.index(varStr, searchPos);
+                        if (pos < 0) break;
+
+                        int isBoundedStart = (pos == 0) ||
+                            (!((result.data()[pos-1] >= 'A' && result.data()[pos-1] <= 'Z') ||
+                               (result.data()[pos-1] >= 'a' && result.data()[pos-1] <= 'z') ||
+                               (result.data()[pos-1] >= '0' && result.data()[pos-1] <= '9') ||
+                               result.data()[pos-1] == '$'));
+
+                        int endPos = pos + varStr.length();
+                        int isBoundedEnd = (endPos >= (int)result.length()) ||
+                            (!((result.data()[endPos] >= 'A' && result.data()[endPos] <= 'Z') ||
+                               (result.data()[endPos] >= 'a' && result.data()[endPos] <= 'z') ||
+                               (result.data()[endPos] >= '0' && result.data()[endPos] <= '9')));
+
+                        if (isBoundedStart && isBoundedEnd) {
+                            CxString before = result.subString(0, pos);
+                            CxString after = result.subString(endPos, result.length() - endPos);
+                            result = before + newRef + after;
+                            searchPos = pos + newRef.length();
+                            changed = 1;
+                        } else {
+                            searchPos = endPos;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (changed) {
+            // Update formula text and re-parse with proper databases.
+            // Can't use cell->setFormula() because it creates a CxExpression
+            // without the variableDatabase, and Parse() needs the database
+            // to recognize cell references as variables.
+            cell->text = result;
+            if (cell->formula != NULL) {
+                delete cell->formula;
+            }
+            cell->formula = new CxExpression(result, variableDatabase, functionDatabase);
+            cell->formula->Parse();
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::moveCells
+//
+// Move cells from old coordinates to new coordinates. This is the
+// model-level operation for cut/paste:
+//   1. Collect cells at old coordinates
+//   2. Clear old coordinates (deferred recalc)
+//   3. Place cells at new coordinates (formulas unchanged — it's a move)
+//   4. Scan all formulas and update references from old to new
+//   5. Rebuild dependency graph and recalculate
+//
+// After return, getLastAffectedCells() contains all cells in the sheet.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::moveCells(CxSList<CxSheetCellCoordinate> &oldCoords,
+                         CxSList<CxSheetCellCoordinate> &newCoords)
+{
+    // 1. Collect cells to move (copy cell data before clearing)
+    CxSList<CxSheetCell> cellsToMove;
+    for (int i = 0; i < (int)oldCoords.entries(); i++) {
+        CxSheetCell *ptr = getCellPtr(oldCoords.at(i));
+        if (ptr != NULL) {
+            cellsToMove.append(*ptr);
+        } else {
+            CxSheetCell empty;
+            cellsToMove.append(empty);
+        }
+    }
+
+    // 2-3. Clear old, place at new (defer recalc during bulk changes)
+    loadingInProgress = 1;
+
+    for (int i = 0; i < (int)oldCoords.entries(); i++) {
+        CxSheetCell emptyCell;
+        setCell(oldCoords.at(i), emptyCell);
+    }
+
+    for (int i = 0; i < (int)newCoords.entries(); i++) {
+        setCell(newCoords.at(i), cellsToMove.at(i));
+    }
+
+    loadingInProgress = 0;
+
+    // 4. Scan all formulas and update references from old to new
+    updateReferencesForMovedCells(oldCoords, newCoords);
+
+    // 5. Rebuild dependency graph and recalculate
+    //    (populates _lastAffectedCells with all cells)
+    dependencyGraph.clear();
+    recalculateAll();
+
+    touched = 1;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::fillDown
+//
+// Copy the source row (minRow) down through all rows in the range.
+// Formula references are adjusted relative to each destination row
+// using adjustFormulaForCopy with the appropriate row delta.
+//
+// After return, getLastAffectedCells() contains all cells in the sheet.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::fillDown(int minRow, int maxRow, int minCol, int maxCol)
+{
+    loadingInProgress = 1;
+
+    for (int col = minCol; col <= maxCol; col++) {
+        CxSheetCellCoordinate srcCoord;
+        srcCoord.setRow(minRow);
+        srcCoord.setCol(col);
+        CxSheetCell *srcPtr = getCellPtr(srcCoord);
+
+        CxSheetCell srcCell;
+        if (srcPtr != NULL) {
+            srcCell = *srcPtr;
+        }
+
+        for (int row = minRow + 1; row <= maxRow; row++) {
+            int rowDelta = row - minRow;
+
+            CxSheetCellCoordinate dstCoord;
+            dstCoord.setRow(row);
+            dstCoord.setCol(col);
+
+            CxSheetCell newCell = srcCell;
+
+            if (newCell.getType() == CxSheetCell::FORMULA) {
+                CxString adjusted = adjustFormulaForCopy(
+                    newCell.getFormulaText(), rowDelta, 0);
+                newCell.setFormula(adjusted);
+            }
+
+            setCell(dstCoord, newCell);
+        }
+    }
+
+    loadingInProgress = 0;
+    dependencyGraph.clear();
+    recalculateAll();
+
+    touched = 1;
+}
+
+
+//-------------------------------------------------------------------------
+// CxSheetModel::fillRight
+//
+// Copy the source column (minCol) right through all columns in the range.
+// Formula references are adjusted relative to each destination column
+// using adjustFormulaForCopy with the appropriate column delta.
+//
+// After return, getLastAffectedCells() contains all cells in the sheet.
+//-------------------------------------------------------------------------
+void
+CxSheetModel::fillRight(int minRow, int maxRow, int minCol, int maxCol)
+{
+    loadingInProgress = 1;
+
+    for (int row = minRow; row <= maxRow; row++) {
+        CxSheetCellCoordinate srcCoord;
+        srcCoord.setRow(row);
+        srcCoord.setCol(minCol);
+        CxSheetCell *srcPtr = getCellPtr(srcCoord);
+
+        CxSheetCell srcCell;
+        if (srcPtr != NULL) {
+            srcCell = *srcPtr;
+        }
+
+        for (int col = minCol + 1; col <= maxCol; col++) {
+            int colDelta = col - minCol;
+
+            CxSheetCellCoordinate dstCoord;
+            dstCoord.setRow(row);
+            dstCoord.setCol(col);
+
+            CxSheetCell newCell = srcCell;
+
+            if (newCell.getType() == CxSheetCell::FORMULA) {
+                CxString adjusted = adjustFormulaForCopy(
+                    newCell.getFormulaText(), 0, colDelta);
+                newCell.setFormula(adjusted);
+            }
+
+            setCell(dstCoord, newCell);
+        }
+    }
+
+    loadingInProgress = 0;
+    dependencyGraph.clear();
+    recalculateAll();
+
+    touched = 1;
+}

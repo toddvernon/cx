@@ -671,3 +671,52 @@ CxScreen::endSyncUpdate(void)
 {
     printf("%c[?2026l", ESC);
 }
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::setWindowTitle
+//
+// Set the terminal window/tab title using OSC 0 (Operating System Command).
+// Works on iTerm2, xterm, and most Linux terminal emulators.
+// Terminals that don't support it will ignore the sequence harmlessly.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::setWindowTitle(CxString title)
+{
+    printf("%c]0;%s%c", ESC, title.data(), 7);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::saveWindowTitle
+//
+// Push the current window title onto the terminal's internal title stack.
+// Uses xterm's CSI 22;0t sequence. Pair with restoreWindowTitle() to
+// restore the original title when the application exits.
+//
+// Supported by: xterm, iTerm2, kitty, foot, wezterm, most Linux terminals.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::saveWindowTitle(void)
+{
+    printf("%c[22;0t", ESC);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::restoreWindowTitle
+//
+// Pop and restore the previously saved window title from the terminal's
+// internal title stack. Uses xterm's CSI 23;0t sequence.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::restoreWindowTitle(void)
+{
+    printf("%c[23;0t", ESC);
+}

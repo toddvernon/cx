@@ -97,6 +97,15 @@ class CxScreen
     static void endSyncUpdate(void);
     // end synchronized update - terminal renders buffered content atomically
 
+    static void setWindowTitle(CxString title);
+    // set the terminal window/tab title using OSC 0
+
+    static void saveWindowTitle(void);
+    // push current window title onto terminal's title stack
+
+    static void restoreWindowTitle(void);
+    // pop and restore previously saved window title from terminal's title stack
+
 	static void moveCursorLeft( int num );
 	// move cursor to the left num characters
 

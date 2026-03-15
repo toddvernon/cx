@@ -88,16 +88,12 @@ CxScreen::CxScreen( void )
 
 void CxScreen::hideCursor(void)
 {
-    printf("%c[?25l", ESC);
-    
-//    fputs(CSI "?25l", stdout);
+    fputs("\033[?25l", stdout);
 }
 
 void CxScreen::showCursor(void)
 {
-    
-//    fputs(CSI "?25h", stdout);
-    printf("%c[?25h", ESC);
+    fputs("\033[?25h", stdout);
 }
 
 
@@ -135,7 +131,7 @@ CxScreen::addScreenSizeCallback( CxFunctor *callback)
 void
 CxScreen::clearScreen(void)
 {
-    printf("%c[2J\033[1;1H", ESC);
+    fputs("\033[2J\033[1;1H", stdout);
 }
 
 
@@ -150,7 +146,8 @@ CxScreen::getCursorPosition(int *row, int *col)
 {
 
 	CxString buffer;
-    printf("%c[6n", ESC);
+    fputs("\033[6n", stdout);
+    fflush(stdout);
 	char c = getchar(); // get the ESC
 
 	if (c != '\033') return;
@@ -185,7 +182,7 @@ CxScreen::getCursorPosition(int *row, int *col)
 void CxScreen::sigWinchHandler(int sig, struct sigaction *, struct sigaction *)
 {
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, (char*) &(CxScreen::ws)) == -1) {
-        printf("error in ioctl call\n");
+        fputs("error in ioctl call\n", stderr);
         exit(0);
     }
 
@@ -200,7 +197,7 @@ void CxScreen::sigWinchHandler(int sig, struct sigaction *, struct sigaction *)
 void CxScreen::sigWinchHandler(int sig)
 {
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, (char*) &(CxScreen::ws)) == -1) {
-        printf("error in ioctl call\n");
+        fputs("error in ioctl call\n", stderr);
         exit(0);
     }
     
@@ -268,7 +265,9 @@ CxScreen::cols(void)
 void
 CxScreen::placeCursor( int row, int col)
 {
-    printf("%c[%d;%dH", ESC, row+1, col+1);
+    char buf[32];
+    sprintf(buf, "\033[%d;%dH", row+1, col+1);
+    fputs(buf, stdout);
 }
 
 
@@ -282,7 +281,7 @@ CxScreen::placeCursor( int row, int col)
 void
 CxScreen::resetForegroundColor(void)
 {
-    printf("%c[39m", ESC);
+    fputs("\033[39m", stdout);
 }
 
 
@@ -296,7 +295,7 @@ CxScreen::resetForegroundColor(void)
 void
 CxScreen::openAlternateScreen(void)
 {
-    printf("%c[?47h", ESC);
+    fputs("\033[?47h", stdout);
 }
 
 
@@ -310,7 +309,7 @@ CxScreen::openAlternateScreen(void)
 void
 CxScreen::closeAlternateScreen(void)
 {
-    printf("%c[?47l", ESC);
+    fputs("\033[?47l", stdout);
 }
 
  
@@ -324,7 +323,7 @@ CxScreen::closeAlternateScreen(void)
 void
 CxScreen::resetBackgroundColor(void)
 {
-    printf("%c[49m", ESC);
+    fputs("\033[49m", stdout);
 }
 
 
@@ -338,7 +337,9 @@ CxScreen::resetBackgroundColor(void)
 void
 CxScreen::moveCursorLeft( int num )
 {
-	printf("%c[%dD", ESC, num );
+    char buf[16];
+    sprintf(buf, "\033[%dD", num);
+    fputs(buf, stdout);
 }
 
 
@@ -352,7 +353,9 @@ CxScreen::moveCursorLeft( int num )
 void
 CxScreen::moveCursorRight( int num )
 {
-	printf("%c[%dC", ESC, num );
+    char buf[16];
+    sprintf(buf, "\033[%dC", num);
+    fputs(buf, stdout);
 }
 
 
@@ -366,7 +369,9 @@ CxScreen::moveCursorRight( int num )
 void
 CxScreen::moveCursorToColumn( int c )
 {
-	printf("%c[%dG", ESC, c+1 );
+    char buf[16];
+    sprintf(buf, "\033[%dG", c+1);
+    fputs(buf, stdout);
 }
 
 
@@ -380,7 +385,7 @@ CxScreen::moveCursorToColumn( int c )
 void
 CxScreen::clearScreenFromCursorToEndOfLine( void )
 {
-	printf("%c[K", ESC);
+    fputs("\033[K", stdout);
 }
 
 
@@ -395,7 +400,7 @@ CxScreen::clearScreenFromCursorToEndOfLine( void )
 void
 CxScreen::clearScreenFromCursorDown( void )
 {
-    printf("%c[J", ESC);
+    fputs("\033[J", stdout);
 }
 
 
@@ -409,7 +414,7 @@ CxScreen::clearScreenFromCursorDown( void )
 void
 CxScreen::saveCursorPosition(void)
 {
-	printf("%c[s", ESC);
+    fputs("\033[s", stdout);
 }
 
 
@@ -423,7 +428,7 @@ CxScreen::saveCursorPosition(void)
 void
 CxScreen::restoreCursorPosition(void)
 {
-	printf("%c[u", ESC);
+    fputs("\033[u", stdout);
 }
  
 
@@ -504,7 +509,7 @@ CxScreen::flush(void)
 void
 CxScreen::setForegroundColor( CxColor *color )
 {
-    printf("%s",color->terminalString().data());
+    fputs(color->terminalString().data(), stdout);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -517,7 +522,7 @@ CxScreen::setForegroundColor( CxColor *color )
 void
 CxScreen::setBackgroundColor( CxColor *color )
 {
-    printf("%s",color->terminalString().data());
+    fputs(color->terminalString().data(), stdout);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -530,7 +535,7 @@ CxScreen::setBackgroundColor( CxColor *color )
 void
 CxScreen::resetColors( void )
 {
-    printf("%c[0m", ESC);
+    fputs("\033[0m", stdout);
 }
 
 
@@ -545,7 +550,9 @@ CxScreen::resetColors( void )
 void
 CxScreen::setScrollRegion(int topRow, int bottomRow)
 {
-    printf("%c[%d;%dr", ESC, topRow + 1, bottomRow + 1);
+    char buf[32];
+    sprintf(buf, "\033[%d;%dr", topRow + 1, bottomRow + 1);
+    fputs(buf, stdout);
 }
 
 
@@ -559,7 +566,7 @@ CxScreen::setScrollRegion(int topRow, int bottomRow)
 void
 CxScreen::resetScrollRegion(void)
 {
-    printf("%c[r", ESC);
+    fputs("\033[r", stdout);
 }
 
 
@@ -576,7 +583,9 @@ void
 CxScreen::scrollUp(int lines)
 {
     if (lines > 0) {
-        printf("%c[%dS", ESC, lines);
+        char buf[16];
+        sprintf(buf, "\033[%dS", lines);
+        fputs(buf, stdout);
     }
 }
 
@@ -594,7 +603,9 @@ void
 CxScreen::scrollDown(int lines)
 {
     if (lines > 0) {
-        printf("%c[%dT", ESC, lines);
+        char buf[16];
+        sprintf(buf, "\033[%dT", lines);
+        fputs(buf, stdout);
     }
 }
 
@@ -612,7 +623,9 @@ void
 CxScreen::insertLines(int lines)
 {
     if (lines > 0) {
-        printf("%c[%dL", ESC, lines);
+        char buf[16];
+        sprintf(buf, "\033[%dL", lines);
+        fputs(buf, stdout);
     }
 }
 
@@ -630,7 +643,9 @@ void
 CxScreen::deleteLines(int lines)
 {
     if (lines > 0) {
-        printf("%c[%dM", ESC, lines);
+        char buf[16];
+        sprintf(buf, "\033[%dM", lines);
+        fputs(buf, stdout);
     }
 }
 
@@ -652,7 +667,7 @@ CxScreen::deleteLines(int lines)
 void
 CxScreen::beginSyncUpdate(void)
 {
-    printf("%c[?2026h", ESC);
+    fputs("\033[?2026h", stdout);
 }
 
 
@@ -669,7 +684,7 @@ CxScreen::beginSyncUpdate(void)
 void
 CxScreen::endSyncUpdate(void)
 {
-    printf("%c[?2026l", ESC);
+    fputs("\033[?2026l", stdout);
 }
 
 
@@ -685,7 +700,9 @@ CxScreen::endSyncUpdate(void)
 void
 CxScreen::setWindowTitle(CxString title)
 {
-    printf("%c]0;%s%c", ESC, title.data(), 7);
+    fputs("\033]0;", stdout);
+    fputs(title.data(), stdout);
+    fputc(7, stdout);
 }
 
 
@@ -703,7 +720,7 @@ CxScreen::setWindowTitle(CxString title)
 void
 CxScreen::saveWindowTitle(void)
 {
-    printf("%c[22;0t", ESC);
+    fputs("\033[22;0t", stdout);
 }
 
 
@@ -718,5 +735,5 @@ CxScreen::saveWindowTitle(void)
 void
 CxScreen::restoreWindowTitle(void)
 {
-    printf("%c[23;0t", ESC);
+    fputs("\033[23;0t", stdout);
 }

@@ -337,6 +337,8 @@ archive:
 	@echo "  (extracts to cx/ when untarred from parent directory)"
 	@test -d ../ARCHIVE || mkdir ../ARCHIVE
 	@cd .. && tar cvf ARCHIVE/cxlibs_unix.tar \
+		--no-mac-metadata \
+		--exclude='._*' \
 		--exclude='*.o' \
 		--exclude='*.a' \
 		--exclude='.git' \

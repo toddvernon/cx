@@ -197,23 +197,6 @@ static char* unescape_string(char* s, char** end, nx_json_unicode_encoder encode
   return 0;
 }
 
-static char* skip_block_comment(char* p) {
-  // assume p[-2]=='/' && p[-1]=='*'
-  char* ps=p-2;
-  if (!*p) {
-    NX_JSON_REPORT_ERROR("endless comment", ps);
-    return 0;
-  }
-  REPEAT:
-  p=strchr(p+1, '/');
-  if (!p) {
-    NX_JSON_REPORT_ERROR("endless comment", ps);
-    return 0;
-  }
-  if (p[-1]!='*') goto REPEAT;
-  return p+1;
-}
-
 static char* parse_key(const char** key, char* p, nx_json_unicode_encoder encoder) {
   // on '}' return with *p=='}'
   char c;

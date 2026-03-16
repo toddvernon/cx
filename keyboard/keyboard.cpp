@@ -1248,24 +1248,26 @@ CxKeyboard::handleSGRMouseSequence(void)
     int button;
     int isMotion = 0;
 
-    if (baseButton >= 32) {
-        // Motion event (drag)
-        isMotion = 1;
-        baseButton = baseButton - 32;
-    }
-
-    if (baseButton == 64) {
-        button = 4;  // wheel up
-    } else if (baseButton == 65) {
-        button = 5;  // wheel down
-    } else if (baseButton == 0) {
-        button = 1;  // left
-    } else if (baseButton == 1) {
-        button = 2;  // middle
-    } else if (baseButton == 2) {
-        button = 3;  // right
+    // Check for wheel BEFORE stripping motion flag, since wheel rawButtons
+    // (64, 65) overlap with the motion range (32+)
+    if (baseButton == 64 || baseButton == 65) {
+        button = (baseButton == 64) ? 4 : 5;  // wheel up / wheel down
     } else {
-        button = 1;  // default to left for unknown
+        if (baseButton >= 32) {
+            // Motion event (drag)
+            isMotion = 1;
+            baseButton = baseButton - 32;
+        }
+
+        if (baseButton == 0) {
+            button = 1;  // left
+        } else if (baseButton == 1) {
+            button = 2;  // middle
+        } else if (baseButton == 2) {
+            button = 3;  // right
+        } else {
+            button = 1;  // default to left for unknown
+        }
     }
 
     // Return encoded mouse string: MOUSE:button:col:row:release:modifiers:motion

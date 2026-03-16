@@ -336,8 +336,7 @@ archive:
 	@echo "Creating cxlibs_unix.tar..."
 	@echo "  (extracts to cx/ when untarred from parent directory)"
 	@test -d ../ARCHIVE || mkdir ../ARCHIVE
-	@tar cvf ../ARCHIVE/cxlibs_unix.tar \
-		--transform 's,^\./,cx/,' \
+	@cd .. && tar cvf ARCHIVE/cxlibs_unix.tar \
 		--exclude='*.o' \
 		--exclude='*.a' \
 		--exclude='.git' \
@@ -358,6 +357,6 @@ archive:
 		--exclude='*.mode2v3' \
 		--exclude='*.perspectivev3' \
 		--exclude='*.xcuserstate' \
-		.
+		cx
 	@echo "Archive created: ../ARCHIVE/cxlibs_unix.tar"
 

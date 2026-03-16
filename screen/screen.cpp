@@ -663,10 +663,19 @@ CxScreen::deleteLines(int lines)
 // Terminals that don't support it will ignore the sequence harmlessly.
 //
 //-------------------------------------------------------------------------------------------------
+// Static buffer for stdout batching. Large enough for a full screen redraw.
+// Used by beginSyncUpdate/endSyncUpdate to hold all output and flush once.
+static char syncUpdateBuffer[256 * 1024];
+
 /*static*/
 void
 CxScreen::beginSyncUpdate(void)
 {
+    // Switch stdout to full buffering so all writes accumulate in our buffer.
+    // This eliminates flicker on terminals that don't support mode 2026.
+    setvbuf(stdout, syncUpdateBuffer, _IOFBF, sizeof(syncUpdateBuffer));
+
+    // Also send mode 2026 for terminals that support it (double protection)
     fputs("\033[?2026h", stdout);
 }
 
@@ -677,7 +686,7 @@ CxScreen::beginSyncUpdate(void)
 // End synchronized update mode. The terminal renders all buffered content
 // from since beginSyncUpdate() was called in a single atomic frame.
 //
-// Uses DEC private mode 2026 (CSI ? 2026 l).
+// Uses DEC private mode 2026 (CSI ? 2026 l) plus stdout flush for portability.
 //
 //-------------------------------------------------------------------------------------------------
 /*static*/
@@ -685,6 +694,11 @@ void
 CxScreen::endSyncUpdate(void)
 {
     fputs("\033[?2026l", stdout);
+
+    // Flush everything accumulated since beginSyncUpdate, then restore
+    // line buffering so interactive output (cursor moves, etc.) works normally.
+    fflush(stdout);
+    setvbuf(stdout, NULL, _IOLBF, 0);
 }
 
 

@@ -18,6 +18,10 @@
 //
 //-------------------------------------------------------------------------
 CxKeyAction::CxKeyAction( CxString definition )
+: _mouseButton(0)
+, _mouseRow(0)
+, _mouseCol(0)
+, _mouseModifiers(0)
 {
 	_actionType = CxKeyAction::UNKNOWN;
 	_definition = definition;
@@ -91,15 +95,38 @@ CxKeyAction::CxKeyAction( CxString definition )
 
 
 //-------------------------------------------------------------------------
+// CxKeyAction:: (mouse constructor)
+//
+// Create a mouse action directly with parsed data.
+//-------------------------------------------------------------------------
+CxKeyAction::CxKeyAction( aType type, int button, int row, int col, int modifiers )
+: _actionType(type)
+, _mouseButton(button)
+, _mouseRow(row)
+, _mouseCol(col)
+, _mouseModifiers(modifiers)
+{
+}
+
+
+//-------------------------------------------------------------------------
 // CxKeyAction:: (copy constructor)
 //
 //-------------------------------------------------------------------------
 CxKeyAction::CxKeyAction( const CxKeyAction& a_)
+: _mouseButton(0)
+, _mouseRow(0)
+, _mouseCol(0)
+, _mouseModifiers(0)
 {
 	if (&a_ != this ) {
-    	_actionType = a_._actionType;
-       	_tag        = a_._tag;
-        _definition = a_._definition;
+    	_actionType     = a_._actionType;
+       	_tag            = a_._tag;
+        _definition     = a_._definition;
+        _mouseButton    = a_._mouseButton;
+        _mouseRow       = a_._mouseRow;
+        _mouseCol       = a_._mouseCol;
+        _mouseModifiers = a_._mouseModifiers;
     }
 }
 
@@ -112,9 +139,13 @@ CxKeyAction&
 CxKeyAction::operator=( const CxKeyAction& a_ )
 {
 	if ( &a_ != this ) {
-    	_actionType = a_._actionType;
-     	_tag        = a_._tag;
-     	_definition = a_._definition;
+    	_actionType     = a_._actionType;
+     	_tag            = a_._tag;
+     	_definition     = a_._definition;
+        _mouseButton    = a_._mouseButton;
+        _mouseRow       = a_._mouseRow;
+        _mouseCol       = a_._mouseCol;
+        _mouseModifiers = a_._mouseModifiers;
   	}
     return( *this );
 }
@@ -144,9 +175,81 @@ CxKeyAction::tag(void)
 //-------------------------------------------------------------------------
 // CxKeyAction::definition
 //
-//-------------------------------------------------------------------------/
-CxString 
+//-------------------------------------------------------------------------
+CxString
 CxKeyAction::definition(void)
 {
 	return(_definition);
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyAction::mouseButton
+//
+// Returns the mouse button: 1=left, 2=middle, 3=right, 4=wheel-up, 5=wheel-down
+//-------------------------------------------------------------------------
+int
+CxKeyAction::mouseButton(void)
+{
+    return(_mouseButton);
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyAction::mouseRow
+//
+// Returns the terminal row (0-indexed)
+//-------------------------------------------------------------------------
+int
+CxKeyAction::mouseRow(void)
+{
+    return(_mouseRow);
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyAction::mouseCol
+//
+// Returns the terminal column (0-indexed)
+//-------------------------------------------------------------------------
+int
+CxKeyAction::mouseCol(void)
+{
+    return(_mouseCol);
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyAction::mouseModifiers
+//
+// Returns modifier bit flags: 4=shift, 8=meta, 16=ctrl
+//-------------------------------------------------------------------------
+int
+CxKeyAction::mouseModifiers(void)
+{
+    return(_mouseModifiers);
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyAction::mouseShift
+//
+// Returns 1 if shift held, 0 otherwise
+//-------------------------------------------------------------------------
+int
+CxKeyAction::mouseShift(void)
+{
+    return((_mouseModifiers & 4) ? 1 : 0);
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyAction::mouseCtrl
+//
+// Returns 1 if ctrl held, 0 otherwise
+//-------------------------------------------------------------------------
+int
+CxKeyAction::mouseCtrl(void)
+{
+    return((_mouseModifiers & 16) ? 1 : 0);
 }

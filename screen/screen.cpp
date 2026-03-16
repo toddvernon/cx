@@ -737,3 +737,45 @@ CxScreen::restoreWindowTitle(void)
 {
     fputs("\033[23;0t", stdout);
 }
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::enableMouseTracking
+//
+// Enable terminal mouse tracking using SGR extended mode. This provides:
+// - Button press events
+// - Button release events
+// - Mouse drag (button-motion) events
+// - Scroll wheel events
+// - Extended coordinate support (handles terminals wider/taller than 223)
+//
+// Supported by modern terminals: iTerm2, Terminal.app, xterm, kitty, etc.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::enableMouseTracking(void)
+{
+    fputs("\033[?1000h", stdout);  // Enable basic mouse tracking
+    fputs("\033[?1002h", stdout);  // Enable button-event tracking (drag)
+    fputs("\033[?1006h", stdout);  // Enable SGR extended coordinates
+    fflush(stdout);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::disableMouseTracking
+//
+// Disable terminal mouse tracking. Should be called before exiting the
+// application to restore normal terminal behavior.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::disableMouseTracking(void)
+{
+    fputs("\033[?1006l", stdout);  // Disable SGR extended
+    fputs("\033[?1002l", stdout);  // Disable button-event
+    fputs("\033[?1000l", stdout);  // Disable basic tracking
+    fflush(stdout);
+}

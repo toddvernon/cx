@@ -106,6 +106,12 @@ class CxScreen
     static void restoreWindowTitle(void);
     // pop and restore previously saved window title from terminal's title stack
 
+    static void enableMouseTracking(void);
+    // enable terminal mouse tracking (SGR extended mode)
+
+    static void disableMouseTracking(void);
+    // disable terminal mouse tracking
+
 	static void moveCursorLeft( int num );
 	// move cursor to the left num characters
 

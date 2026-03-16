@@ -54,6 +54,76 @@
 // Static member definition for idle callbacks
 CxSList< CxFunctor * > CxKeyboard::idleCallbackQueue;
 
+// Static member definitions for double-click detection
+struct timeval CxKeyboard::_lastClickTime = {0, 0};
+int CxKeyboard::_lastClickRow = -1;
+int CxKeyboard::_lastClickCol = -1;
+int CxKeyboard::_lastClickButton = 0;
+int CxKeyboard::_lastClickValid = 0;
+int CxKeyboard::_doubleClickThresholdMs = 400;  // default 400ms
+
+
+//-------------------------------------------------------------------------
+// CxKeyboard::isDoubleClick
+//
+// Check if the current click qualifies as a double-click:
+// - Same button as last click
+// - Same or adjacent position (within 1 cell tolerance)
+// - Within time threshold
+//-------------------------------------------------------------------------
+/*static*/
+int
+CxKeyboard::isDoubleClick(int button, int row, int col)
+{
+    if (!_lastClickValid) {
+        return 0;
+    }
+
+    // Must be same button
+    if (button != _lastClickButton) {
+        return 0;
+    }
+
+    // Must be same or adjacent position (allow 1 cell tolerance)
+    int rowDiff = row - _lastClickRow;
+    int colDiff = col - _lastClickCol;
+    if (rowDiff < 0) rowDiff = -rowDiff;
+    if (colDiff < 0) colDiff = -colDiff;
+    if (rowDiff > 0 || colDiff > 1) {
+        return 0;  // Too far apart
+    }
+
+    // Check time elapsed
+    struct timeval now;
+    gettimeofday(&now, NULL);
+
+    long elapsed_ms = (now.tv_sec - _lastClickTime.tv_sec) * 1000 +
+                      (now.tv_usec - _lastClickTime.tv_usec) / 1000;
+
+    if (elapsed_ms < 0 || elapsed_ms > _doubleClickThresholdMs) {
+        return 0;  // Too slow
+    }
+
+    return 1;  // It's a double-click
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyboard::recordClick
+//
+// Record a click for future double-click detection.
+//-------------------------------------------------------------------------
+/*static*/
+void
+CxKeyboard::recordClick(int button, int row, int col)
+{
+    gettimeofday(&_lastClickTime, NULL);
+    _lastClickRow = row;
+    _lastClickCol = col;
+    _lastClickButton = button;
+    _lastClickValid = 1;
+}
+
 
 //-------------------------------------------------------------------------
 // CxKeyboard::addIdleCallback
@@ -64,6 +134,30 @@ void
 CxKeyboard::addIdleCallback( CxFunctor *callback )
 {
     idleCallbackQueue.append( callback );
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyboard::setDoubleClickThreshold
+//
+// Set the double-click detection threshold in milliseconds.
+//-------------------------------------------------------------------------
+void
+CxKeyboard::setDoubleClickThreshold( int milliseconds )
+{
+    _doubleClickThresholdMs = milliseconds;
+}
+
+
+//-------------------------------------------------------------------------
+// CxKeyboard::getDoubleClickThreshold
+//
+// Get the current double-click threshold in milliseconds.
+//-------------------------------------------------------------------------
+int
+CxKeyboard::getDoubleClickThreshold( void )
+{
+    return _doubleClickThresholdMs;
 }
 
 
@@ -598,11 +692,99 @@ CxKeyboard::getAction( void )
     //---------------------------------------------------------------------------------------------
     if (c==27) {
         keyString = handleEscapeSequence(c);
+
+        //-----------------------------------------------------------------------------------------
+        // Check for mouse sequence - create CxKeyAction directly instead of hash lookup
+        //-----------------------------------------------------------------------------------------
+        if (keyString.length() >= 6 && keyString.data()[0] == 'M' &&
+            keyString.data()[1] == 'O' && keyString.data()[2] == 'U' &&
+            keyString.data()[3] == 'S' && keyString.data()[4] == 'E' &&
+            keyString.data()[5] == ':') {
+
+            // Parse MOUSE:button:col:row:release:modifiers:motion
+            // Find field positions
+            int pos = 6;  // skip "MOUSE:"
+            int fieldStart = pos;
+
+            // Parse button
+            int button = 0;
+            while (pos < (int)keyString.length() && keyString.data()[pos] != ':') {
+                button = button * 10 + (keyString.data()[pos] - '0');
+                pos++;
+            }
+            pos++;  // skip ':'
+
+            // Parse col
+            int col = 0;
+            while (pos < (int)keyString.length() && keyString.data()[pos] != ':') {
+                col = col * 10 + (keyString.data()[pos] - '0');
+                pos++;
+            }
+            pos++;  // skip ':'
+
+            // Parse row
+            int row = 0;
+            while (pos < (int)keyString.length() && keyString.data()[pos] != ':') {
+                row = row * 10 + (keyString.data()[pos] - '0');
+                pos++;
+            }
+            pos++;  // skip ':'
+
+            // Parse release
+            int release = 0;
+            while (pos < (int)keyString.length() && keyString.data()[pos] != ':') {
+                release = release * 10 + (keyString.data()[pos] - '0');
+                pos++;
+            }
+            pos++;  // skip ':'
+
+            // Parse modifiers
+            int modifiers = 0;
+            while (pos < (int)keyString.length() && keyString.data()[pos] != ':') {
+                modifiers = modifiers * 10 + (keyString.data()[pos] - '0');
+                pos++;
+            }
+            pos++;  // skip ':'
+
+            // Parse motion flag
+            int motion = 0;
+            while (pos < (int)keyString.length()) {
+                motion = motion * 10 + (keyString.data()[pos] - '0');
+                pos++;
+            }
+
+            // Convert terminal 1-indexed coords to 0-indexed
+            row = row - 1;
+            col = col - 1;
+
+            // Determine action type
+            CxKeyAction::aType actionType;
+            if (button == 4 || button == 5) {
+                actionType = CxKeyAction::MOUSE_WHEEL;
+            } else if (motion) {
+                actionType = CxKeyAction::MOUSE_DRAG;
+            } else if (release) {
+                actionType = CxKeyAction::MOUSE_RELEASE;
+                // Don't clear double-click state on release - we need it for the next press
+            } else {
+                // Check for double-click before recording this click
+                if (isDoubleClick(button, row, col)) {
+                    actionType = CxKeyAction::MOUSE_DOUBLE_CLICK;
+                    _lastClickValid = 0;  // Reset so triple-click doesn't trigger
+                } else {
+                    actionType = CxKeyAction::MOUSE_PRESS;
+                    recordClick(button, row, col);
+                }
+            }
+
+            return CxKeyAction(actionType, button, row, col, modifiers);
+        }
+
         keyString = keyHash[ keyString ];
     }
-    
+
     CxKeyAction keyAction( keyString );
-    
+
     return(keyAction);
 }
 
@@ -736,7 +918,15 @@ CxKeyboard::handleEscapeSequence(int c)
 
     //int c3 = getchar();
     int c3 = readKey();
-    
+
+    //---------------------------------------------------------------------------------------------
+    // SGR mouse sequence: ESC [ <
+    // Passes parsing to handleSGRMouseSequence which reads the rest
+    //---------------------------------------------------------------------------------------------
+    if ((c1==27) && (c2==91) && (c3==60)) {
+        return handleSGRMouseSequence();
+    }
+
     //---------------------------------------------------------------------------------------------
     // arrow up
     //---------------------------------------------------------------------------------------------
@@ -995,6 +1185,93 @@ CxKeyboard::handleEscapeSequence(int c)
     }
     
     return( "<unknown>" );
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxKeyboard::handleSGRMouseSequence
+//
+// Parse SGR extended mouse sequence after ESC [ < has been seen.
+// Format: <button>;<col>;<row>[Mm]
+// Returns special string format: MOUSE:button:col:row:release:modifiers
+//
+// SGR button encoding:
+//   0 = left button, 1 = middle, 2 = right
+//   32+ = motion (add to button for drag)
+//   64 = wheel up, 65 = wheel down
+//
+// Modifier bits (in button value):
+//   +4 = shift, +8 = meta/alt, +16 = ctrl
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+CxString
+CxKeyboard::handleSGRMouseSequence(void)
+{
+    // Parse button number
+    int rawButton = 0;
+    int c;
+    while ((c = readKey()) != ';') {
+        if (c >= '0' && c <= '9') {
+            rawButton = rawButton * 10 + (c - '0');
+        }
+    }
+
+    // Parse column number (1-indexed from terminal)
+    int col = 0;
+    while ((c = readKey()) != ';') {
+        if (c >= '0' && c <= '9') {
+            col = col * 10 + (c - '0');
+        }
+    }
+
+    // Parse row number, terminated by M (press) or m (release)
+    int row = 0;
+    while (1) {
+        c = readKey();
+        if (c == 'M' || c == 'm') break;
+        if (c >= '0' && c <= '9') {
+            row = row * 10 + (c - '0');
+        }
+    }
+
+    int release = (c == 'm') ? 1 : 0;
+
+    // Extract modifiers from button value (bits 2-4)
+    int modifiers = rawButton & (4 | 8 | 16);
+
+    // Extract base button (removing modifiers and motion flag)
+    int baseButton = rawButton & ~(4 | 8 | 16);
+
+    // Decode button number to our convention:
+    // 1=left, 2=middle, 3=right, 4=wheel-up, 5=wheel-down
+    int button;
+    int isMotion = 0;
+
+    if (baseButton >= 32) {
+        // Motion event (drag)
+        isMotion = 1;
+        baseButton = baseButton - 32;
+    }
+
+    if (baseButton == 64) {
+        button = 4;  // wheel up
+    } else if (baseButton == 65) {
+        button = 5;  // wheel down
+    } else if (baseButton == 0) {
+        button = 1;  // left
+    } else if (baseButton == 1) {
+        button = 2;  // middle
+    } else if (baseButton == 2) {
+        button = 3;  // right
+    } else {
+        button = 1;  // default to left for unknown
+    }
+
+    // Return encoded mouse string: MOUSE:button:col:row:release:modifiers:motion
+    char buffer[64];
+    sprintf(buffer, "MOUSE:%d:%d:%d:%d:%d:%d", button, col, row, release, modifiers, isMotion);
+    return buffer;
 }
 
 

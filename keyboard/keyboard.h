@@ -65,6 +65,12 @@ class CxKeyboard
     static CxSList< CxFunctor * > idleCallbackQueue;
         // queue of callbacks to call during idle
 
+    static void setDoubleClickThreshold( int milliseconds );
+        // set the double-click detection threshold (default 400ms)
+
+    static int getDoubleClickThreshold( void );
+        // get the current double-click threshold in milliseconds
+
   private:
     
     void setupTerminalFeatures(void);
@@ -86,17 +92,34 @@ class CxKeyboard
     
     static CxString handleEscapeSequence(int c);
     // handle known escape sequences
-    
+
+    static CxString handleSGRMouseSequence(void);
+    // handle SGR extended mouse sequence (ESC [ < ...)
+
     static CxString handleControlKeySequence(int c );
     // handle known control key codes
-    
+
     static CxString handleKey( int c );
     // handle normal ascii keys
     
     CxHashmap< CxString, CxString > keyHash;
-    
+
     struct termios _oldt;
     struct termios _newt;
+
+    // Double-click detection state (static so it persists across getAction calls)
+    static struct timeval _lastClickTime;
+    static int _lastClickRow;
+    static int _lastClickCol;
+    static int _lastClickButton;
+    static int _lastClickValid;  // 1 if last click data is valid
+    static int _doubleClickThresholdMs;  // configurable threshold (default 400)
+
+    static int isDoubleClick(int button, int row, int col);
+    // Check if current click qualifies as double-click (same position, within threshold)
+
+    static void recordClick(int button, int row, int col);
+    // Record click for future double-click detection
 };
 
 #endif

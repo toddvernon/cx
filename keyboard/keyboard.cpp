@@ -613,11 +613,26 @@ CxKeyboard::readKey(CxKeyboard::BLOCKING mode = WAIT)
 
     if (mode == CxKeyboard::NO_WAIT) {
 
-        // Use select() with 100ms timeout for escape sequence detection
+        // Inter-byte timeout for escape sequence detection. Used to tell
+        // a bare ESC from the start of an arrow/function key sequence.
+        //
+        // On modern terminals all bytes of an escape sequence arrive in
+        // well under a millisecond, so 100ms is plenty. On vintage tty
+        // pipelines (SunOS/IRIX serial console, slow CPU, STREAMS line
+        // discipline cooking one byte at a time, fast key autorepeat)
+        // the gap between ESC and '[' can easily exceed 100ms, which
+        // causes held arrow keys to be misread as bare ESC. Give those
+        // platforms a full second of grace.
+        //
         FD_ZERO(&fds);
         FD_SET(STDIN_FILENO, &fds);
-        tv.tv_sec = 0;
-        tv.tv_usec = 100000;  // 100ms timeout
+#if defined(_OSX_) || defined(_LINUX_)
+        tv.tv_sec  = 0;
+        tv.tv_usec = 100000;   // 100ms - modern terminals
+#else
+        tv.tv_sec  = 1;
+        tv.tv_usec = 0;        // 1s - vintage serial / slow tty
+#endif
 
         int ready = select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);
 

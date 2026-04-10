@@ -177,7 +177,11 @@ CxKeyboard::CxKeyboard( void )
     keyHash.insert("5",                     "CONTROL:E");
     keyHash.insert("6",                     "CONTROL:F");
     keyHash.insert("7",                     "CONTROL:G");
+#if defined(_OSX_) || defined(_LINUX_)
     keyHash.insert("8",                     "CONTROL:H");
+#else
+    keyHash.insert("8",                     "BACKSPACE:<backspace>");
+#endif
 
     keyHash.insert("9",                     "TAB:<HT>");
     keyHash.insert("10",                    "NEWLINE:<NL>");
@@ -630,8 +634,8 @@ CxKeyboard::readKey(CxKeyboard::BLOCKING mode = WAIT)
         tv.tv_sec  = 0;
         tv.tv_usec = 100000;   // 100ms - modern terminals
 #else
-        tv.tv_sec  = 1;
-        tv.tv_usec = 0;        // 1s - vintage serial / slow tty
+        tv.tv_sec  = 0;
+        tv.tv_usec = 300000;   // 300ms - vintage serial / slow tty
 #endif
 
         int ready = select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);

@@ -57,6 +57,10 @@ int ioctl(int fd, int request, ...);
 struct winsize CxScreen::ws;
 struct sigaction CxScreen::sa;
 CxSList< CxFunctor * > CxScreen::screenSizeCallbackQueue;
+int CxScreen::_subtractRows = 0;
+int CxScreen::_subtractCols = 0;
+int CxScreen::_overrideRows = 0;
+int CxScreen::_overrideCols = 0;
  
 //-------------------------------------------------------------------------------------------------
 // CxScreen::CxScreen
@@ -220,6 +224,14 @@ void CxScreen::sigWinchHandler(int sig)
 // 
 //-------------------------------------------------------------------------------------------------
 /*static*/
+void
+CxScreen::refreshWindowSize(void)
+{
+    ioctl(STDIN_FILENO, TIOCGWINSZ, (caddr_t) &(CxScreen::ws));
+}
+
+
+/*static*/
 struct winsize
 CxScreen::getWindowSize(void)
 {
@@ -237,6 +249,8 @@ CxScreen::getWindowSize(void)
 int
 CxScreen::rows(void)
 {
+    if (_overrideRows > 0) return( _overrideRows );
+    if (_subtractRows > 0) return( ws.ws_row - _subtractRows );
     return( ws.ws_row );
 }
 
@@ -251,7 +265,26 @@ CxScreen::rows(void)
 int
 CxScreen::cols(void)
 {
+    if (_overrideCols > 0) return( _overrideCols );
+    if (_subtractCols > 0) return( ws.ws_col - _subtractCols );
     return( ws.ws_col );
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::setScreenAdjustments
+//
+// Configure screen size adjustments for vintage platforms where the terminal
+// or telnetd reports incorrect dimensions. Ignored on modern platforms.
+//-------------------------------------------------------------------------------------------------
+/*static*/
+void
+CxScreen::setScreenAdjustments(int subRows, int subCols, int overRows, int overCols)
+{
+    _subtractRows = subRows;
+    _subtractCols = subCols;
+    _overrideRows = overRows;
+    _overrideCols = overCols;
 }
 
 

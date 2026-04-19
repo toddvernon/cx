@@ -13,6 +13,14 @@
 
 #include <cx/keyboard/keyboard.h>
 
+#if defined(_SUNOS_)
+extern "C" {
+    int gettimeofday(struct timeval *, struct timezone *);
+    void bzero(char *, int);
+    int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+}
+#endif
+
 /*
  
  Ctrl    ASCII    Dec    Hex    Meaning

@@ -189,7 +189,18 @@ class CxScreen
 
     static CxSList< CxFunctor * > screenSizeCallbackQueue;
     void addScreenSizeCallback( CxFunctor *callback);
-   
+
+    static void refreshWindowSize(void);
+    // re-read terminal dimensions from the kernel (call after external resize)
+
+    static void setScreenAdjustments(int subRows, int subCols, int overRows, int overCols);
+
+private:
+
+    static int _subtractRows;
+    static int _subtractCols;
+    static int _overrideRows;
+    static int _overrideCols;
 };
 
 #endif

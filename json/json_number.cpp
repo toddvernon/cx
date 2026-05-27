@@ -74,7 +74,7 @@ void CxJSONNumber::print(std::ostream& str ) const
 CxString CxJSONNumber::toJsonString(void) const
 {
     char buf[64];
-    sprintf(buf, "%g", _d);
+    sprintf(buf, "%.17g", _d);
     return CxString(buf);
 }
 

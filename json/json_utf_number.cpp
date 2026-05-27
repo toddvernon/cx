@@ -74,7 +74,7 @@ void CxJSONUTFNumber::print(std::ostream& str ) const
 CxString CxJSONUTFNumber::toJsonString(void) const
 {
     char buf[64];
-    sprintf(buf, "%g", _d);
+    sprintf(buf, "%.17g", _d);
     return CxString(buf);
 }
 

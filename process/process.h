@@ -53,6 +53,16 @@ public:
     int run(CxString command);
 
     //---------------------------------------------------------------------------------------------
+    // Run a command in an optional working directory, with an optional timeout.
+    //   cwd        : NULL or "" inherits the caller's cwd; otherwise chdir before exec
+    //   timeout_ms : 0 waits indefinitely; > 0 kills the command after the deadline
+    // Returns 0 on a clean launch + wait, -1 on launch failure or a timeout kill.
+    // Combined stdout+stderr is in getOutput(); exit code in getExitCode()
+    // (128 + signal if the command was killed by a signal); see wasTimedOut().
+    //---------------------------------------------------------------------------------------------
+    int run(const char *command, const char *cwd, int timeout_ms);
+
+    //---------------------------------------------------------------------------------------------
     // Get the captured output from the last run
     //---------------------------------------------------------------------------------------------
     CxString getOutput(void);
@@ -61,6 +71,12 @@ public:
     // Get the exit code from the last run
     //---------------------------------------------------------------------------------------------
     int getExitCode(void);
+
+    //---------------------------------------------------------------------------------------------
+    // True if the last run was killed because it exceeded its timeout (vs. a
+    // normal exit). Only meaningful after a run() with timeout_ms > 0.
+    //---------------------------------------------------------------------------------------------
+    int wasTimedOut(void);
 
     //---------------------------------------------------------------------------------------------
     // Parse a single line for build error pattern (file:line:col: or file:line:)
@@ -74,6 +90,7 @@ public:
 private:
     CxString _output;
     int _exitCode;
+    int _killedByTimeout;
 };
 
 #endif

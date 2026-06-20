@@ -14,18 +14,14 @@
 #include "process.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 #if defined(_LINUX_) || defined(_OSX_) || defined(_SUNOS_) || defined(_SOLARIS6_) || defined(_SOLARIS10_) || defined(_IRIX6_) || defined(_NETBSD_) || defined(_NEXT_)
 #include <sys/wait.h>
-#endif
-
-//-------------------------------------------------------------------------
-// SunOS 4.x needs extern "C" declaration for pclose
-//-------------------------------------------------------------------------
-#if defined(_SUNOS_)
-extern "C" {
-int pclose(FILE *stream);
-}
 #endif
 
 
@@ -33,7 +29,7 @@ int pclose(FILE *stream);
 // Constructor
 //-------------------------------------------------------------------------------------------------
 CxProcess::CxProcess()
-    : _exitCode(-1)
+    : _exitCode(-1), _killedByTimeout(0)
 {
 }
 
@@ -47,44 +43,178 @@ CxProcess::~CxProcess()
 
 
 //-------------------------------------------------------------------------------------------------
-// Run a command and capture output
+// cxMilliSleep -- portable sub-second sleep via an empty select() timeout.
+//-------------------------------------------------------------------------------------------------
+static void
+cxMilliSleep(int ms)
+{
+    struct timeval tv;
+    tv.tv_sec  = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+    select(0, (fd_set*)0, (fd_set*)0, (fd_set*)0, &tv);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Run a command and capture output (no cwd, no timeout).
+// Delegates to the full form so there is a single implementation.
 //-------------------------------------------------------------------------------------------------
 int
 CxProcess::run(const char *command)
 {
+    return run(command, (const char*)0, 0);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Run a command in an optional working directory, with an optional timeout.
+//
+// fork + pipe + execl("/bin/sh","-c"), draining combined stdout/stderr through a
+// select() loop. The child gets its own process group so a timeout can signal
+// the whole tree (SIGTERM, ~1s grace, then SIGKILL). Exit code is WEXITSTATUS,
+// or 128+signal if the command was killed. POSIX-only (fork/pipe/dup2/execl/
+// chdir/setpgid/select/waitpid/kill), so it builds the same on macOS, Linux,
+// and Solaris.
+//-------------------------------------------------------------------------------------------------
+int
+CxProcess::run(const char *command, const char *cwd, int timeout_ms)
+{
     _output = "";
     _exitCode = -1;
+    _killedByTimeout = 0;
 
-    if (command == NULL || command[0] == '\0') {
+    if (command == (const char*)0 || command[0] == '\0') {
         return -1;
     }
 
-    // Redirect stderr to stdout so we capture both
-    CxString fullCommand = command;
-    fullCommand += " 2>&1";
-
-    FILE *pipe = popen(fullCommand.data(), "r");
-    if (pipe == NULL) {
+    int pipefd[2];
+    if (pipe(pipefd) != 0) {
         return -1;
     }
 
-    // Read output
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return -1;
+    }
+
+    if (pid == 0) {
+        // ---- child ----
+        setpgid(0, 0);                       // own group, for a group-wide kill
+
+        close(pipefd[0]);
+        dup2(pipefd[1], 1);                  // stdout -> pipe
+        dup2(pipefd[1], 2);                  // stderr -> pipe
+        close(pipefd[1]);
+
+        if (cwd != (const char*)0 && cwd[0] != '\0') {
+            if (chdir(cwd) != 0) {
+                fprintf(stderr, "cx: chdir failed: %s\n", cwd);
+                _exit(127);
+            }
+        }
+
+        execl("/bin/sh", "sh", "-c", command, (char*)0);
+        _exit(127);                          // exec failed
+    }
+
+    // ---- parent ----
+    close(pipefd[1]);
+    setpgid(pid, pid);                       // best-effort (races with exec)
+
+    struct timeval deadline;
+    int haveDeadline = 0;
+    if (timeout_ms > 0) {
+        struct timeval now;
+        gettimeofday(&now, (struct timezone*)0);
+        long carry = now.tv_usec + (long)(timeout_ms % 1000) * 1000L;
+        deadline.tv_sec  = now.tv_sec + (timeout_ms / 1000) + (carry / 1000000L);
+        deadline.tv_usec = carry % 1000000L;
+        haveDeadline = 1;
+    }
+
     char buffer[4096];
-    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
-        _output += buffer;
+    int done = 0;
+
+    while (!done) {
+
+        if (haveDeadline) {
+            struct timeval now;
+            gettimeofday(&now, (struct timezone*)0);
+            if (now.tv_sec > deadline.tv_sec ||
+                (now.tv_sec == deadline.tv_sec && now.tv_usec >= deadline.tv_usec)) {
+                // Deadline passed: terminate the group, grace, then hard kill.
+                _killedByTimeout = 1;
+                kill(-pid, SIGTERM);
+                int reaped = 0;
+                int waited = 0;
+                while (waited < 1000) {
+                    int st;
+                    if (waitpid(pid, &st, WNOHANG) == pid) { reaped = 1; break; }
+                    cxMilliSleep(100);
+                    waited += 100;
+                }
+                if (!reaped) {
+                    int st;
+                    kill(-pid, SIGKILL);
+                    waitpid(pid, &st, 0);
+                }
+                close(pipefd[0]);
+                _exitCode = -1;
+                return -1;
+            }
+        }
+
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(pipefd[0], &rset);
+
+        struct timeval tv;
+        tv.tv_sec  = 0;
+        tv.tv_usec = 100000;                 // 100ms slice
+
+        int rc = select(pipefd[0] + 1, &rset, (fd_set*)0, (fd_set*)0, &tv);
+
+        if (rc < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            break;                           // select error
+        }
+
+        if (rc > 0 && FD_ISSET(pipefd[0], &rset)) {
+            int n = read(pipefd[0], buffer, sizeof(buffer) - 1);
+            if (n > 0) {
+                buffer[n] = '\0';
+                _output += buffer;
+            } else if (n == 0) {
+                done = 1;                     // EOF: child closed its write end
+            } else {
+                if (errno == EINTR) {
+                    continue;
+                }
+                done = 1;                     // read error
+            }
+        }
+        // rc == 0: nothing this slice; loop re-checks the deadline
     }
 
-    // Get exit status
-    int status = pclose(pipe);
-#if defined(_LINUX_) || defined(_OSX_) || defined(_SUNOS_) || defined(_SOLARIS6_) || defined(_SOLARIS10_) || defined(_IRIX6_) || defined(_NETBSD_) || defined(_NEXT_)
+    close(pipefd[0]);
+
+    int status;
+    if (waitpid(pid, &status, 0) < 0) {
+        _exitCode = -1;                       // launched, but couldn't reap
+        return 0;
+    }
+
     if (WIFEXITED(status)) {
         _exitCode = WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+        _exitCode = 128 + WTERMSIG(status);
     } else {
         _exitCode = -1;
     }
-#else
-    _exitCode = status;
-#endif
 
     return 0;
 }
@@ -117,6 +247,16 @@ int
 CxProcess::getExitCode(void)
 {
     return _exitCode;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Was the last run killed by its timeout?
+//-------------------------------------------------------------------------------------------------
+int
+CxProcess::wasTimedOut(void)
+{
+    return _killedByTimeout;
 }
 
 

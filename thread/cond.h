@@ -23,7 +23,7 @@
 #include <cx/base/string.h>
 
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
 #include <pthread.h>
 #endif
 
@@ -65,7 +65,7 @@ class CxCondition
 
   private:
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
     pthread_cond_t _condition;
 #endif
 

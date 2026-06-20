@@ -22,7 +22,7 @@
 //-------------------------------------------------------------------------
 CxRecursiveMutex::CxRecursiveMutex( void )
 {
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
     _thCount = 0;
 #endif
 
@@ -40,7 +40,7 @@ CxRecursiveMutex::CxRecursiveMutex( void )
 CxRecursiveMutex::~CxRecursiveMutex( void )
 {
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
 #endif
 
 #ifdef WIN32
@@ -57,7 +57,7 @@ void
 CxRecursiveMutex::acquire( void )
 {
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
 
     CX_THREAD_TYPE mySelf = CX_THREAD_SELF;
 
@@ -96,7 +96,7 @@ void
 CxRecursiveMutex::release( void )
 {
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
 
     CX_THREAD_TYPE mySelf = CX_THREAD_SELF;
 
@@ -112,12 +112,14 @@ CxRecursiveMutex::release( void )
         throw CxMutexException( "CxRecursiveMutex::release():internal error 2" );
     }
 
-    _guardMutex.release();
     _thCount--;
 
     if ( _thCount == 0 ) {
         _thOwner = CX_NO_THREAD;
+        _guardMutex.release();
         _mutex.release();
+    } else {
+        _guardMutex.release();
     }
 
 #endif

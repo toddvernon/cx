@@ -258,11 +258,26 @@ void
 CxSocketImpl::setBlocking( void )
 {
 
-#if defined(_LINUX_) || defined(_SOLARIS6_) || defined(_SOLARIS10_) || defined(_NETBSD_)	
+#if defined(_LINUX_) || defined(_SOLARIS6_) || defined(_SOLARIS10_) || defined(_NETBSD_)
     int flags = fcntl( _sfd, F_GETFL, 0);
-    fcntl( _sfd, F_SETFL, flags |~ O_NONBLOCK);    
+    fcntl( _sfd, F_SETFL, flags |~ O_NONBLOCK);
 #endif
 
+}
+
+
+//-------------------------------------------------------------------------
+// CxSocketImpl::setReuseAddr
+//
+// Set SO_REUSEADDR so a listening port left in TIME_WAIT by a prior instance
+// can be rebound immediately (a daemon restarting after a crash/stop must not
+// fail bind with "address in use"). char* cast keeps old SVR4 setsockopt
+// prototypes happy. Returns setsockopt's rc; a failure is non-fatal.
+//-------------------------------------------------------------------------
+int
+CxSocketImpl::setReuseAddr( int on_ )
+{
+    return( ::setsockopt( _sfd, SOL_SOCKET, SO_REUSEADDR, (char*)&on_, sizeof(on_) ) );
 }
 
 

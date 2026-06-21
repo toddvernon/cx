@@ -152,6 +152,9 @@ class CxSocket
     void setBlocking( void );
     // set the socket blocking
 
+    int setReuseAddr( int on = 1 );
+    // set SO_REUSEADDR (call before bind) so a port in TIME_WAIT can be rebound
+
     static int initWinSock( void );
     // initialize winsock if on windows
     

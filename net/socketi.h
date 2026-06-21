@@ -175,6 +175,9 @@ class CxSocketImpl
     void setBlocking( void );
     // ask the socket to block
 
+    int setReuseAddr( int on = 1 );
+    // set SO_REUSEADDR so a port in TIME_WAIT can be rebound after a restart
+
     void close( void );
     // close the socket
 

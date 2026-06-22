@@ -63,6 +63,16 @@ public:
     int run(const char *command, const char *cwd, int timeout_ms);
 
     //---------------------------------------------------------------------------------------------
+    // As above, but drop privileges to `user` before exec (NULL/"" = run as the
+    // caller, the historical behavior). The child validates the user via
+    // getpwnam and does initgroups + setgid + setuid (+ a login-ish HOME/USER/
+    // LOGNAME/SHELL env); a failed drop _exit(127)s rather than running as the
+    // caller. Requires the caller to be root to drop to a different user.
+    // Portable across Solaris 2.6 / BSD / Linux / macOS / Irix (no #ifdef).
+    //---------------------------------------------------------------------------------------------
+    int run(const char *command, const char *cwd, int timeout_ms, const char *user);
+
+    //---------------------------------------------------------------------------------------------
     // Get the captured output from the last run
     //---------------------------------------------------------------------------------------------
     CxString getOutput(void);

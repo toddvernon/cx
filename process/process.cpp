@@ -14,9 +14,12 @@
 #include "process.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pwd.h>
+#include <grp.h>
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -43,6 +46,69 @@ CxProcess::~CxProcess()
 
 
 //-------------------------------------------------------------------------------------------------
+// cxSetEnvDup -- putenv a NAME=value pair, strdup'd so it outlives the call.
+// putenv (not setenv: setenv is absent on Solaris 2.6) keeps the pointer, so it
+// must persist; we leak it deliberately (called in a child about to exec).
+//-------------------------------------------------------------------------------------------------
+static void
+cxSetEnvDup(const char *name, const char *value)
+{
+    if (name == (const char*)0 || value == (const char*)0) {
+        return;
+    }
+    char *kv = (char*) malloc(strlen(name) + 1 + strlen(value) + 1);
+    if (kv == (char*)0) {
+        return;
+    }
+    sprintf(kv, "%s=%s", name, value);
+    putenv(kv);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// cxDropToUser -- drop privileges to `user` in the child, before exec, and set a
+// login-ish environment so the command behaves as that user. Returns 0 on
+// success, -1 on any failure (the caller _exit()s, so a failed drop can never
+// fall through to running as root).
+//
+// Max portability: getpwnam + initgroups + setgid + setuid + putenv -- all
+// present on Solaris 2.6 / SunOS 4 / BSD / Linux / macOS / Irix, no per-platform
+// #ifdef. Deliberately NOT getpwnam_r (its signature differs Solaris-vs-POSIX)
+// -- safe here because we're single-threaded after fork. Order matters: groups
+// and gid are set while still root; setuid is LAST and irreversible (a permanent
+// drop, vs. seteuid which could be reversed).
+//-------------------------------------------------------------------------------------------------
+static int
+cxDropToUser(const char *user)
+{
+    struct passwd *pw = getpwnam(user);
+    if (pw == (struct passwd*)0) {
+        fprintf(stderr, "cx: unknown user: %s\n", user);
+        return -1;
+    }
+    if (initgroups(pw->pw_name, pw->pw_gid) != 0) {
+        fprintf(stderr, "cx: initgroups failed for %s\n", user);
+        return -1;
+    }
+    if (setgid(pw->pw_gid) != 0) {
+        fprintf(stderr, "cx: setgid failed for %s\n", user);
+        return -1;
+    }
+    if (setuid(pw->pw_uid) != 0) {
+        fprintf(stderr, "cx: setuid failed for %s\n", user);
+        return -1;
+    }
+    cxSetEnvDup("HOME", pw->pw_dir);
+    cxSetEnvDup("USER", pw->pw_name);
+    cxSetEnvDup("LOGNAME", pw->pw_name);
+    if (pw->pw_shell != (char*)0 && pw->pw_shell[0] != '\0') {
+        cxSetEnvDup("SHELL", pw->pw_shell);
+    }
+    return 0;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // cxMilliSleep -- portable sub-second sleep via an empty select() timeout.
 //-------------------------------------------------------------------------------------------------
 static void
@@ -62,7 +128,18 @@ cxMilliSleep(int ms)
 int
 CxProcess::run(const char *command)
 {
-    return run(command, (const char*)0, 0);
+    return run(command, (const char*)0, 0, (const char*)0);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Three-arg form: run with cwd/timeout but no privilege drop (inherits the
+// caller's uid). Delegates to the full form so there is one implementation.
+//-------------------------------------------------------------------------------------------------
+int
+CxProcess::run(const char *command, const char *cwd, int timeout_ms)
+{
+    return run(command, cwd, timeout_ms, (const char*)0);
 }
 
 
@@ -75,9 +152,15 @@ CxProcess::run(const char *command)
 // or 128+signal if the command was killed. POSIX-only (fork/pipe/dup2/execl/
 // chdir/setpgid/select/waitpid/kill), so it builds the same on macOS, Linux,
 // and Solaris.
+//
+// `user`: NULL or "" runs as the caller's uid (the historical behavior). When
+// set, the child drops privileges to that user (getpwnam validated) before
+// exec; a failed drop _exit(127)s rather than running as the caller. Requires
+// the caller to be root (only root can setuid to another user); a non-root
+// caller asking for a different user fails the drop and the child exits 127.
 //-------------------------------------------------------------------------------------------------
 int
-CxProcess::run(const char *command, const char *cwd, int timeout_ms)
+CxProcess::run(const char *command, const char *cwd, int timeout_ms, const char *user)
 {
     _output = "";
     _exitCode = -1;
@@ -107,6 +190,14 @@ CxProcess::run(const char *command, const char *cwd, int timeout_ms)
         dup2(pipefd[1], 1);                  // stdout -> pipe
         dup2(pipefd[1], 2);                  // stderr -> pipe
         close(pipefd[1]);
+
+        // Drop to the target user (if any) while still root: groups + gid +
+        // uid, then a login-ish env. A failed drop never falls through to root.
+        if (user != (const char*)0 && user[0] != '\0') {
+            if (cxDropToUser(user) != 0) {
+                _exit(127);
+            }
+        }
 
         if (cwd != (const char*)0 && cwd[0] != '\0') {
             if (chdir(cwd) != 0) {

@@ -3,58 +3,8 @@
 # Figure out the OS
 #
 ########################################################################################
-UNAME_S := $(shell uname -s | tr '[A-Z]' '[a-z]' )
-
-ifeq ($(UNAME_S), linux)
-	UNAME_R := $(shell uname -r | tr '[A-Z]' '[a-z]' )
-	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
-	CPPFLAGS = -D _LINUX_ -g
-endif
-
-#if this is OSX
-ifeq ($(UNAME_S), darwin)
-	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
-	CPPFLAGS = -D _OSX_ -g -Wno-deprecated
-endif
-
-#if this is SUNOS or SOLARIS
-ifeq ($(UNAME_S),sunos)
-    UNAME_R := $(shell uname -r)
-
-    ifeq ($(UNAME_R), 4.1.3)
-        CPPFLAGS = -D _SUNOS_ -g
-    endif
-
-    ifeq ($(UNAME_R), 4.1.4)
-        CPPFLAGS = -D _SUNOS_ -g
-    endif
-
-    ifeq ($(UNAME_R), 5.6)
-        CPPFLAGS = -D _SOLARIS6_ -g
-    endif
-
-    ifeq ($(UNAME_R), 5.7)
-        CPPFLAGS = -D _SOLARIS6_ -g
-    endif
-
-    ifeq ($(UNAME_R), 5.10)
-        CPPFLAGS = -D _SOLARIS10_ -g
-    endif
-
-endif
-
-#if this is IRIX
-ifeq ($(UNAME_S),irix)
-	UNAME_R := $(shell uname -r)
- 	ifeq ($(UNAME_R), 6.5) 
-		CPPFLAGS = -D _IRIX6_ -g 
-    endif
-endif
-
-ifeq ($(UNAME_S),nextstep)
-    ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
-    CPPFLAGS = -D _NEXT_ -D_POSIX_SOURCE=1 -g
-endif
+# Platform detection + flags live in cx/platform.mk (single source of truth).
+include platform.mk
 
 
 
@@ -66,8 +16,8 @@ endif
 
 all:
 	test -d ../lib || mkdir ../lib
-	test -d ../lib/$(UNAME_S)_$(ARCH) || mkdir ../lib/$(UNAME_S)_$(ARCH)
-	#mkdir -p ../lib/$(UNAME_S)_$(ARCH)
+	test -d ../lib/$(PLATFORM) || mkdir ../lib/$(PLATFORM)
+	#mkdir -p ../lib/$(PLATFORM)
 
 # Base Library
 	
@@ -324,7 +274,7 @@ clean:
 		cd tz; make clean; \
 	fi
 
-	rm -fr ../lib/$(UNAME_S)/*.a
+	rm -fr ../lib/$(PLATFORM)/*.a
 
 
 ########################################################################################

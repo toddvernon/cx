@@ -15,29 +15,26 @@ INC=        -I../..
 
 ## Platform ###################################################
 
-# get the OS
-UNAME_S := $(shell uname -s | tr '[A-Z]' '[a-z]' )
+# Platform detection + flags live in cx/platform.mk (single source of truth).
+include ../platform.mk
 
-# Check if this is a supported platform (Linux or macOS)
+# regex is a POSIX-regex wrapper; build it only on Linux and macOS (see
+# PLATFORM_SUPPORT.md). This module-local capability gate stays here, not in
+# platform.mk -- platform.mk answers "what OS/arch am I", the module answers
+# "do I build here". The ALL target below is wrapped in ifeq($(BUILD_REGEX),1).
 BUILD_REGEX=0
-
 ifeq ($(UNAME_S),linux)
-	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
-	CPPFLAGS = -D _LINUX_ -g -Wno-deprecated
 	BUILD_REGEX=1
 endif
-
 ifeq ($(UNAME_S),darwin)
-	ARCH := $(shell uname -m | tr '[A-Z]' '[a-z]' )
-	CPPFLAGS = -D _OSX_ -g -Wno-deprecated
 	BUILD_REGEX=1
 endif
 
 
 ## Object #####################################################
 
-LIB_CX_PLATFORM_LIB_DIR=../../lib/$(UNAME_S)_$(ARCH)
-LIB_CX_PLATFORM_OBJECT_DIR=$(UNAME_S)_$(ARCH)
+LIB_CX_PLATFORM_LIB_DIR=../../lib/$(PLATFORM)
+LIB_CX_PLATFORM_OBJECT_DIR=$(PLATFORM)
 
 LIB_CX_REGEX_NAME=libcx_regex.a
 LIB_CX_REGEX_OBJECTS=\
@@ -51,14 +48,14 @@ ifeq ($(BUILD_REGEX),1)
 ALL: MAKE_OBJ_DIR $(LIB_CX_REGEX_NAME)
 
 MAKE_OBJ_DIR:
-	test -d $(UNAME_S)_$(ARCH) || mkdir $(UNAME_S)_$(ARCH)
+	test -d $(PLATFORM) || mkdir $(PLATFORM)
 
 $(LIB_CX_REGEX_NAME): $(LIB_CX_REGEX_OBJECTS)
 	$(RM) $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_REGEX_NAME)
 	$(LIBRARIAN) $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_REGEX_NAME) $(LIB_CX_REGEX_OBJECTS)
 	if [ -f /usr/bin/ranlib -o -f /bin/ranlib ] ; \
 		then ranlib $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_REGEX_NAME) ; fi
-	cp $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_REGEX_NAME) ../../lib/$(UNAME_S)_$(ARCH)
+	cp $(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_REGEX_NAME) ../../lib/$(PLATFORM)
 	@echo "Done building static library "$(LIB_CX_PLATFORM_OBJECT_DIR)/$(LIB_CX_REGEX_NAME)
 
 else

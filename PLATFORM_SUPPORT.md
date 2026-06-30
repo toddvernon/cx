@@ -2,6 +2,38 @@
 
 This document describes which libraries are built and which tests are run on each supported platform.
 
+## Build system (platform detection)
+
+All platform detection lives in `cx/platform.mk`, included by every makefile
+(cx library modules, cx_tests, cx_apps). It derives:
+
+- `UNAME_S`, `UNAME_R`, `ARCH` from `uname`.
+- `CPPFLAGS` with the per-platform compile macro (`-D _SUNOS_`, `-D _SOLARIS6_`,
+  `-D _OSX_`, ...). This is what the `#ifdef` guards in the sources compile
+  against; it is unchanged from the old per-makefile blocks.
+- `PLATFORM_LIBS` (`-lsocket -lnsl` on Solaris, `-lpthread` on NetBSD, empty
+  elsewhere).
+- `PLATFORM = $(PLATFORM_OS)_$(ARCH)` — the per-platform output dir token used
+  for `lib/<PLATFORM>` and the object dirs.
+
+`PLATFORM_OS` encodes the OS release for the sun family so incompatible binaries
+never share a directory (a real problem on shared NFS, since SunOS 4.x and every
+Solaris release all report `uname -s = sunos` and often the same `uname -m`):
+
+| Platform | PLATFORM_OS | Example output dir |
+|----------|-------------|--------------------|
+| Linux | linux | `lib/linux_x86_64` |
+| macOS | darwin | `lib/darwin_arm64` |
+| SunOS 4.x | sunos4 | `lib/sunos4_sun4m` |
+| Solaris 6/7 | solaris6 | `lib/solaris6_sun4m` |
+| Solaris 10 | solaris10 | `lib/solaris10_sun4u` |
+| IRIX 6.5 | irix6 | `lib/irix6_IP22` |
+| NetBSD | netbsd | `lib/netbsd_sparc` |
+| NeXTSTEP | nextstep | (no `uname`; override with `make PLATFORM=...`) |
+
+`linux` and `darwin` keep `PLATFORM_OS == uname_s`, so their dir names are
+unchanged. Requires GNU make on every platform (as the build always has).
+
 ## Supported Platforms
 
 | Platform | Macro | uname -s | uname -r |

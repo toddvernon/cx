@@ -74,7 +74,7 @@ class CxThread
 
     int       _suggestQuit;
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_) || defined(_NETBSD_)
     pthread_t _threadId;
 #endif
 

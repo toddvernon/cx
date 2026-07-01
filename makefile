@@ -154,16 +154,19 @@ all:
 		cd buildoutput; make; \
 	fi
 
-# Thread library (doesn't build on SunOS )
+# Thread library. Excluded ONLY on SunOS 4.x (no POSIX threads there). It DOES
+# build and pass on Solaris 2.6 -- the earlier "!= sunos" gate wrongly excluded
+# Solaris too (Solaris also reports uname_s=sunos); PLATFORM_OS distinguishes
+# sunos4 from solaris6/10. (validated on real Solaris 2.6, 2026-07-01)
 
-	@if [ "$(UNAME_S)" != "sunos" ]; then \
+	@if [ "$(PLATFORM_OS)" != "sunos4" ]; then \
 		if [ ! -d "./thread" ]; then \
 			echo "BUILD ABORT: './thread' not found"; \
 			exit 1;\
 		fi;\
 	fi
 
-	@if [ "$(UNAME_S)" != "sunos" ]; then \
+	@if [ "$(PLATFORM_OS)" != "sunos4" ]; then \
 		if [ -d "./thread" ]; then \
 			cd thread; make; \
 		fi;\

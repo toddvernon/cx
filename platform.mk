@@ -70,19 +70,19 @@ ifeq ($(UNAME_S),sunos)
 	ifeq ($(UNAME_R), 5.6)
 		PLATFORM_OS := solaris6
 		CPPFLAGS = -D _SOLARIS6_ -g
-		PLATFORM_LIBS = -lsocket -lnsl
+		PLATFORM_LIBS = -lsocket -lnsl -lpthread
 	endif
 
 	ifeq ($(UNAME_R), 5.7)
 		PLATFORM_OS := solaris6
 		CPPFLAGS = -D _SOLARIS6_ -g
-		PLATFORM_LIBS = -lsocket -lnsl
+		PLATFORM_LIBS = -lsocket -lnsl -lpthread
 	endif
 
 	ifeq ($(UNAME_R), 5.10)
 		PLATFORM_OS := solaris10
 		CPPFLAGS = -D _SOLARIS10_ -g
-		PLATFORM_LIBS = -lsocket -lnsl
+		PLATFORM_LIBS = -lsocket -lnsl -lpthread
 	endif
 
 endif

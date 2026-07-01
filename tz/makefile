@@ -20,6 +20,13 @@ include ../platform.mk
 
 ## Object #####################################################
 
+# cctz (this library) requires C++11. The cx CPPFLAGS carry no -std, so tz
+# would otherwise rely on the compiler's DEFAULT standard being new enough
+# (gcc >= 6 defaults to gnu++14; older-but-capable gcc 4.8-5.x default to
+# gnu++98 and would fail). Pin it explicitly so tz builds on any C++11 compiler.
+# The pre-C++11 boxes (SunOS 4.x, Solaris 2.6 g++ 2.95, IRIX) never reach here:
+# the parent cx/makefile gates tz off those platforms.
+TZ_STD = -std=c++11
 
 LIB_CX_PLATFORM_LIB_DIR=../../lib/$(PLATFORM)
 LIB_CX_PLATFORM_OBJECT_DIR=$(PLATFORM)
@@ -96,6 +103,6 @@ $(LIB_CX_PLATFORM_OBJECT_DIR)/time_zone_posix.o   : time_zone_posix.cc
 $(LIB_CX_PLATFORM_OBJECT_DIR)/zone_info_source.o	: zone_info_source.cc
 
 $(LIB_CX_TZ_OBJECTS):
-	$(CPP)  $(CPPFLAGS) $(INC) -c $? -o $@
+	$(CPP)  $(CPPFLAGS) $(TZ_STD) $(INC) -c $? -o $@
 
 

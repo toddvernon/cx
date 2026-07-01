@@ -80,10 +80,11 @@ CxFile::tempName(const char* prefix)
 {
 	char buffer[1000];
 
-#ifdef _SUNOS_
-	tmpnam(buffer);
-#else
-	// mkstemp requires a template with XXXXXX pattern
+	// mkstemp requires a template with an XXXXXX pattern. It creates the file
+	// (mode 0600) and honors the caller's prefix, which the tests rely on.
+	// SunOS 4.1.4 has a working mkstemp too -- its <stdlib.h> just omits the
+	// prototype, so it compiles with an implicit-declaration warning and links
+	// fine (the usual SunOS-4 warn-but-link reality). No _SUNOS_ special case.
 	if (prefix != NULL) {
 		sprintf(buffer, "/tmp/%s", prefix);
 	} else {
@@ -93,7 +94,6 @@ CxFile::tempName(const char* prefix)
 	if (fd != -1) {
 		::close(fd);  // mkstemp opens the file, close it
 	}
-#endif
 
 	return(buffer);
 }

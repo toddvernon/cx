@@ -77,7 +77,7 @@ class CxRecursiveMutex
 
   private:
 
-#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_)
+#if defined(_LINUX_) || defined(_OSX_) || defined(_IRIX6_) || defined(_SOLARIS6_) || defined(_SOLARIS10_) || defined(_NETBSD_)
     int                 _thCount;
     CxMutex             _mutex;
     CxMutex             _guardMutex;

@@ -656,14 +656,18 @@ CxString
 CxDateTime::formatTimeLength(CxDateTime startTime, CxDateTime endTime)
 {
     char buffer[1000];
-    time_t sec  = endTime.epochSeconds() - startTime.epochSeconds();
-    
-    unsigned long hr, min, t;
-    
-    hr = sec/3600;
-    t = sec%3600;
-    min = t/60;
-    sec = t%60;
+
+    // See CxTime::formatTimeLength in cx/base/time.cpp: keep h/m/s in unsigned
+    // long, not time_t. On 32-bit NetBSD/sparc time_t is 64-bit but long is
+    // 32-bit, so a time_t "sec" printed with %ld gave a garbage seconds field.
+    time_t elapsed = endTime.epochSeconds() - startTime.epochSeconds();
+
+    unsigned long hr, min, sec, t;
+
+    hr  = (unsigned long)(elapsed / 3600);
+    t   = (unsigned long)(elapsed % 3600);
+    min = t / 60;
+    sec = t % 60;
     
     if ((hr==0) && (min==0) && (sec==0)) {
     sprintf(buffer, "0 seconds");

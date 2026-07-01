@@ -278,36 +278,10 @@ clean:
 
 
 ########################################################################################
-# Create tar archive for distribution
-#
+# Archives are built from the umbrella makefile (../makefile), not here:
+#   make -C .. cxlibs_unix.tar     (this library)
+#   make -C .. cxapps_unix.tar     (cm, psd, heliosAgent)
+#   make -C .. cxtest_unix.tar     (cx_tests)
+# One place to maintain the object/binary exclusion, and it ships cx/platform.mk.
 ########################################################################################
-
-archive:
-	@echo "Creating cxlibs_unix.tar..."
-	@echo "  (extracts to cx/ when untarred from parent directory)"
-	@test -d ../ARCHIVE || mkdir ../ARCHIVE
-	@cd .. && tar cvf ARCHIVE/cxlibs_unix.tar \
-		--exclude='._*' \
-		--exclude='*.o' \
-		--exclude='*.a' \
-		--exclude='.git' \
-		--exclude='.claude' \
-		--exclude='.DS_Store' \
-		--exclude='darwin_*' \
-		--exclude='linux_*' \
-		--exclude='sunos_*' \
-		--exclude='irix_*' \
-		--exclude='netbsd_*' \
-		--exclude='nextstep_*' \
-		--exclude='*.xcodeproj' \
-		--exclude='*.xcworkspace' \
-		--exclude='xcuserdata' \
-		--exclude='DerivedData' \
-		--exclude='*.pbxuser' \
-		--exclude='*.mode1v3' \
-		--exclude='*.mode2v3' \
-		--exclude='*.perspectivev3' \
-		--exclude='*.xcuserstate' \
-		cx
-	@echo "Archive created: ../ARCHIVE/cxlibs_unix.tar"
 

@@ -14,6 +14,11 @@
 #include <stdio.h>
 #include <signal.h>
 #include <termios.h>
+#include <sys/types.h>
+#include <sys/time.h>   // timeval for select() timeout
+#if !defined(_SUNOS_)
+#include <sys/select.h> // select() - not needed on SunOS 4.1.x (in sys/types.h)
+#endif
 
 //-------------------------------------------------------------------------
 // SunOS 4.x: termios.h and sys/ioctl.h both define these macros.
@@ -57,10 +62,6 @@ int ioctl(int fd, int request, ...);
 struct winsize CxScreen::ws;
 struct sigaction CxScreen::sa;
 CxSList< CxFunctor * > CxScreen::screenSizeCallbackQueue;
-int CxScreen::_subtractRows = 0;
-int CxScreen::_subtractCols = 0;
-int CxScreen::_overrideRows = 0;
-int CxScreen::_overrideCols = 0;
  
 //-------------------------------------------------------------------------------------------------
 // CxScreen::CxScreen
@@ -140,38 +141,159 @@ CxScreen::clearScreen(void)
 
 
 //-------------------------------------------------------------------------------------------------
+// CxScreen::readByteTimeout
+//
+// Read one byte from fd, waiting at most timeoutMs for it to arrive.
+// Returns the byte, or -1 on timeout/error. Never blocks forever: a
+// terminal (or pipe) that doesn't answer a query must not wedge us.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+int
+CxScreen::readByteTimeout(int fd, int timeoutMs)
+{
+    fd_set rfds;
+    struct timeval tv;
+
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
+    tv.tv_sec  = timeoutMs / 1000;
+    tv.tv_usec = (timeoutMs % 1000) * 1000;
+
+    if (select(fd + 1, &rfds, NULL, NULL, &tv) != 1) return( -1 );
+
+    unsigned char c;
+    if (read(fd, (char *) &c, 1) != 1) return( -1 );
+    return( c );
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CxScreen::readCursorReport
+//
+// Read a DSR cursor-position report (ESC [ row ; col R) from stdin and
+// return the 1-indexed row/col exactly as the terminal reported them.
+// Leading bytes that aren't ESC (typed-ahead keys) are discarded. Bounded
+// both by a per-byte timeout and a total byte budget, so a terminal that
+// never answers -- or answers garbage -- gets a FALSE, not a hang.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+int
+CxScreen::readCursorReport(int *row, int *col, int timeoutMs)
+{
+    CxString buffer;
+    int c;
+    int budget = 32;   // a real report is at most ~10 bytes
+
+    // sync to the ESC that starts the report
+    do {
+        c = readByteTimeout(STDIN_FILENO, timeoutMs);
+        if (c == -1) return( 0 );
+    } while (c != '\033' && --budget > 0);
+    if (c != '\033') return( 0 );
+
+    c = readByteTimeout(STDIN_FILENO, timeoutMs);
+    if (c != '[') return( 0 );
+
+    while (budget-- > 0) {
+        c = readByteTimeout(STDIN_FILENO, timeoutMs);
+        if (c == -1) return( 0 );
+        if (c == 'R') break;
+        buffer += (char) c;
+    }
+    if (c != 'R') return( 0 );
+
+    CxString rowString = buffer.nextToken(";");
+    CxString colString = buffer.nextToken(";");
+    if (!rowString.length() || !colString.length()) return( 0 );
+
+    *row = rowString.toInt();
+    *col = colString.toInt();
+    return( 1 );
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CxScreen::getCursorPosition
 //
+// Ask the terminal where the cursor is (DSR). 0-indexed. If the terminal
+// never answers, row/col are left untouched -- callers pre-initialize.
+// Requires raw/cbreak mode.
 //
 //-------------------------------------------------------------------------------------------------
 /*static*/
 void
 CxScreen::getCursorPosition(int *row, int *col)
 {
+    int r, c;
 
-	CxString buffer;
     fputs("\033[6n", stdout);
     fflush(stdout);
-	char c = getchar(); // get the ESC
 
-	if (c != '\033') return;
+    if (readCursorReport(&r, &c, 1000)) {
+        *row = r - 1;
+        *col = c - 1;
+    }
+    return;
+}
 
-	c = getchar(); // get the bracket
-	if (c != '[') return;
 
-	c = getchar();
-	while( c!= 'R') {
-		buffer += c;
-		c = getchar();
-	}
+//-------------------------------------------------------------------------------------------------
+// CxScreen::syncTerminalSize
+//
+// Make the kernel's winsize agree with the terminal's real size. Serial
+// consoles report 0x0 (nothing ever sets a size on them) and vintage
+// telnetds report stale or missing sizes, so the terminal itself is the
+// only authority: park the cursor at 999;999 (the terminal clamps the
+// move to its true bottom-right corner), ask where the cursor actually
+// landed (DSR), and write the answer back with TIOCSWINSZ so the kernel,
+// SIGWINCH consumers and child processes all agree. This is exactly what
+// xterm's resize(1) does, done in-process: no external binary, no
+// per-platform path, no output flash.
+//
+// If the terminal never answers (dumb pipe), fall back to whatever the
+// kernel had; if the kernel had nothing, force 24x80 rather than let a
+// full-screen app run with 0 rows. Requires raw/cbreak mode.
+//
+// Returns TRUE if the terminal answered the probe.
+//
+//-------------------------------------------------------------------------------------------------
+/*static*/
+int
+CxScreen::syncTerminalSize(void)
+{
+    int probedRows = 0;
+    int probedCols = 0;
+    int answered;
 
-	CxString rowString = buffer.nextToken(";R");
-	CxString colString = buffer.nextToken(";R");
+    fputs("\0337", stdout);           // DEC save cursor
+    fputs("\033[999;999H", stdout);   // clamped to the real corner
+    fputs("\033[6n", stdout);         // where did I land?
+    fflush(stdout);
 
-	*row = rowString.toInt() -1;
-	*col = colString.toInt() -1;
-	 
-	return;
+    answered = readCursorReport(&probedRows, &probedCols, 1000);
+
+    fputs("\0338", stdout);           // DEC restore cursor
+    fflush(stdout);
+
+    refreshWindowSize();
+
+    if (answered && probedRows > 0 && probedCols > 0) {
+        if (probedRows != ws.ws_row || probedCols != ws.ws_col) {
+            ws.ws_row = probedRows;
+            ws.ws_col = probedCols;
+            ioctl(STDIN_FILENO, TIOCSWINSZ, (caddr_t) &(CxScreen::ws));
+        }
+        return( 1 );
+    }
+
+    if (ws.ws_row == 0 || ws.ws_col == 0) {
+        ws.ws_row = 24;
+        ws.ws_col = 80;
+        ioctl(STDIN_FILENO, TIOCSWINSZ, (caddr_t) &(CxScreen::ws));
+    }
+    return( 0 );
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -249,8 +371,6 @@ CxScreen::getWindowSize(void)
 int
 CxScreen::rows(void)
 {
-    if (_overrideRows > 0) return( _overrideRows );
-    if (_subtractRows > 0) return( ws.ws_row - _subtractRows );
     return( ws.ws_row );
 }
 
@@ -265,26 +385,7 @@ CxScreen::rows(void)
 int
 CxScreen::cols(void)
 {
-    if (_overrideCols > 0) return( _overrideCols );
-    if (_subtractCols > 0) return( ws.ws_col - _subtractCols );
     return( ws.ws_col );
-}
-
-
-//-------------------------------------------------------------------------------------------------
-// CxScreen::setScreenAdjustments
-//
-// Configure screen size adjustments for vintage platforms where the terminal
-// or telnetd reports incorrect dimensions. Ignored on modern platforms.
-//-------------------------------------------------------------------------------------------------
-/*static*/
-void
-CxScreen::setScreenAdjustments(int subRows, int subCols, int overRows, int overCols)
-{
-    _subtractRows = subRows;
-    _subtractCols = subCols;
-    _overrideRows = overRows;
-    _overrideCols = overCols;
 }
 
 

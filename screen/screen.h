@@ -61,7 +61,19 @@ class CxScreen
     // clear the entire visible screen
     
 	static void getCursorPosition(int *row, int *col);
-	// get the row and column of the cursor on the screen
+	// get the row and column of the cursor on the screen (0-indexed).
+	// requires raw/cbreak mode; gives up after a short timeout if the
+	// terminal never answers the DSR query (row/col left untouched)
+
+	static int syncTerminalSize(void);
+	// make the kernel winsize agree with the terminal's real size.
+	// serial consoles report 0x0 and vintage telnetds report stale or
+	// missing sizes, so ask the terminal directly (park the cursor at
+	// 999;999, read where it actually landed via DSR) and write the
+	// answer back with TIOCSWINSZ -- the in-process equivalent of
+	// xterm's resize(1). falls back to the kernel value, or 24x80 if
+	// the kernel had nothing. requires raw/cbreak mode. returns TRUE
+	// if the terminal answered the probe
 
 	static void moveCursorToColumn( int c );
 	// move the cursor to the designated column on the row
@@ -193,14 +205,14 @@ class CxScreen
     static void refreshWindowSize(void);
     // re-read terminal dimensions from the kernel (call after external resize)
 
-    static void setScreenAdjustments(int subRows, int subCols, int overRows, int overCols);
-
 private:
 
-    static int _subtractRows;
-    static int _subtractCols;
-    static int _overrideRows;
-    static int _overrideCols;
+    static int readByteTimeout(int fd, int timeoutMs);
+    // read one byte from fd, waiting at most timeoutMs; -1 on timeout/error
+
+    static int readCursorReport(int *row, int *col, int timeoutMs);
+    // read a DSR cursor-position report (ESC [ row ; col R) from stdin,
+    // returning the 1-indexed values as reported; FALSE on timeout/garbage
 };
 
 #endif

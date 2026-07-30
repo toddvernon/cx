@@ -87,8 +87,15 @@ ifeq ($(UNAME_S),sunos)
 
 endif
 
-# IRIX
+# IRIX. 64-bit kernels (Octane, Origin) report `uname -s = IRIX64` but build
+# the same n32 userland binaries, so both map to the one irix6 platform.
 ifeq ($(UNAME_S),irix)
+	ifeq ($(UNAME_R), 6.5)
+		PLATFORM_OS := irix6
+		CPPFLAGS = -D _IRIX6_ -g
+	endif
+endif
+ifeq ($(UNAME_S),irix64)
 	ifeq ($(UNAME_R), 6.5)
 		PLATFORM_OS := irix6
 		CPPFLAGS = -D _IRIX6_ -g

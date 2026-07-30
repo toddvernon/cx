@@ -132,6 +132,32 @@ SunOS 4.x (BSD-based) requires several compatibility workarounds:
 Solaris 5.x (SVR4-based) requires:
 - Link with `-lsocket -lnsl` for network functions
 
+## IRIX 6.5 Specific Notes
+
+Validated 2026-07-30 on a real SGI Indigo R4400 (IP20, `irix6_ip20`): all
+core libraries plus cm and heliosAgent build and run. Porting notes:
+
+1. **Signal handlers**: SGI's C++ headers declare signal(2)'s handler as
+   `void (*)(...)` (legacy C++ linkage), so a `void handler(int)` needs a
+   cast at the call site. The tell is "ANSI C++ prohibits conversion from
+   `(int)' to `(...)'". See HELIOS_SIGHANDLER in heliosAgent.
+2. **pthread_self**: exists only in libpthread, which single-threaded
+   daemons shouldn't link (it changes libc process semantics on 6.5).
+   logfile.cpp guards the thread-id log column out under `_IRIX6_`, same
+   as `_SUNOS_`.
+3. **nlist(3)**: not in libc. xload's Imakefile says `-lmld`, but that's
+   the COFF-era o32 library; on 6.5 n32 the home is `-lelf`.
+4. **uname -s**: 64-bit kernels (Octane/Origin) report `IRIX64`, 32-bit
+   report `IRIX`; platform.mk maps both to the one `irix6` platform (same
+   n32 userland).
+5. **Pseudo filesystems mount from '/'-prefixed sources** (`/proc`, `/hw`),
+   so source-path tests for "real disk" don't screen them; gate on fs type
+   (`efs` / `xfs`) instead.
+6. **Base grep has no -r**: GNU grep is `/usr/freeware/bin/grep` (freeware
+   tardist).
+7. **Power-off is `/etc/shutdown -y -g0 -i0`**, not `init 5` (that's
+   Solaris semantics).
+
 ## Legend
 
 - **Y** = Supported and built/tested

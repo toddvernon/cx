@@ -448,7 +448,11 @@ CxLogFile::printf( logType type, const char *file, int line, const char *format,
 	//---------------------------------------------------------------------
 	if (_threadFlag == CxLogFile::INCLUDE_THREAD_ID) {
 
-#if !defined(_SUNOS_)
+// No pthread_self on SunOS 4 (no pthreads at all); on IRIX it would be
+// the only pthread symbol in the daemon's link and would drag in
+// libpthread, which changes libc process semantics on 6.5. Skip the
+// thread-id column on both rather than link a thread runtime for it.
+#if !defined(_SUNOS_) && !defined(_IRIX6_)
 		_impl->printf(", %3ld", ::pthread_self() );
 #endif
     }
